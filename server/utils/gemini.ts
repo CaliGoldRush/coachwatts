@@ -104,9 +104,32 @@ export function buildWorkoutSummary(workouts: any[]): string {
 }
 
 export function buildMetricsSummary(metrics: any[]): string {
-  return metrics.map(m =>
-    `${m.date.toISOString()}: Recovery ${m.recoveryScore}%, HRV ${m.hrv}ms, Sleep ${m.hoursSlept}h`
-  ).join('\n')
+  return metrics.map(m => {
+    const parts = [
+      `**${new Date(m.date).toLocaleDateString()}**:`
+    ];
+    
+    // Recovery metrics
+    if (m.recoveryScore !== null) parts.push(`Recovery ${m.recoveryScore}%`);
+    if (m.hrv !== null) parts.push(`HRV ${m.hrv}ms`);
+    if (m.restingHr !== null) parts.push(`Resting HR ${m.restingHr}bpm`);
+    
+    // Sleep metrics
+    if (m.sleepHours !== null) parts.push(`Sleep ${m.sleepHours.toFixed(1)}h`);
+    if (m.sleepScore !== null) parts.push(`Sleep Score ${m.sleepScore}%`);
+    
+    // Additional metrics
+    if (m.spO2 !== null) parts.push(`SpO2 ${m.spO2}%`);
+    if (m.readiness !== null) parts.push(`Readiness ${m.readiness}/10`);
+    
+    // Subjective wellness
+    if (m.fatigue !== null) parts.push(`Fatigue ${m.fatigue}/10`);
+    if (m.soreness !== null) parts.push(`Soreness ${m.soreness}/10`);
+    if (m.stress !== null) parts.push(`Stress ${m.stress}/10`);
+    if (m.mood !== null) parts.push(`Mood ${m.mood}/10`);
+    
+    return parts.join(', ');
+  }).join('\n')
 }
 
 /**
