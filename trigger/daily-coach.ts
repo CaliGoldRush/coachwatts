@@ -1,8 +1,6 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
-import { PrismaClient } from "@prisma/client";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
-
-const prisma = new PrismaClient();
+import { prisma } from "../server/utils/db";
 
 const suggestionSchema = {
   type: 'object',

@@ -1,14 +1,17 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
-import { PrismaClient } from "@prisma/client";
-import { fetchIntervalsWorkouts, normalizeIntervalsWorkout } from "../server/utils/intervals";
-
-const prisma = new PrismaClient();
+import {
+  fetchIntervalsWorkouts,
+  fetchIntervalsWellness,
+  normalizeIntervalsWorkout,
+  normalizeIntervalsWellness
+} from "../server/utils/intervals";
+import { prisma } from "../server/utils/db";
 
 export const ingestIntervalsTask = task({
   id: "ingest-intervals",
-  run: async (payload: { 
-    userId: string; 
-    startDate: string; 
+  run: async (payload: {
+    userId: string;
+    startDate: string;
     endDate: string;
   }) => {
     const { userId, startDate, endDate } = payload;
@@ -36,17 +39,21 @@ export const ingestIntervalsTask = task({
     });
     
     try {
-      // Fetch activities
-      const activities = await fetchIntervalsWorkouts(
-        integration,
-        new Date(startDate),
-        new Date(endDate)
-      );
+      const start = new Date(startDate);
+      const end = new Date(endDate);
       
+      // Fetch activities
+      logger.log("Fetching activities...");
+      const activities = await fetchIntervalsWorkouts(integration, start, end);
       logger.log(`Fetched ${activities.length} activities from Intervals.icu`);
       
+      // Fetch wellness data
+      logger.log("Fetching wellness data...");
+      const wellnessData = await fetchIntervalsWellness(integration, start, end);
+      logger.log(`Fetched ${wellnessData.length} wellness entries from Intervals.icu`);
+      
       // Upsert workouts
-      let upsertedCount = 0;
+      let workoutsUpserted = 0;
       for (const activity of activities) {
         const workout = normalizeIntervalsWorkout(activity, userId);
         
@@ -61,10 +68,31 @@ export const ingestIntervalsTask = task({
           update: workout,
           create: workout
         });
-        upsertedCount++;
+        workoutsUpserted++;
       }
       
-      logger.log(`Upserted ${upsertedCount} workouts`);
+      logger.log(`Upserted ${workoutsUpserted} workouts`);
+      
+      // Upsert wellness data
+      let wellnessUpserted = 0;
+      for (const wellness of wellnessData) {
+        const wellnessDate = new Date(wellness.id); // wellness.id is the date string
+        const normalizedWellness = normalizeIntervalsWellness(wellness, userId, wellnessDate);
+        
+        await prisma.wellness.upsert({
+          where: {
+            userId_date: {
+              userId,
+              date: wellnessDate
+            }
+          },
+          update: normalizedWellness,
+          create: normalizedWellness
+        });
+        wellnessUpserted++;
+      }
+      
+      logger.log(`Upserted ${wellnessUpserted} wellness entries`);
       
       // Update sync status
       await prisma.integration.update({
@@ -78,7 +106,8 @@ export const ingestIntervalsTask = task({
       
       return {
         success: true,
-        count: upsertedCount,
+        workouts: workoutsUpserted,
+        wellness: wellnessUpserted,
         userId,
         startDate,
         endDate

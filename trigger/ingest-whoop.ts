@@ -1,8 +1,6 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
-import { PrismaClient } from "@prisma/client";
 import { fetchWhoopRecovery, normalizeWhoopRecovery } from "../server/utils/whoop";
-
-const prisma = new PrismaClient();
+import { prisma } from "../server/utils/db";
 
 export const ingestWhoopTask = task({
   id: "ingest-whoop",

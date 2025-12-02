@@ -1,12 +1,10 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
-import { PrismaClient } from "@prisma/client";
-import { 
-  generateCoachAnalysis, 
-  buildWorkoutSummary, 
-  buildMetricsSummary 
+import {
+  generateCoachAnalysis,
+  buildWorkoutSummary,
+  buildMetricsSummary
 } from "../server/utils/gemini";
-
-const prisma = new PrismaClient();
+import { prisma } from "../server/utils/db";
 
 export const generateWeeklyReportTask = task({
   id: "generate-weekly-report",
