@@ -26,3 +26,5 @@ logs
 
 /app/generated/prisma
 examples/dashboard
+.trigger
+examples/cycling

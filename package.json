@@ -7,7 +7,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "prisma:generate": "prisma generate",
+    "dev:trigger": "pnpm prisma:generate && npx trigger.dev@latest dev"
   },
   "dependencies": {
     "@auth/core": "^0.34.3",
@@ -26,6 +28,9 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@iconify-json/heroicons": "^1.2.3",
+    "@iconify-json/lucide": "^1.2.77",
+    "@trigger.dev/build": "4.1.2",
     "@types/node": "^24.10.1",
     "dotenv": "^17.2.3",
     "prisma": "^7.0.1",
