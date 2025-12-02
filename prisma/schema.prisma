@@ -348,6 +348,30 @@ model Nutrition {
   @@index([userId, date])
 }
 
+// Yazio Product Cache - stores product details to avoid rate limiting
+model YazioProductCache {
+  id              String   @id @default(uuid())
+  productId       String   @unique // Yazio product ID
+  
+  // Product details
+  name            String
+  brand           String?
+  baseUnit        String?  // e.g., "g", "ml"
+  
+  // Nutritional info per 100g/ml
+  nutrients       Json?    // Full nutrient data
+  
+  // Cache metadata
+  fetchedAt       DateTime @default(now())
+  expiresAt       DateTime // Long TTL (e.g., 1 year - nutrition rarely changes)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([productId])
+  @@index([expiresAt])
+}
+
 // --------------------------------------
 // AI Agent Outputs
 // --------------------------------------
