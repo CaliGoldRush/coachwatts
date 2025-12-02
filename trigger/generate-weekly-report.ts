@@ -1,10 +1,99 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import {
-  generateCoachAnalysis,
+  generateStructuredAnalysis,
   buildWorkoutSummary,
   buildMetricsSummary
 } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+
+// Analysis schema for structured JSON output
+const analysisSchema = {
+  type: "object",
+  properties: {
+    type: {
+      type: "string",
+      description: "Type of analysis: workout, weekly_report, planning, comparison",
+      enum: ["workout", "weekly_report", "planning", "comparison"]
+    },
+    title: {
+      type: "string",
+      description: "Title of the analysis"
+    },
+    date: {
+      type: "string",
+      description: "Date or date range of the analysis"
+    },
+    executive_summary: {
+      type: "string",
+      description: "2-3 sentence high-level summary of key findings"
+    },
+    sections: {
+      type: "array",
+      description: "Analysis sections with status and points",
+      items: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Section title (e.g., Training Load Analysis, Recovery Trends)"
+          },
+          status: {
+            type: "string",
+            description: "Overall assessment",
+            enum: ["excellent", "good", "moderate", "needs_improvement", "poor"]
+          },
+          status_label: {
+            type: "string",
+            description: "Display label for status"
+          },
+          analysis_points: {
+            type: "array",
+            description: "Detailed analysis points for this section. Each point should be 1-2 sentences maximum as a separate array item. Do NOT combine multiple points into paragraph blocks.",
+            items: {
+              type: "string"
+            }
+          }
+        },
+        required: ["title", "status", "status_label", "analysis_points"]
+      }
+    },
+    recommendations: {
+      type: "array",
+      description: "Actionable coaching recommendations",
+      items: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Recommendation title"
+          },
+          priority: {
+            type: "string",
+            description: "Priority level",
+            enum: ["high", "medium", "low"]
+          },
+          description: {
+            type: "string",
+            description: "Detailed recommendation"
+          }
+        },
+        required: ["title", "priority", "description"]
+      }
+    },
+    metrics_summary: {
+      type: "object",
+      description: "Key metrics across the period",
+      properties: {
+        total_duration_minutes: { type: "number" },
+        total_tss: { type: "number" },
+        avg_power: { type: "number" },
+        avg_heart_rate: { type: "number" },
+        total_distance_km: { type: "number" }
+      }
+    }
+  },
+  required: ["type", "title", "executive_summary", "sections"]
+}
 
 export const generateWeeklyReportTask = task({
   id: "generate-weekly-report",
