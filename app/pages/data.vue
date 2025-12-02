@@ -418,7 +418,12 @@
                 </tr>
               </thead>
               <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                <tr v-for="nutrition in nutritionData" :key="nutrition.id">
+                <tr
+                  v-for="nutrition in nutritionData"
+                  :key="nutrition.id"
+                  @click="navigateToNutrition(nutrition.id)"
+                  class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {{ formatDate(nutrition.date) }}
                   </td>
@@ -699,6 +704,11 @@ function getAnalysisStatusLabel(status: string | null | undefined) {
 // Navigate to workout detail page
 function navigateToWorkout(id: string) {
   navigateTo(`/workouts/${id}`)
+}
+
+// Navigate to nutrition detail page
+function navigateToNutrition(id: string) {
+  navigateTo(`/nutrition/${id}`)
 }
 
 function getRecoveryScoreClass(score: number) {
