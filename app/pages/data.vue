@@ -1,177 +1,259 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Data Management</h1>
-      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-        View and sync your training data from connected integrations
-      </p>
-    </div>
+  <UDashboardPanel id="data">
+    <template #header>
+      <UDashboardNavbar title="Data Management">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+      </UDashboardNavbar>
+    </template>
 
-    <!-- Integration Status Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <!-- Intervals.icu Card -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Intervals.icu</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Training activities & wellness</p>
-          </div>
-          <div v-if="intervalsStatus" :class="getStatusClass(intervalsStatus.syncStatus)">
-            {{ intervalsStatus.syncStatus || 'Not Connected' }}
-          </div>
-        </div>
-        
-        <div v-if="intervalsStatus" class="space-y-2 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-600 dark:text-gray-400">Last Sync:</span>
-            <span class="text-gray-900 dark:text-white">
-              {{ intervalsStatus.lastSyncAt ? formatDate(intervalsStatus.lastSyncAt) : 'Never' }}
-            </span>
-          </div>
-          <div v-if="intervalsStatus.errorMessage" class="text-red-600 text-xs mt-2">
-            {{ intervalsStatus.errorMessage }}
-          </div>
+    <template #body>
+      <div class="p-6 space-y-6">
+        <div>
+          <p class="text-sm text-muted">
+            View and sync your training data from connected integrations
+          </p>
         </div>
 
-        <button
-          @click="syncIntegration('intervals')"
-          :disabled="syncing === 'intervals'"
-          class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-        >
-          <span v-if="syncing === 'intervals'">Syncing...</span>
-          <span v-else>Sync Now</span>
-        </button>
-      </div>
-
-      <!-- Whoop Card -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Whoop</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Recovery & strain data</p>
-          </div>
-          <div v-if="whoopStatus" :class="getStatusClass(whoopStatus.syncStatus)">
-            {{ whoopStatus.syncStatus || 'Not Connected' }}
-          </div>
-        </div>
-        
-        <div v-if="whoopStatus" class="space-y-2 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-600 dark:text-gray-400">Last Sync:</span>
-            <span class="text-gray-900 dark:text-white">
-              {{ whoopStatus.lastSyncAt ? formatDate(whoopStatus.lastSyncAt) : 'Never' }}
-            </span>
-          </div>
-          <div v-if="whoopStatus.errorMessage" class="text-red-600 text-xs mt-2">
-            {{ whoopStatus.errorMessage }}
-          </div>
-        </div>
-
-        <button
-          @click="syncIntegration('whoop')"
-          :disabled="syncing === 'whoop'"
-          class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-        >
-          <span v-if="syncing === 'whoop'">Syncing...</span>
-          <span v-else>Sync Now</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Data Summary -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Data Summary</h2>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-            {{ dataSummary.workouts }}
-          </div>
-          <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Workouts</div>
-        </div>
-        
-        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div class="text-3xl font-bold text-green-600 dark:text-green-400">
-            {{ dataSummary.wellness }}
-          </div>
-          <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Wellness Entries</div>
-        </div>
-        
-        <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">
-            {{ dataSummary.dailyMetrics }}
-          </div>
-          <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Daily Metrics</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Workouts Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Workouts</h2>
-      </div>
-      
-      <div v-if="loading" class="p-8 text-center text-gray-600 dark:text-gray-400">
-        Loading...
-      </div>
-      
-      <div v-else-if="recentWorkouts.length === 0" class="p-8 text-center text-gray-600 dark:text-gray-400">
-        No workouts found. Sync your data to get started.
-      </div>
-      
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Date
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Activity
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Type
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Duration
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Load
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Source
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="workout in recentWorkouts" :key="workout.id">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                {{ formatDate(workout.date) }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                {{ workout.title }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                {{ workout.type }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                {{ formatDuration(workout.durationSec) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                {{ workout.trainingLoad ? Math.round(workout.trainingLoad) : '-' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <span :class="getSourceBadgeClass(workout.source)">
-                  {{ workout.source }}
+        <!-- Integration Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Intervals.icu Card -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Intervals.icu</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Training activities & wellness</p>
+              </div>
+              <div v-if="intervalsStatus" :class="getStatusClass(intervalsStatus.syncStatus)">
+                {{ intervalsStatus.syncStatus || 'Not Connected' }}
+              </div>
+            </div>
+            
+            <div v-if="intervalsStatus" class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Last Sync:</span>
+                <span class="text-gray-900 dark:text-white">
+                  {{ intervalsStatus.lastSyncAt ? formatDate(intervalsStatus.lastSyncAt) : 'Never' }}
                 </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+              <div v-if="intervalsStatus.errorMessage" class="text-red-600 text-xs mt-2">
+                {{ intervalsStatus.errorMessage }}
+              </div>
+            </div>
+
+            <button
+              @click="syncIntegration('intervals')"
+              :disabled="syncing === 'intervals'"
+              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              <span v-if="syncing === 'intervals'">Syncing...</span>
+              <span v-else>Sync Now</span>
+            </button>
+          </div>
+
+          <!-- Whoop Card -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Whoop</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Recovery & strain data</p>
+              </div>
+              <div v-if="whoopStatus" :class="getStatusClass(whoopStatus.syncStatus)">
+                {{ whoopStatus.syncStatus || 'Not Connected' }}
+              </div>
+            </div>
+            
+            <div v-if="whoopStatus" class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Last Sync:</span>
+                <span class="text-gray-900 dark:text-white">
+                  {{ whoopStatus.lastSyncAt ? formatDate(whoopStatus.lastSyncAt) : 'Never' }}
+                </span>
+              </div>
+              <div v-if="whoopStatus.errorMessage" class="text-red-600 text-xs mt-2">
+                {{ whoopStatus.errorMessage }}
+              </div>
+            </div>
+
+            <button
+              @click="syncIntegration('whoop')"
+              :disabled="syncing === 'whoop'"
+              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              <span v-if="syncing === 'whoop'">Syncing...</span>
+              <span v-else>Sync Now</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Data Summary -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Data Summary</h2>
+      
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {{ dataSummary.workouts }}
+              </div>
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Workouts</div>
+            </div>
+        
+            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="text-3xl font-bold text-green-600 dark:text-green-400">
+                {{ dataSummary.wellness }}
+              </div>
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Wellness Entries</div>
+            </div>
+        
+            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                {{ dataSummary.plannedWorkouts }}
+              </div>
+              <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Planned Workouts</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Planned Workouts Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Upcoming Planned Workouts</h2>
+          </div>
+          
+          <div v-if="loading" class="p-8 text-center text-gray-600 dark:text-gray-400">
+            Loading...
+          </div>
+          
+          <div v-else-if="plannedWorkouts.length === 0" class="p-8 text-center text-gray-600 dark:text-gray-400">
+            No planned workouts found. Create workouts in Intervals.icu to see them here.
+          </div>
+          
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Workout
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Duration
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    TSS
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="workout in plannedWorkouts" :key="workout.id">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {{ formatDate(workout.date) }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {{ workout.title }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ workout.type || '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ workout.durationSec ? formatDuration(workout.durationSec) : '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ workout.tss ? Math.round(workout.tss) : '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span :class="workout.completed ? 'px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800' : 'px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800'">
+                      {{ workout.completed ? 'Completed' : 'Planned' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Workouts Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Workouts</h2>
+          </div>
+      
+          <div v-if="loading" class="p-8 text-center text-gray-600 dark:text-gray-400">
+            Loading...
+          </div>
+      
+          <div v-else-if="recentWorkouts.length === 0" class="p-8 text-center text-gray-600 dark:text-gray-400">
+            No workouts found. Sync your data to get started.
+          </div>
+      
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Activity
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Duration
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Load
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Source
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr
+                  v-for="workout in recentWorkouts"
+                  :key="workout.id"
+                  @click="navigateToWorkout(workout.id)"
+                  class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {{ formatDate(workout.date) }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {{ workout.title }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ workout.type }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ formatDuration(workout.durationSec) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ workout.trainingLoad ? Math.round(workout.trainingLoad) : '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span :class="getSourceBadgeClass(workout.source)">
+                      {{ workout.source }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
@@ -187,9 +269,11 @@ const whoopStatus = ref<any>(null)
 const dataSummary = ref({
   workouts: 0,
   wellness: 0,
-  dailyMetrics: 0
+  dailyMetrics: 0,
+  plannedWorkouts: 0
 })
 const recentWorkouts = ref<any[]>([])
+const plannedWorkouts = ref<any[]>([])
 
 // Fetch integration status
 async function fetchStatus() {
@@ -207,13 +291,15 @@ async function fetchStatus() {
 // Fetch data summary
 async function fetchDataSummary() {
   try {
-    const [workouts, wellness] = await Promise.all([
+    const [workouts, wellness, planned] = await Promise.all([
       $fetch('/api/workouts'),
-      $fetch('/api/wellness')
+      $fetch('/api/wellness'),
+      $fetch('/api/planned-workouts')
     ])
     
     dataSummary.value.workouts = Array.isArray(workouts) ? workouts.length : 0
     dataSummary.value.wellness = Array.isArray(wellness) ? wellness.length : 0
+    dataSummary.value.plannedWorkouts = Array.isArray(planned) ? planned.length : 0
   } catch (error) {
     console.error('Error fetching data summary:', error)
   }
@@ -229,6 +315,18 @@ async function fetchRecentWorkouts() {
     console.error('Error fetching workouts:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// Fetch planned workouts
+async function fetchPlannedWorkouts() {
+  try {
+    const planned = await $fetch('/api/planned-workouts', {
+      query: { limit: 10 }
+    })
+    plannedWorkouts.value = planned
+  } catch (error) {
+    console.error('Error fetching planned workouts:', error)
   }
 }
 
@@ -257,6 +355,7 @@ async function syncIntegration(provider: string) {
       await fetchStatus()
       await fetchDataSummary()
       await fetchRecentWorkouts()
+      await fetchPlannedWorkouts()
       
       // Show completion notification if successful
       if (provider === 'intervals' && intervalsStatus.value?.syncStatus === 'SUCCESS') {
@@ -327,10 +426,16 @@ function getSourceBadgeClass(source: string) {
   return `${baseClass} bg-gray-100 text-gray-800`
 }
 
+// Navigate to workout detail page
+function navigateToWorkout(id: string) {
+  navigateTo(`/workouts/${id}`)
+}
+
 // Load data on mount
 onMounted(async () => {
   await fetchStatus()
   await fetchDataSummary()
   await fetchRecentWorkouts()
+  await fetchPlannedWorkouts()
 })
 </script>
