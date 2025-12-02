@@ -322,8 +322,9 @@ model Report {
   modelVersion   String?  // e.g., "gemini-2.5-pro"
   
   // Content
-  markdown       String?  @db.Text
-  latex          String?  @db.Text // If we generated a formal document
+  markdown       String?  @db.Text  // Markdown fallback for compatibility/exports
+  analysisJson   Json?              // Structured analysis data for rich UI display
+  latex          String?  @db.Text  // If we generated a formal document
   pdfUrl         String?  // URL to stored PDF in S3/Blob storage
   
   // Structured Suggestions (for the "Coach" agent)
