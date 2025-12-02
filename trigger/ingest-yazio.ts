@@ -1,9 +1,10 @@
 import { logger, task } from "@trigger.dev/sdk/v3"
 import { prisma } from "../server/utils/db"
-import { 
-  fetchYazioDailySummary, 
+import {
+  fetchYazioDailySummary,
   fetchYazioConsumedItems,
-  normalizeYazioData 
+  fetchYazioProductDetails,
+  normalizeYazioData
 } from "../server/utils/yazio"
 
 export const ingestYazioTask = task({
@@ -15,7 +16,11 @@ export const ingestYazioTask = task({
   }) => {
     const { userId, startDate, endDate } = payload
     
-    logger.log("Starting Yazio ingestion", { userId, startDate, endDate })
+    logger.log("=" .repeat(60))
+    logger.log("🍽️  YAZIO SYNC STARTING")
+    logger.log("=" .repeat(60))
+    logger.log(`User ID: ${userId}`)
+    logger.log(`Date Range: ${startDate} to ${endDate}`)
     
     // Fetch integration
     const integration = await prisma.integration.findUnique({
@@ -28,8 +33,11 @@ export const ingestYazioTask = task({
     })
     
     if (!integration) {
+      logger.error("❌ Yazio integration not found for user")
       throw new Error('Yazio integration not found for user')
     }
+    
+    logger.log(`✓ Found Yazio integration (ID: ${integration.id})`)
     
     // Update sync status
     await prisma.integration.update({
@@ -38,46 +46,40 @@ export const ingestYazioTask = task({
     })
     
     try {
-      // Parse dates and log the range
+      // Parse dates
       const start = new Date(startDate)
       const end = new Date(endDate)
       
-      logger.log(`Date range parameters received:`, {
-        startDate,
-        endDate,
-        startParsed: start.toISOString(),
-        endParsed: end.toISOString()
-      })
-      
-      // Generate date range - FIX: Create new Date object for each iteration
+      // Generate date range
       const dates = []
       const currentDate = new Date(start)
       
       while (currentDate <= end) {
-        // Use UTC date to avoid timezone issues
         const year = currentDate.getUTCFullYear()
         const month = String(currentDate.getUTCMonth() + 1).padStart(2, '0')
         const day = String(currentDate.getUTCDate()).padStart(2, '0')
-        const dateStr = `${year}-${month}-${day}`
-        dates.push(dateStr)
-        
-        // Move to next day
+        dates.push(`${year}-${month}-${day}`)
         currentDate.setUTCDate(currentDate.getUTCDate() + 1)
       }
       
-      logger.log(`Generated ${dates.length} dates to fetch:`, {
-        first: dates[0],
-        last: dates[dates.length - 1],
-        total: dates.length
-      })
+      logger.log("-".repeat(60))
+      logger.log(`📅 Generated ${dates.length} dates to process`)
+      logger.log(`   First: ${dates[0]}`)
+      logger.log(`   Last: ${dates[dates.length - 1]}`)
+      logger.log("-".repeat(60))
       
       let upsertedCount = 0
       let skippedCount = 0
       let errorCount = 0
+      let cachedCount = 0
+      let dbCacheHits = 0
+      let apiFetches = 0
+      
+      logger.log("")
       
       for (const date of dates) {
         try {
-          logger.log(`[${date}] Fetching Yazio data...`)
+          logger.log(`[${date}] Fetching data...`)
           
           // Fetch daily summary and consumed items
           const [summary, items] = await Promise.all([
@@ -85,33 +87,146 @@ export const ingestYazioTask = task({
             fetchYazioConsumedItems(integration, date)
           ])
           
-          logger.log(`[${date}] API Response:`, {
-            hasSummary: !!summary,
-            summaryGoals: summary?.goals,
-            summaryMeals: summary?.meals ? Object.keys(summary.meals) : [],
-            itemsCount: items?.products?.length || 0
-          })
+          const productsCount = items?.products?.length || 0
+          const simpleProductsCount = items?.simple_products?.length || 0
+          const totalItems = productsCount + simpleProductsCount
           
-          // Normalize data
-          const nutrition = normalizeYazioData(summary, items, userId, date)
+          logger.log(`[${date}] Found ${totalItems} items (${productsCount} products, ${simpleProductsCount} simple)`)
           
-          logger.log(`[${date}] Normalized data:`, {
-            date: nutrition.date,
-            calories: nutrition.calories,
-            protein: nutrition.protein,
-            carbs: nutrition.carbs,
-            fat: nutrition.fat,
-            hasBreakfast: !!nutrition.breakfast,
-            hasLunch: !!nutrition.lunch,
-            hasDinner: !!nutrition.dinner
-          })
-          
-          // Skip days with no nutrition data (no food logged)
-          if (!nutrition.calories || nutrition.calories === 0) {
+          if (totalItems === 0) {
             skippedCount++
-            logger.log(`[${date}] ⊘ Skipped - no nutrition data logged`)
+            logger.log(`[${date}] ⊘ Skipping - no food logged`)
             continue
           }
+          
+          // Check if we already have this date with product names
+          const existing = await prisma.nutrition.findUnique({
+            where: {
+              userId_date: {
+                userId,
+                date: new Date(Date.UTC(
+                  parseInt(date.split('-')[0]),
+                  parseInt(date.split('-')[1]) - 1,
+                  parseInt(date.split('-')[2])
+                ))
+              }
+            }
+          })
+          
+          // Skip if record exists and already has product names (check first meal item)
+          if (existing && existing.breakfast) {
+            const firstItem = Array.isArray(existing.breakfast) ? existing.breakfast[0] : null
+            if (firstItem && (firstItem as any).product_name) {
+              cachedCount++
+              logger.log(`[${date}] ✓ Already has product names - skipping`)
+              continue
+            }
+          }
+          
+          logger.log(`[${date}] Processing ${productsCount} products + ${simpleProductsCount} simple_products`)
+          
+          // Fetch product details to get names (simple_products already have names)
+          const enrichedItems = { ...items }
+          
+          if (items?.products && items.products.length > 0) {
+            const productsWithDetails = await Promise.all(
+              items.products.map(async (item, index) => {
+                try {
+                  // Check database cache first
+                  const cached = await prisma.yazioProductCache.findUnique({
+                    where: {
+                      productId: item.product_id
+                    }
+                  })
+                  
+                  let productDetails
+                  
+                  if (cached && cached.expiresAt > new Date()) {
+                    // Use cached data
+                    dbCacheHits++
+                    logger.log(`[${date}] Product ${index + 1}/${items.products.length}: ${item.product_id} (DB cached)`)
+                    productDetails = {
+                      name: cached.name,
+                      brand: cached.brand,
+                      base_unit: cached.baseUnit,
+                      nutrients: cached.nutrients
+                    }
+                  } else {
+                    // Fetch from API
+                    apiFetches++
+                    logger.log(`[${date}] Fetching product ${index + 1}/${items.products.length}: ${item.product_id}`)
+                    productDetails = await fetchYazioProductDetails(integration, item.product_id)
+                    
+                    // Cache in database with 1 year TTL
+                    const expiresAt = new Date()
+                    expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+                    
+                    await prisma.yazioProductCache.upsert({
+                      where: { productId: item.product_id },
+                      create: {
+                        productId: item.product_id,
+                        name: productDetails?.name || 'Unknown Product',
+                        brand: productDetails?.brand,
+                        baseUnit: productDetails?.base_unit,
+                        nutrients: productDetails?.nutrients,
+                        expiresAt
+                      },
+                      update: {
+                        name: productDetails?.name || 'Unknown Product',
+                        brand: productDetails?.brand,
+                        baseUnit: productDetails?.base_unit,
+                        nutrients: productDetails?.nutrients,
+                        expiresAt,
+                        fetchedAt: new Date()
+                      }
+                    })
+                  }
+                  
+                  const enriched = {
+                    ...item,
+                    product_name: productDetails?.name || 'Unknown Product',
+                    product_brand: productDetails?.brand || null,
+                    product_nutrients: productDetails?.nutrients || null
+                  }
+                  logger.log(`[${date}] → "${enriched.product_name}"${enriched.product_brand ? ` (${enriched.product_brand})` : ''}`)
+                  return enriched
+                } catch (error) {
+                  logger.error(`[${date}] ✗ Failed to fetch product ${item.product_id}:`, {
+                    error: error instanceof Error ? error.message : String(error)
+                  })
+                  return {
+                    ...item,
+                    product_name: 'Unknown Product'
+                  }
+                }
+              })
+            )
+            enrichedItems.products = productsWithDetails
+          }
+          
+          // Log simple products (already have names)
+          if (items?.simple_products && items.simple_products.length > 0) {
+            items.simple_products.forEach((item, index) => {
+              logger.log(`[${date}] Simple product ${index + 1}/${items.simple_products.length}: "${item.name}" (AI-generated)`)
+            })
+          }
+          
+          // Normalize data with enriched items
+          const nutrition = normalizeYazioData(summary, enrichedItems, userId, date)
+          
+          // Debug the final nutrition meals data
+          logger.log(`[${date}] Final meal items:`)
+          if (nutrition.breakfast) logger.log(`  Breakfast: ${nutrition.breakfast.length} items`)
+          if (nutrition.lunch) logger.log(`  Lunch: ${nutrition.lunch.length} items`)
+          if (nutrition.dinner) logger.log(`  Dinner: ${nutrition.dinner.length} items`)
+          if (nutrition.snacks) logger.log(`  Snacks: ${nutrition.snacks.length} items`)
+          
+          // Log what we're about to save
+          logger.log(`[${date}] 💾 Saving to database...`)
+          logger.log(`[${date}]    Calories: ${nutrition.calories}/${nutrition.caloriesGoal}`)
+          logger.log(`[${date}]    Protein: ${nutrition.protein?.toFixed(1)}g`)
+          logger.log(`[${date}]    Carbs: ${nutrition.carbs?.toFixed(1)}g`)
+          logger.log(`[${date}]    Fat: ${nutrition.fat?.toFixed(1)}g`)
           
           // Upsert to database
           const result = await prisma.nutrition.upsert({
@@ -126,25 +241,31 @@ export const ingestYazioTask = task({
           })
           
           upsertedCount++
-          logger.log(`[${date}] ✓ Synced successfully (ID: ${result.id})`)
+          logger.log(`[${date}] ✅ Synced successfully (ID: ${result.id})`)
+          logger.log("")
         } catch (error) {
           errorCount++
-          logger.error(`[${date}] ✗ Error syncing:`, {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined
-          })
+          logger.error(`[${date}] ❌ ERROR:`, error)
+          logger.error(`[${date}] Stack:`, error instanceof Error ? error.stack : 'N/A')
+          logger.log("")
           // Continue with other dates
         }
       }
       
-      logger.log(`Sync completed:`, {
-        total: dates.length,
-        upserted: upsertedCount,
-        errors: errorCount,
-        skipped: skippedCount
-      })
-      
-      logger.log(`Upserted ${upsertedCount} nutrition entries`)
+      logger.log("=" .repeat(60))
+      logger.log("📊 SYNC SUMMARY")
+      logger.log("=" .repeat(60))
+      logger.log(`✅ Successfully synced: ${upsertedCount} days`)
+      logger.log(`✓  Already cached: ${cachedCount} days`)
+      logger.log(`⊘  Skipped (no data): ${skippedCount} days`)
+      logger.log(`❌ Errors: ${errorCount} days`)
+      logger.log(`📆 Total processed: ${dates.length} days`)
+      logger.log("")
+      logger.log("🗄️  Product Cache Stats:")
+      logger.log(`   DB cache hits: ${dbCacheHits}`)
+      logger.log(`   API fetches: ${apiFetches}`)
+      logger.log(`   Total products processed: ${dbCacheHits + apiFetches}`)
+      logger.log("=" .repeat(60))
       
       // Update sync status
       await prisma.integration.update({
