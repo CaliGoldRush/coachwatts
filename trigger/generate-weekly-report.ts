@@ -110,9 +110,9 @@ export const generateWeeklyReportTask = task({
     });
     
     try {
-      // Calculate date range (last 30 days)
+      // Calculate date range (last 7 days / previous week)
       const endDate = new Date();
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       
       logger.log("Fetching data", { startDate, endDate });
       
@@ -149,7 +149,7 @@ export const generateWeeklyReportTask = task({
       }
       
       // Build prompt for structured analysis
-      const prompt = `You are an expert cycling coach analyzing 30 days of training data.
+      const prompt = `You are an expert cycling coach analyzing the previous week of training data (last 7 days).
 
 USER PROFILE:
 - FTP: ${user?.ftp || 'Unknown'} watts
@@ -157,7 +157,7 @@ USER PROFILE:
 - Max HR: ${user?.maxHr || 'Unknown'} bpm
 - W/kg: ${user?.ftp && user?.weight ? (user.ftp / user.weight).toFixed(2) : 'Unknown'}
 
-WORKOUTS (Last 30 days):
+WORKOUTS (Last 7 days):
 ${buildWorkoutSummary(workouts)}
 
 DAILY METRICS (Recovery & Sleep):

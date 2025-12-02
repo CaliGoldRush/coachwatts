@@ -29,11 +29,11 @@ export default defineEventHandler(async (event) => {
   let dateRangeEnd = new Date()
   
   if (reportType === 'LAST_3_WORKOUTS') {
-    // For last 3 workouts, we'll use a 30-day lookback
+    // For last 3 workouts, we'll use a 30-day lookback to find them
     dateRangeStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   } else {
-    // WEEKLY_ANALYSIS uses 30 days
-    dateRangeStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    // WEEKLY_ANALYSIS uses 7 days (previous week)
+    dateRangeStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   }
   
   // Create report record
