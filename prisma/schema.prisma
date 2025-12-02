@@ -36,6 +36,7 @@ model User {
   plannedWorkouts PlannedWorkout[]
   dailyMetrics    DailyMetric[]
   wellness        Wellness[]
+  nutrition       Nutrition[]
   reports         Report[]
   activityRecommendations ActivityRecommendation[]
 }
@@ -302,6 +303,47 @@ model Wellness {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// Nutrition data from Yazio
+model Nutrition {
+  id                String   @id @default(uuid())
+  userId            String
+  date              DateTime @db.Date
+  
+  // Daily Summary
+  calories          Int?     // Total calories consumed
+  protein           Float?   // Protein in grams
+  carbs             Float?   // Carbohydrates in grams
+  fat               Float?   // Fat in grams
+  fiber             Float?   // Fiber in grams
+  sugar             Float?   // Sugar in grams
+  
+  // Meal Breakdown
+  breakfast         Json?    // Breakfast items and macros
+  lunch             Json?    // Lunch items and macros
+  dinner            Json?    // Dinner items and macros
+  snacks            Json?    // Snacks items and macros
+  
+  // Nutrition Goals vs Actual
+  caloriesGoal      Int?
+  proteinGoal       Float?
+  carbsGoal         Float?
+  fatGoal           Float?
+  
+  // Water intake
+  waterMl           Int?     // Water in milliliters
+  
+  // Raw data for re-analysis
+  rawJson           Json?
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
   @@unique([userId, date])
   @@index([userId, date])
 }
