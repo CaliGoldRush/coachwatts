@@ -1,0 +1,189 @@
+import { Yazio } from 'yazio'
+import type { Integration } from '@prisma/client'
+
+export interface YazioDailySummary {
+  steps?: number
+  activity_energy?: number
+  consume_activity_energy?: boolean
+  water_intake?: number
+  goals?: {
+    'energy.energy'?: number
+    'nutrient.carb'?: number
+    'nutrient.fat'?: number
+    'nutrient.protein'?: number
+    'activity.step'?: number
+    'bodyvalue.weight'?: number
+    water?: number
+  }
+  units?: any
+  meals?: any
+  user_stats?: any
+}
+
+export interface YazioConsumedItem {
+  type: string
+  date: string
+  serving: string | null
+  amount: number
+  id: string
+  product_id: string
+  serving_quantity: number | null
+  daytime: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+}
+
+export interface YazioConsumedItemsResponse {
+  products: YazioConsumedItem[]
+  recipe_portions: unknown[]
+  simple_products: unknown[]
+}
+
+export async function createYazioClient(integration: Integration): Promise<Yazio> {
+  return new Yazio({
+    credentials: {
+      username: integration.accessToken, // Stored in accessToken field
+      password: integration.refreshToken! // Stored in refreshToken field
+    }
+  })
+}
+
+export async function fetchYazioDailySummary(
+  integration: Integration,
+  date: string
+): Promise<YazioDailySummary> {
+  const yazio = await createYazioClient(integration)
+  return (await yazio.user.getDailySummary({ date })) as unknown as YazioDailySummary
+}
+
+export async function fetchYazioConsumedItems(
+  integration: Integration,
+  date: string
+): Promise<YazioConsumedItemsResponse> {
+  const yazio = await createYazioClient(integration)
+  return (await yazio.user.getConsumedItems({ date })) as unknown as YazioConsumedItemsResponse
+}
+
+export async function fetchYazioProductDetails(
+  integration: Integration,
+  productId: string
+): Promise<any> {
+  const yazio = await createYazioClient(integration)
+  return await yazio.products.get(productId)
+}
+
+export function normalizeYazioData(
+  summary: YazioDailySummary,
+  items: YazioConsumedItemsResponse,
+  userId: string,
+  date: string
+) {
+  // Parse date string to create Date object at midnight UTC
+  const [year, month, day] = date.split('-').map(Number)
+  const dateObj = new Date(Date.UTC(year, month - 1, day))
+  
+  console.log(`[Yazio Normalize] Processing date: ${date}`)
+  console.log(`[Yazio Normalize] Date object: ${dateObj.toISOString()}`)
+  
+  // Group items by meal time
+  const mealGroups: Record<string, YazioConsumedItem[]> = {
+    breakfast: [],
+    lunch: [],
+    dinner: [],
+    snacks: []
+  }
+  
+  for (const item of items.products) {
+    const mealTime = item.daytime.toLowerCase()
+    if (mealGroups[mealTime]) {
+      mealGroups[mealTime].push(item)
+    } else {
+      mealGroups.snacks.push(item)
+    }
+  }
+  
+  console.log(`[Yazio Normalize] Meal groups:`, {
+    breakfast: mealGroups.breakfast.length,
+    lunch: mealGroups.lunch.length,
+    dinner: mealGroups.dinner.length,
+    snacks: mealGroups.snacks.length
+  })
+  
+  // Calculate totals from meals data
+  const meals = summary.meals || {}
+  const totals = {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: 0,
+    sugar: 0
+  }
+  
+  console.log(`[Yazio Normalize] Summary meals:`, Object.keys(meals))
+  
+  // Sum up nutrients from all meals if available
+  Object.entries(meals).forEach(([mealName, meal]: [string, any]) => {
+    if (meal?.nutrients) {
+      const mealNutrients = {
+        calories: meal.nutrients['energy.energy'] || 0,
+        protein: meal.nutrients['nutrient.protein'] || 0,
+        carbs: meal.nutrients['nutrient.carb'] || 0,
+        fat: meal.nutrients['nutrient.fat'] || 0,
+        fiber: meal.nutrients['nutrient.fiber'] || 0,
+        sugar: meal.nutrients['nutrient.sugar'] || 0
+      }
+      
+      console.log(`[Yazio Normalize] ${mealName}:`, mealNutrients)
+      
+      totals.calories += mealNutrients.calories
+      totals.protein += mealNutrients.protein
+      totals.carbs += mealNutrients.carbs
+      totals.fat += mealNutrients.fat
+      totals.fiber += mealNutrients.fiber
+      totals.sugar += mealNutrients.sugar
+    }
+  })
+  
+  console.log(`[Yazio Normalize] Totals:`, totals)
+  console.log(`[Yazio Normalize] Goals:`, {
+    calories: summary.goals?.['energy.energy'],
+    protein: summary.goals?.['nutrient.protein'],
+    carbs: summary.goals?.['nutrient.carb'],
+    fat: summary.goals?.['nutrient.fat']
+  })
+  
+  const result = {
+    userId,
+    date: dateObj,
+    calories: totals.calories || null,
+    protein: totals.protein || null,
+    carbs: totals.carbs || null,
+    fat: totals.fat || null,
+    fiber: totals.fiber || null,
+    sugar: totals.sugar || null,
+    waterMl: summary.water_intake || null,
+    caloriesGoal: summary.goals?.['energy.energy'] || null,
+    proteinGoal: summary.goals?.['nutrient.protein'] || null,
+    carbsGoal: summary.goals?.['nutrient.carb'] || null,
+    fatGoal: summary.goals?.['nutrient.fat'] || null,
+    breakfast: mealGroups.breakfast.length > 0 ? mealGroups.breakfast : null,
+    lunch: mealGroups.lunch.length > 0 ? mealGroups.lunch : null,
+    dinner: mealGroups.dinner.length > 0 ? mealGroups.dinner : null,
+    snacks: mealGroups.snacks.length > 0 ? mealGroups.snacks : null,
+    rawJson: { summary, items }
+  }
+  
+  console.log(`[Yazio Normalize] Final result:`, {
+    userId: result.userId,
+    date: result.date,
+    calories: result.calories,
+    protein: result.protein,
+    carbs: result.carbs,
+    fat: result.fat,
+    hasBreakfast: !!result.breakfast,
+    hasLunch: !!result.lunch,
+    hasDinner: !!result.dinner,
+    hasSnacks: !!result.snacks
+  })
+  
+  return result
+}

@@ -14,10 +14,10 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { provider } = body
   
-  if (!provider || !['intervals', 'whoop'].includes(provider)) {
-    throw createError({ 
+  if (!provider || !['intervals', 'whoop', 'yazio'].includes(provider)) {
+    throw createError({
       statusCode: 400,
-      message: 'Invalid provider. Must be "intervals" or "whoop"' 
+      message: 'Invalid provider. Must be "intervals", "whoop", or "yazio"'
     })
   }
   
@@ -40,18 +40,30 @@ export default defineEventHandler(async (event) => {
   
   // Calculate date range
   // For Intervals: last 90 days + next 30 days (to capture future planned workouts)
-  // For Whoop: last 90 days only
-  const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+  // For Whoop: last 90 days
+  // For Yazio: last 45 days (less data needed for nutrition)
+  const now = new Date()
+  const startDate = new Date(now)
+  const daysBack = provider === 'yazio' ? 45 : 90
+  startDate.setDate(startDate.getDate() - daysBack)
+  
   const endDate = provider === 'intervals'
-    ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)  // +30 days for planned workouts
-    : new Date()  // Today for Whoop
+    ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)  // +30 days for planned workouts
+    : new Date(now)  // Today for Whoop and Yazio
   
   // Trigger the appropriate job
-  const taskId = provider === 'intervals' ? 'ingest-intervals' : 'ingest-whoop'
+  const taskId = provider === 'intervals'
+    ? 'ingest-intervals'
+    : provider === 'whoop'
+    ? 'ingest-whoop'
+    : 'ingest-yazio'
   
   try {
     console.log(`[Sync] Triggering task: ${taskId} for user: ${(session.user as any).id}`)
-    console.log(`[Sync] Date range: ${startDate.toISOString()} to ${endDate.toISOString()}`)
+    console.log(`[Sync] Current time: ${now.toISOString()}`)
+    console.log(`[Sync] Start date: ${startDate.toISOString()} (${startDate.toISOString().split('T')[0]})`)
+    console.log(`[Sync] End date: ${endDate.toISOString()} (${endDate.toISOString().split('T')[0]})`)
+    console.log(`[Sync] Days to sync: ${Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000))}`)
     
     const handle = await tasks.trigger(taskId, {
       userId: (session.user as any).id,
