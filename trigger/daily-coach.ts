@@ -42,7 +42,8 @@ export const dailyCoachTask = task({
       prisma.workout.findFirst({
         where: {
           userId,
-          date: { gte: yesterday, lt: today }
+          date: { gte: yesterday, lt: today },
+          durationSec: { gt: 0 }  // Filter out workouts without duration
         },
         orderBy: { date: 'desc' }
       }),
