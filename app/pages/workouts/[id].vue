@@ -69,6 +69,56 @@
             </div>
           </div>
 
+          <!-- AI Analysis Section -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-bold text-gray-900 dark:text-white">AI Workout Analysis</h2>
+              <UButton
+                v-if="!workout.aiAnalysis"
+                icon="i-heroicons-sparkles"
+                color="primary"
+                :loading="analyzingWorkout"
+                :disabled="analyzingWorkout"
+                @click="analyzeWorkout"
+              >
+                {{ analyzingWorkout ? 'Analyzing...' : 'Analyze Workout' }}
+              </UButton>
+              <UButton
+                v-else
+                icon="i-heroicons-arrow-path"
+                color="neutral"
+                variant="ghost"
+                :loading="analyzingWorkout"
+                :disabled="analyzingWorkout"
+                @click="analyzeWorkout"
+                size="sm"
+              >
+                Re-analyze
+              </UButton>
+            </div>
+            
+            <div v-if="workout.aiAnalysis" class="space-y-4">
+              <div class="prose prose-sm dark:prose-invert max-w-none">
+                <div v-html="renderedAnalysis" class="text-gray-700 dark:text-gray-300"></div>
+              </div>
+              <div v-if="workout.aiAnalyzedAt" class="text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
+                Analyzed on {{ formatDate(workout.aiAnalyzedAt) }}
+              </div>
+            </div>
+            
+            <div v-else-if="!analyzingWorkout" class="text-center py-8">
+              <div class="text-gray-500 dark:text-gray-400">
+                <span class="i-heroicons-light-bulb w-12 h-12 mx-auto mb-4 opacity-50"></span>
+                <p class="text-sm">Click "Analyze Workout" to get AI-powered insights on your performance, pacing, and technique.</p>
+              </div>
+            </div>
+
+            <div v-else class="text-center py-8">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Generating analysis with AI...</p>
+            </div>
+          </div>
+
           <!-- Tabs for different data sections -->
           <UTabs :items="tabs" v-model="selectedTab" />
           
@@ -285,6 +335,8 @@
 </template>
 
 <script setup lang="ts">
+import { marked } from 'marked'
+
 definePageMeta({
   middleware: 'auth'
 })
@@ -295,12 +347,19 @@ const toast = useToast()
 const workout = ref<any>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+const analyzingWorkout = ref(false)
 const tabs = [
   { label: 'Overview', slot: 'overview' },
   { label: 'JSON Data', slot: 'json' }
 ]
 
 const selectedTab = ref(0)
+
+// Rendered markdown analysis
+const renderedAnalysis = computed(() => {
+  if (!workout.value?.aiAnalysis) return ''
+  return marked(workout.value.aiAnalysis)
+})
 
 // Fetch workout data
 async function fetchWorkout() {
@@ -330,6 +389,114 @@ const formattedRawJson = computed(() => {
   if (!workout.value?.rawJson) return ''
   return JSON.stringify(workout.value.rawJson, null, 2)
 })
+
+// Polling interval reference
+let pollingInterval: NodeJS.Timeout | null = null
+
+// Analyze workout function
+async function analyzeWorkout() {
+  if (!workout.value) return
+  
+  analyzingWorkout.value = true
+  try {
+    const result = await $fetch(`/api/workouts/${workout.value.id}/analyze`, {
+      method: 'POST'
+    })
+    
+    // If already completed, update immediately
+    if (result.status === 'COMPLETED' && 'analysis' in result && result.analysis) {
+      workout.value.aiAnalysis = result.analysis
+      workout.value.aiAnalyzedAt = result.analyzedAt
+      workout.value.aiAnalysisStatus = 'COMPLETED'
+      analyzingWorkout.value = false
+      
+      toast.add({
+        title: 'Analysis Ready',
+        description: 'Workout analysis already exists',
+        color: 'success',
+        icon: 'i-heroicons-check-circle'
+      })
+      return
+    }
+    
+    // Update status
+    workout.value.aiAnalysisStatus = result.status
+    
+    // Show processing message
+    toast.add({
+      title: 'Analysis Started',
+      description: 'Your workout is being analyzed by AI. This may take a minute...',
+      color: 'info',
+      icon: 'i-heroicons-sparkles'
+    })
+    
+    // Start polling for completion
+    startPolling()
+  } catch (e: any) {
+    console.error('Error triggering workout analysis:', e)
+    analyzingWorkout.value = false
+    toast.add({
+      title: 'Analysis Failed',
+      description: e.data?.message || e.message || 'Failed to start workout analysis',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle'
+    })
+  }
+}
+
+// Poll for analysis completion
+function startPolling() {
+  // Clear any existing polling
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+  }
+  
+  // Poll every 3 seconds
+  pollingInterval = setInterval(async () => {
+    if (!workout.value) return
+    
+    try {
+      const updated = await $fetch(`/api/workouts/${workout.value.id}`)
+      
+      // Update workout data
+      workout.value.aiAnalysis = updated.aiAnalysis
+      workout.value.aiAnalysisStatus = (updated as any).aiAnalysisStatus
+      workout.value.aiAnalyzedAt = updated.aiAnalyzedAt
+      
+      // If completed or failed, stop polling
+      if ((updated as any).aiAnalysisStatus === 'COMPLETED') {
+        stopPolling()
+        analyzingWorkout.value = false
+        
+        toast.add({
+          title: 'Analysis Complete',
+          description: 'AI workout analysis has been generated successfully',
+          color: 'success',
+          icon: 'i-heroicons-check-circle'
+        })
+      } else if ((updated as any).aiAnalysisStatus === 'FAILED') {
+        stopPolling()
+        analyzingWorkout.value = false
+        
+        toast.add({
+          title: 'Analysis Failed',
+          description: 'Failed to generate workout analysis. Please try again.',
+          color: 'error',
+          icon: 'i-heroicons-exclamation-circle'
+        })
+      }
+    } catch (e) {
+      console.error('Error polling workout status:', e)
+    }
+  }, 3000) // Poll every 3 seconds
+}
+
+function stopPolling() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+    pollingInterval = null
+  }
+}
 
 // Copy functions
 async function copyJsonToClipboard() {
@@ -376,7 +543,9 @@ function formatDate(date: string | Date) {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   })
 }
 
@@ -409,5 +578,10 @@ function getSourceBadgeClass(source: string) {
 // Load data on mount
 onMounted(() => {
   fetchWorkout()
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  stopPolling()
 })
 </script>
