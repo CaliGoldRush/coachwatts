@@ -31,11 +31,12 @@ model User {
   // Relations
   accounts      Account[]
   sessions      Session[]
-  integrations  Integration[] // External App Connections (Whoop, Intervals)
-  workouts      Workout[]
-  dailyMetrics  DailyMetric[]
-  wellness      Wellness[]
-  reports       Report[]
+  integrations    Integration[] // External App Connections (Whoop, Intervals)
+  workouts        Workout[]
+  plannedWorkouts PlannedWorkout[]
+  dailyMetrics    DailyMetric[]
+  wellness        Wellness[]
+  reports         Report[]
 }
 
 model Account {
@@ -179,6 +180,41 @@ model Workout {
 
   @@index([userId, date])
   @@unique([userId, source, externalId]) // Prevent duplicates
+}
+
+// Planned workouts from Intervals.icu
+model PlannedWorkout {
+  id              String   @id @default(uuid())
+  userId          String
+  externalId      String   // ID from Intervals.icu
+  
+  // Core Data
+  date            DateTime @db.Date // When the workout is planned for
+  title           String
+  description     String?  @db.Text
+  type            String?  // "Ride", "Run", etc.
+  category        String?  // "WORKOUT", "EVENT", "NOTE"
+  
+  // Planned Metrics
+  durationSec     Int?     // Planned duration
+  distanceMeters  Float?   // Planned distance
+  tss             Float?   // Planned TSS
+  workIntensity   Float?   // Planned intensity
+  
+  // Status
+  completed       Boolean? @default(false)
+  workoutId       String?  // Link to actual workout if completed
+  
+  // Raw Data
+  rawJson         Json?    // Store the original full payload
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId, date])
+  @@unique([userId, externalId]) // Prevent duplicates
 }
 
 // Normalized Daily Health Data (Recovery, Sleep)
