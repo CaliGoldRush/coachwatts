@@ -118,6 +118,67 @@
             </div>
           </UCard>
           
+          <!-- Today's Recommendation Card -->
+          <UCard v-if="intervalsConnected">
+            <template #header>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-light-bulb" class="w-5 h-5" />
+                  <h3 class="font-semibold">Today's Training</h3>
+                </div>
+                <UBadge v-if="todayRecommendation" :color="getRecommendationColor(todayRecommendation.recommendation)">
+                  {{ getRecommendationLabel(todayRecommendation.recommendation) }}
+                </UBadge>
+              </div>
+            </template>
+            
+            <div v-if="loadingRecommendation" class="text-sm text-muted py-4 text-center">
+              <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin inline" />
+              Analyzing...
+            </div>
+            
+            <div v-else-if="!todayRecommendation" class="space-y-3">
+              <p class="text-sm text-muted">
+                Get AI-powered guidance for today's training based on your recovery and planned workout.
+              </p>
+              <UButton
+                @click="generateTodayRecommendation"
+                block
+                :loading="generatingRecommendation"
+                :disabled="generatingRecommendation"
+              >
+                {{ generatingRecommendation ? 'Analyzing...' : 'Get Today\'s Recommendation' }}
+              </UButton>
+            </div>
+            
+            <div v-else class="space-y-3">
+              <p class="text-sm">{{ todayRecommendation.reasoning }}</p>
+              
+              <div v-if="todayRecommendation.analysisJson?.suggested_modifications" class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <p class="text-sm font-medium mb-2">Suggested Modification:</p>
+                <p class="text-sm">{{ todayRecommendation.analysisJson.suggested_modifications.description }}</p>
+              </div>
+              
+              <div class="flex gap-2">
+                <UButton
+                  variant="outline"
+                  size="sm"
+                  @click="openRecommendationModal"
+                >
+                  View Details
+                </UButton>
+                <UButton
+                  size="sm"
+                  @click="generateTodayRecommendation"
+                  :loading="generatingRecommendation"
+                  :disabled="generatingRecommendation"
+                >
+                  {{ generatingRecommendation ? 'Analyzing...' : 'Refresh' }}
+                </UButton>
+              </div>
+            </div>
+          </UCard>
+          
           <!-- Recent Activity Card -->
           <UCard>
             <template #header>
@@ -164,6 +225,75 @@
       </div>
     </template>
   </UDashboardPanel>
+  
+  <!-- Recommendation Modal -->
+  <UModal v-model:open="showRecommendationModal" title="Today's Training Recommendation">
+    <template #body>
+      <div v-if="todayRecommendation" class="space-y-4">
+        <!-- Recommendation Badge -->
+        <div class="text-center">
+          <UBadge
+            :color="getRecommendationColor(todayRecommendation.recommendation)"
+            size="lg"
+            class="text-lg px-4 py-2"
+          >
+            {{ getRecommendationLabel(todayRecommendation.recommendation) }}
+          </UBadge>
+          <p class="text-sm text-muted mt-2">Confidence: {{ (todayRecommendation.confidence * 100).toFixed(0) }}%</p>
+        </div>
+        
+        <!-- Reasoning -->
+        <div>
+          <h4 class="font-medium mb-2">Why?</h4>
+          <p class="text-sm text-muted">{{ todayRecommendation.reasoning }}</p>
+        </div>
+        
+        <!-- Key Factors -->
+        <div v-if="todayRecommendation.analysisJson?.key_factors">
+          <h4 class="font-medium mb-2">Key Factors:</h4>
+          <ul class="space-y-1">
+            <li v-for="(factor, idx) in todayRecommendation.analysisJson.key_factors" :key="idx" class="text-sm flex gap-2">
+              <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 mt-0.5" />
+              <span>{{ factor }}</span>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- Planned Workout -->
+        <div v-if="todayRecommendation.analysisJson?.planned_workout">
+          <h4 class="font-medium mb-2">Original Plan:</h4>
+          <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded">
+            <p class="font-medium">{{ todayRecommendation.analysisJson.planned_workout.original_title }}</p>
+            <p class="text-sm text-muted">
+              {{ todayRecommendation.analysisJson.planned_workout.original_duration_min }} min •
+              {{ todayRecommendation.analysisJson.planned_workout.original_tss }} TSS
+            </p>
+          </div>
+        </div>
+        
+        <!-- Suggested Modifications -->
+        <div v-if="todayRecommendation.analysisJson?.suggested_modifications">
+          <h4 class="font-medium mb-2">Suggested Changes:</h4>
+          <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
+            <p class="font-medium">{{ todayRecommendation.analysisJson.suggested_modifications.new_title }}</p>
+            <p class="text-sm text-muted mb-2">
+              {{ todayRecommendation.analysisJson.suggested_modifications.new_duration_min }} min •
+              {{ todayRecommendation.analysisJson.suggested_modifications.new_tss }} TSS
+            </p>
+            <p class="text-sm">{{ todayRecommendation.analysisJson.suggested_modifications.description }}</p>
+          </div>
+        </div>
+      </div>
+    </template>
+    
+    <template #footer>
+      <div class="flex gap-2 justify-end">
+        <UButton color="neutral" variant="outline" @click="showRecommendationModal = false">
+          Close
+        </UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -188,5 +318,124 @@ const { data: profileData } = useFetch('/api/profile', {
   watch: [intervalsConnected]
 })
 
+
+// Recommendation state
+const showRecommendationModal = ref(false)
+const todayRecommendation = ref<any>(null)
+const loadingRecommendation = ref(false)
+const generatingRecommendation = ref(false)
+
 const profile = computed(() => profileData.value?.profile || null)
+
+// Fetch today's recommendation
+async function fetchTodayRecommendation() {
+  if (!intervalsConnected.value) {
+    console.log('Intervals not connected, skipping recommendation fetch')
+    return
+  }
+  
+  try {
+    console.log('Fetching today\'s recommendation...')
+    loadingRecommendation.value = true
+    const data = await $fetch('/api/recommendations/today')
+    console.log('Recommendation fetched:', data)
+    todayRecommendation.value = data
+  } catch (error: any) {
+    console.error('Error fetching recommendation:', error)
+    // Don't show error if it's just 404 (no recommendation exists yet)
+    if (error?.statusCode !== 404) {
+      console.error('Unexpected error:', error)
+    }
+  } finally {
+    loadingRecommendation.value = false
+  }
+}
+
+// Generate new recommendation with improved polling
+async function generateTodayRecommendation() {
+  if (generatingRecommendation.value) {
+    console.log('Already generating, skipping...')
+    return
+  }
+  
+  generatingRecommendation.value = true
+  try {
+    console.log('Triggering recommendation generation...')
+    const result = await $fetch('/api/recommendations/today', { method: 'POST' })
+    console.log('Generation triggered:', result)
+    
+    // Poll for result with exponential backoff
+    let attempts = 0
+    const maxAttempts = 12 // Poll for up to 60 seconds
+    
+    const pollForResult = async () => {
+      attempts++
+      console.log(`Polling attempt ${attempts}/${maxAttempts}`)
+      
+      try {
+        await fetchTodayRecommendation()
+        console.log('Current recommendation after fetch:', todayRecommendation.value)
+        
+        if (todayRecommendation.value && todayRecommendation.value.status === 'COMPLETED') {
+          console.log('Recommendation completed!')
+          generatingRecommendation.value = false
+          return
+        }
+      } catch (error) {
+        console.error('Error during polling:', error)
+      }
+      
+      if (attempts < maxAttempts) {
+        // Continue polling with 5 second intervals
+        console.log('Scheduling next poll in 5 seconds...')
+        setTimeout(pollForResult, 5000)
+      } else {
+        console.log('Max polling attempts reached, stopping')
+        generatingRecommendation.value = false
+      }
+    }
+    
+    // Start polling after initial delay
+    console.log('Starting polling in 5 seconds...')
+    setTimeout(pollForResult, 5000)
+    
+  } catch (error) {
+    console.error('Error generating recommendation:', error)
+    generatingRecommendation.value = false
+  }
+}
+
+function openRecommendationModal() {
+  console.log('Opening recommendation modal, current value:', todayRecommendation.value)
+  showRecommendationModal.value = true
+  console.log('Modal state set to:', showRecommendationModal.value)
+}
+
+function getRecommendationColor(rec: string): 'success' | 'warning' | 'error' | 'neutral' {
+  const colors: Record<string, 'success' | 'warning' | 'error' | 'neutral'> = {
+    'proceed': 'success',
+    'modify': 'warning',
+    'reduce_intensity': 'warning',
+    'rest': 'error'
+  }
+  return colors[rec] || 'neutral'
+}
+
+function getRecommendationLabel(rec: string) {
+  const labels: Record<string, string> = {
+    'proceed': '✓ Proceed as Planned',
+    'modify': '⟳ Modify Workout',
+    'reduce_intensity': '↓ Reduce Intensity',
+    'rest': '⏸ Rest Day'
+  }
+  return labels[rec] || rec
+}
+
+// Watch for intervals connection and fetch recommendation
+watch(intervalsConnected, async (connected) => {
+  console.log('Intervals connection changed:', connected)
+  if (connected) {
+    await fetchTodayRecommendation()
+  }
+}, { immediate: true })
 </script>
