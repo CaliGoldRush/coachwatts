@@ -45,6 +45,30 @@ export default defineEventHandler(async (event) => {
             date: 'desc'
           }
         }
+      },
+      nutrition: {
+        include: {
+          nutrition: {
+            select: {
+              id: true,
+              date: true,
+              calories: true,
+              protein: true,
+              carbs: true,
+              fat: true,
+              fiber: true,
+              caloriesGoal: true,
+              proteinGoal: true,
+              carbsGoal: true,
+              fatGoal: true
+            }
+          }
+        },
+        orderBy: {
+          nutrition: {
+            date: 'desc'
+          }
+        }
       }
     }
   })

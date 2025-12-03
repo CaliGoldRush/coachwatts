@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   const reportType = body.type || 'WEEKLY_ANALYSIS'
   
   // Validate report type
-  const validTypes = ['WEEKLY_ANALYSIS', 'LAST_3_WORKOUTS']
+  const validTypes = ['WEEKLY_ANALYSIS', 'LAST_3_WORKOUTS', 'LAST_3_NUTRITION', 'LAST_7_NUTRITION']
   if (!validTypes.includes(reportType)) {
     throw createError({
       statusCode: 400,
@@ -31,6 +31,12 @@ export default defineEventHandler(async (event) => {
   if (reportType === 'LAST_3_WORKOUTS') {
     // For last 3 workouts, we'll use a 30-day lookback to find them
     dateRangeStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  } else if (reportType === 'LAST_3_NUTRITION') {
+    // For last 3 nutrition days
+    dateRangeStart = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+  } else if (reportType === 'LAST_7_NUTRITION') {
+    // For last 7 nutrition days
+    dateRangeStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   } else {
     // WEEKLY_ANALYSIS uses 7 days (previous week)
     dateRangeStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
@@ -52,6 +58,16 @@ export default defineEventHandler(async (event) => {
     let handle
     if (reportType === 'LAST_3_WORKOUTS') {
       handle = await tasks.trigger('analyze-last-3-workouts', {
+        userId,
+        reportId: report.id
+      })
+    } else if (reportType === 'LAST_3_NUTRITION') {
+      handle = await tasks.trigger('analyze-last-3-nutrition', {
+        userId,
+        reportId: report.id
+      })
+    } else if (reportType === 'LAST_7_NUTRITION') {
+      handle = await tasks.trigger('analyze-last-7-nutrition', {
         userId,
         reportId: report.id
       })
