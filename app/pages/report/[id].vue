@@ -66,24 +66,229 @@
             <p class="text-gray-700 dark:text-gray-300 leading-relaxed">{{ report.analysisJson.executive_summary }}</p>
           </UCard>
 
-          <!-- Analysis Sections -->
-          <UCard v-for="section in report.analysisJson.sections" :key="section.title">
-            <template #header>
-              <div class="flex items-center justify-between">
-                <h3 class="text-xl font-semibold">{{ section.title }}</h3>
-                <UBadge :color="getStatusBadgeColor(section.status) as any" size="lg">
-                  {{ section.status_label }}
-                </UBadge>
+          <!-- Athlete Profile Sections -->
+          <template v-if="report.analysisJson.type === 'athlete_profile'">
+            <!-- Current Fitness -->
+            <UCard v-if="report.analysisJson.current_fitness">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xl font-semibold">Current Fitness</h3>
+                  <UBadge :color="getStatusBadgeColor(report.analysisJson.current_fitness.status) as any" size="lg">
+                    {{ report.analysisJson.current_fitness.status_label }}
+                  </UBadge>
+                </div>
+              </template>
+              
+              <div class="space-y-3">
+                <div v-for="(point, idx) in report.analysisJson.current_fitness.key_points" :key="idx" class="flex gap-3">
+                  <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <p class="text-gray-700 dark:text-gray-300">{{ point }}</p>
+                </div>
               </div>
-            </template>
-            
-            <div class="space-y-3">
-              <div v-for="(point, idx) in section.analysis_points" :key="idx" class="flex gap-3">
-                <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <p class="text-gray-700 dark:text-gray-300">{{ point }}</p>
+            </UCard>
+
+            <!-- Training Characteristics -->
+            <UCard v-if="report.analysisJson.training_characteristics">
+              <template #header>
+                <h3 class="text-xl font-semibold">Training Characteristics</h3>
+              </template>
+              
+              <div class="space-y-4">
+                <div v-if="report.analysisJson.training_characteristics.training_style">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Training Style</h4>
+                  <p class="text-gray-700 dark:text-gray-300">{{ report.analysisJson.training_characteristics.training_style }}</p>
+                </div>
+                
+                <div v-if="report.analysisJson.training_characteristics.strengths?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Strengths</h4>
+                  <div class="space-y-2">
+                    <div v-for="(strength, idx) in report.analysisJson.training_characteristics.strengths" :key="idx" class="flex gap-3">
+                      <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p class="text-gray-700 dark:text-gray-300">{{ strength }}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-if="report.analysisJson.training_characteristics.areas_for_development?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Areas for Development</h4>
+                  <div class="space-y-2">
+                    <div v-for="(area, idx) in report.analysisJson.training_characteristics.areas_for_development" :key="idx" class="flex gap-3">
+                      <UIcon name="i-heroicons-arrow-trending-up" class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <p class="text-gray-700 dark:text-gray-300">{{ area }}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </UCard>
+            </UCard>
+
+            <!-- Recovery Profile -->
+            <UCard v-if="report.analysisJson.recovery_profile">
+              <template #header>
+                <h3 class="text-xl font-semibold">Recovery Profile</h3>
+              </template>
+              
+              <div class="space-y-4">
+                <div v-if="report.analysisJson.recovery_profile.recovery_pattern">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Recovery Pattern</h4>
+                  <p class="text-gray-700 dark:text-gray-300">{{ report.analysisJson.recovery_profile.recovery_pattern }}</p>
+                </div>
+                
+                <div v-if="report.analysisJson.recovery_profile.hrv_trend">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">HRV Trend</h4>
+                  <p class="text-gray-700 dark:text-gray-300">{{ report.analysisJson.recovery_profile.hrv_trend }}</p>
+                </div>
+                
+                <div v-if="report.analysisJson.recovery_profile.sleep_quality">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Sleep Quality</h4>
+                  <p class="text-gray-700 dark:text-gray-300">{{ report.analysisJson.recovery_profile.sleep_quality }}</p>
+                </div>
+                
+                <div v-if="report.analysisJson.recovery_profile.key_observations?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Key Observations</h4>
+                  <div class="space-y-2">
+                    <div v-for="(obs, idx) in report.analysisJson.recovery_profile.key_observations" :key="idx" class="flex gap-3">
+                      <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      <p class="text-gray-700 dark:text-gray-300">{{ obs }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </UCard>
+
+            <!-- Recent Performance -->
+            <UCard v-if="report.analysisJson.recent_performance">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xl font-semibold">Recent Performance</h3>
+                  <UBadge :color="getTrendBadgeColor(report.analysisJson.recent_performance.trend) as any" size="lg">
+                    {{ report.analysisJson.recent_performance.trend }}
+                  </UBadge>
+                </div>
+              </template>
+              
+              <div class="space-y-4">
+                <div v-if="report.analysisJson.recent_performance.patterns?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Patterns</h4>
+                  <div class="space-y-2">
+                    <div v-for="(pattern, idx) in report.analysisJson.recent_performance.patterns" :key="idx" class="flex gap-3">
+                      <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      <p class="text-gray-700 dark:text-gray-300">{{ pattern }}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-if="report.analysisJson.recent_performance.notable_workouts?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Notable Workouts</h4>
+                  <div class="space-y-3">
+                    <div v-for="(workout, idx) in report.analysisJson.recent_performance.notable_workouts" :key="idx"
+                         class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="font-medium text-gray-900 dark:text-white">{{ workout.title }}</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(workout.date) }}</span>
+                      </div>
+                      <p class="text-sm text-gray-700 dark:text-gray-300">{{ workout.key_insight }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </UCard>
+
+            <!-- Planning Context -->
+            <UCard v-if="report.analysisJson.planning_context">
+              <template #header>
+                <h3 class="text-xl font-semibold">Planning Context</h3>
+              </template>
+              
+              <div class="space-y-4">
+                <div v-if="report.analysisJson.planning_context.current_focus">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Current Focus</h4>
+                  <p class="text-gray-700 dark:text-gray-300">{{ report.analysisJson.planning_context.current_focus }}</p>
+                </div>
+                
+                <div v-if="report.analysisJson.planning_context.limitations?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Limitations</h4>
+                  <div class="space-y-2">
+                    <div v-for="(limitation, idx) in report.analysisJson.planning_context.limitations" :key="idx" class="flex gap-3">
+                      <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+                      <p class="text-gray-700 dark:text-gray-300">{{ limitation }}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-if="report.analysisJson.planning_context.opportunities?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Opportunities</h4>
+                  <div class="space-y-2">
+                    <div v-for="(opp, idx) in report.analysisJson.planning_context.opportunities" :key="idx" class="flex gap-3">
+                      <UIcon name="i-heroicons-light-bulb" class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <p class="text-gray-700 dark:text-gray-300">{{ opp }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </UCard>
+
+            <!-- Recommendations Summary (for athlete profile) -->
+            <UCard v-if="report.analysisJson.recommendations_summary">
+              <template #header>
+                <h3 class="text-xl font-semibold flex items-center gap-2">
+                  <UIcon name="i-heroicons-light-bulb" class="w-6 h-6" />
+                  Recommendations Summary
+                </h3>
+              </template>
+              
+              <div class="space-y-4">
+                <div v-if="report.analysisJson.recommendations_summary.action_items?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Action Items</h4>
+                  <div class="space-y-3">
+                    <div
+                      v-for="(item, idx) in report.analysisJson.recommendations_summary.action_items"
+                      :key="idx"
+                      class="border-l-4 pl-4"
+                      :class="getPriorityBorderClass(item.priority)"
+                    >
+                      <div class="flex items-start justify-between gap-4 mb-1">
+                        <p class="text-gray-900 dark:text-white">{{ item.action }}</p>
+                        <UBadge :color="getPriorityBadgeColor(item.priority) as any">
+                          {{ item.priority }}
+                        </UBadge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-if="report.analysisJson.recommendations_summary.recurring_themes?.length">
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Recurring Themes</h4>
+                  <div class="space-y-2">
+                    <div v-for="(theme, idx) in report.analysisJson.recommendations_summary.recurring_themes" :key="idx" class="flex gap-3">
+                      <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      <p class="text-gray-700 dark:text-gray-300">{{ theme }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </UCard>
+          </template>
+
+          <!-- Standard Report Sections (for non-athlete-profile reports) -->
+          <template v-else>
+            <UCard v-for="section in report.analysisJson.sections" :key="section.title">
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xl font-semibold">{{ section.title }}</h3>
+                  <UBadge :color="getStatusBadgeColor(section.status) as any" size="lg">
+                    {{ section.status_label }}
+                  </UBadge>
+                </div>
+              </template>
+              
+              <div class="space-y-3">
+                <div v-for="(point, idx) in section.analysis_points" :key="idx" class="flex gap-3">
+                  <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <p class="text-gray-700 dark:text-gray-300">{{ point }}</p>
+                </div>
+              </div>
+            </UCard>
+          </template>
 
           <!-- Recommendations -->
           <UCard v-if="report.analysisJson.recommendations?.length">
@@ -349,6 +554,16 @@ const getPriorityBorderClass = (priority: string) => {
   }
   return classes[priority] || 'border-gray-300'
 }
+const getTrendBadgeColor = (trend: string) => {
+  const colors: Record<string, string> = {
+    'improving': 'success',
+    'stable': 'info',
+    'declining': 'error',
+    'variable': 'warning'
+  }
+  return colors[trend] || 'neutral'
+}
+
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-US', {

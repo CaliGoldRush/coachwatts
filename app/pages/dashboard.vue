@@ -15,47 +15,24 @@
           <p class="mt-2 text-muted">Your AI-powered cycling coach is ready to help you optimize your training.</p>
         </div>
       
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <UCard v-if="!intervalsConnected">
-            <template #header>
-              <h3 class="font-semibold">Getting Started</h3>
-            </template>
-            <p class="text-sm text-muted">
-              Connect your Intervals.icu account to start analyzing your training data.
-            </p>
-            <template #footer>
-              <UButton to="/settings" block>
-                Connect Intervals.icu
-              </UButton>
-            </template>
-          </UCard>
-          
+        <!-- Row 1: Athlete Profile / Today's Training -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Athlete Profile Card - shown when connected -->
           <UCard v-if="intervalsConnected">
             <template #header>
-              <h3 class="font-semibold">Connection Status</h3>
-            </template>
-            <div class="space-y-3">
-              <div class="flex items-center gap-2">
-                <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-success" />
-                <span class="text-sm">Intervals.icu connected</span>
-              </div>
-              <p class="text-sm text-muted">
-                Your training data is being synced automatically.
-              </p>
-            </div>
-            <template #footer>
-              <UButton to="/reports" block variant="outline">
-                View Reports
-              </UButton>
-            </template>
-          </UCard>
-          
-          <!-- Rider Profile Card - shown when connected -->
-          <UCard v-if="intervalsConnected">
-            <template #header>
-              <div class="flex items-center gap-2">
-                <UIcon name="i-heroicons-user-circle" class="w-5 h-5" />
-                <h3 class="font-semibold">Rider Profile</h3>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-user-circle" class="w-5 h-5" />
+                  <h3 class="font-semibold">Athlete Profile</h3>
+                </div>
+                <UButton
+                  size="xs"
+                  variant="ghost"
+                  icon="i-heroicons-arrow-path"
+                  @click="generateAthleteProfile"
+                  :loading="generatingProfile"
+                  :disabled="generatingProfile"
+                />
               </div>
             </template>
             
@@ -116,6 +93,12 @@
                 </div>
               </div>
             </div>
+            
+            <template #footer>
+              <UButton to="/profile/athlete" block variant="outline">
+                View Details
+              </UButton>
+            </template>
           </UCard>
           
           <!-- Today's Recommendation Card -->
@@ -179,6 +162,24 @@
             </div>
           </UCard>
           
+          <!-- Getting Started Card - shown when not connected -->
+          <UCard v-if="!intervalsConnected">
+            <template #header>
+              <h3 class="font-semibold">Getting Started</h3>
+            </template>
+            <p class="text-sm text-muted">
+              Connect your Intervals.icu account to start analyzing your training data.
+            </p>
+            <template #footer>
+              <UButton to="/settings" block>
+                Connect Intervals.icu
+              </UButton>
+            </template>
+          </UCard>
+        </div>
+        
+        <!-- Row 2: Recent Activity / Next Steps / Connection Status -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <!-- Recent Activity Card -->
           <UCard>
             <template #header>
@@ -191,37 +192,59 @@
               Your workouts are syncing. Check back soon or view the Reports page.
             </p>
           </UCard>
+          
+          <!-- Next Steps Card -->
+          <UCard>
+            <template #header>
+              <h3 class="font-semibold">Next Steps</h3>
+            </template>
+            <ul class="space-y-2 text-sm text-muted">
+              <li class="flex items-center gap-2">
+                <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-success" />
+                Account created successfully
+              </li>
+              <li class="flex items-center gap-2">
+                <UIcon
+                  :name="intervalsConnected ? 'i-heroicons-check-circle' : 'i-heroicons-arrow-path'"
+                  :class="intervalsConnected ? 'w-5 h-5 text-success' : 'w-5 h-5'"
+                />
+                Connect Intervals.icu
+              </li>
+              <li class="flex items-center gap-2">
+                <UIcon
+                  :name="intervalsConnected ? 'i-heroicons-check-circle' : 'i-heroicons-arrow-path'"
+                  :class="intervalsConnected ? 'w-5 h-5 text-success' : 'w-5 h-5'"
+                />
+                Sync your training data
+              </li>
+              <li class="flex items-center gap-2">
+                <UIcon name="i-heroicons-arrow-path" class="w-5 h-5" />
+                Get your first AI coaching report
+              </li>
+            </ul>
+          </UCard>
+          
+          <!-- Connection Status Card - shown when connected -->
+          <UCard v-if="intervalsConnected">
+            <template #header>
+              <h3 class="font-semibold">Connection Status</h3>
+            </template>
+            <div class="space-y-3">
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-success" />
+                <span class="text-sm">Intervals.icu connected</span>
+              </div>
+              <p class="text-sm text-muted">
+                Your training data is being synced automatically.
+              </p>
+            </div>
+            <template #footer>
+              <UButton to="/reports" block variant="outline">
+                View Reports
+              </UButton>
+            </template>
+          </UCard>
         </div>
-      
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold">Next Steps</h3>
-          </template>
-          <ul class="space-y-2 text-sm text-muted">
-            <li class="flex items-center gap-2">
-              <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-success" />
-              Account created successfully
-            </li>
-            <li class="flex items-center gap-2">
-              <UIcon
-                :name="intervalsConnected ? 'i-heroicons-check-circle' : 'i-heroicons-arrow-path'"
-                :class="intervalsConnected ? 'w-5 h-5 text-success' : 'w-5 h-5'"
-              />
-              Connect Intervals.icu
-            </li>
-            <li class="flex items-center gap-2">
-              <UIcon
-                :name="intervalsConnected ? 'i-heroicons-check-circle' : 'i-heroicons-arrow-path'"
-                :class="intervalsConnected ? 'w-5 h-5 text-success' : 'w-5 h-5'"
-              />
-              Sync your training data
-            </li>
-            <li class="flex items-center gap-2">
-              <UIcon name="i-heroicons-arrow-path" class="w-5 h-5" />
-              Get your first AI coaching report
-            </li>
-          </ul>
-        </UCard>
       </div>
     </template>
   </UDashboardPanel>
@@ -301,6 +324,8 @@ definePageMeta({
   middleware: 'auth'
 })
 
+const toast = useToast()
+
 // Integration status - use lazy to avoid SSR issues
 const { data: integrationStatus } = useFetch('/api/integrations/status', {
   lazy: true,
@@ -311,7 +336,7 @@ const intervalsConnected = computed(() =>
   integrationStatus.value?.integrations?.some((i: any) => i.provider === 'intervals') ?? false
 )
 
-// Fetch rider profile when connected
+// Fetch athlete profile when connected
 const { data: profileData } = useFetch('/api/profile', {
   lazy: true,
   server: false,
@@ -324,6 +349,7 @@ const showRecommendationModal = ref(false)
 const todayRecommendation = ref<any>(null)
 const loadingRecommendation = ref(false)
 const generatingRecommendation = ref(false)
+const generatingProfile = ref(false)
 
 const profile = computed(() => profileData.value?.profile || null)
 
@@ -429,6 +455,36 @@ function getRecommendationLabel(rec: string) {
     'rest': '⏸ Rest Day'
   }
   return labels[rec] || rec
+}
+
+// Generate athlete profile
+async function generateAthleteProfile() {
+  generatingProfile.value = true
+  try {
+    const result: any = await $fetch('/api/profile/generate', { method: 'POST' })
+    
+    toast.add({
+      title: 'Profile Generation Started',
+      description: 'Creating your comprehensive athlete profile. This may take a minute...',
+      color: 'success',
+      icon: 'i-heroicons-check-circle'
+    })
+    
+    // Redirect to profile page after a delay
+    setTimeout(() => {
+      navigateTo('/profile/athlete')
+    }, 2000)
+    
+  } catch (error: any) {
+    toast.add({
+      title: 'Generation Failed',
+      description: error.data?.message || 'Failed to generate profile',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle'
+    })
+  } finally {
+    generatingProfile.value = false
+  }
 }
 
 // Watch for intervals connection and fetch recommendation

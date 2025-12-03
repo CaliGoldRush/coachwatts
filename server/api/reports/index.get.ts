@@ -34,7 +34,8 @@ export default defineEventHandler(async (event) => {
       updatedAt: true,
       dateRangeStart: true,
       dateRangeEnd: true,
-      modelVersion: true
+      modelVersion: true,
+      analysisJson: true
     }
   })
   
