@@ -1,0 +1,387 @@
+import { logger, task } from "@trigger.dev/sdk/v3";
+import { generateStructuredAnalysis } from "../server/utils/gemini";
+import { prisma } from "../server/utils/db";
+
+// Athlete Profile schema for structured JSON output
+const athleteProfileSchema = {
+  type: "object",
+  properties: {
+    type: {
+      type: "string",
+      enum: ["athlete_profile"],
+      description: "Type of report"
+    },
+    title: {
+      type: "string",
+      description: "Profile title"
+    },
+    generated_date: {
+      type: "string",
+      description: "Date profile was generated"
+    },
+    executive_summary: {
+      type: "string",
+      description: "2-3 sentence overview of the athlete's current status"
+    },
+    current_fitness: {
+      type: "object",
+      description: "Current fitness assessment",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["excellent", "good", "moderate", "developing", "recovering"],
+          description: "Overall fitness status"
+        },
+        status_label: {
+          type: "string",
+          description: "Display label for status"
+        },
+        key_points: {
+          type: "array",
+          items: { type: "string" },
+          description: "Key fitness indicators (each as separate item, 1-2 sentences)"
+        }
+      },
+      required: ["status", "status_label", "key_points"]
+    },
+    training_characteristics: {
+      type: "object",
+      description: "How the athlete trains",
+      properties: {
+        training_style: {
+          type: "string",
+          description: "Training approach description"
+        },
+        strengths: {
+          type: "array",
+          items: { type: "string" },
+          description: "Key strengths in training"
+        },
+        areas_for_development: {
+          type: "array",
+          items: { type: "string" },
+          description: "Areas that need attention"
+        }
+      },
+      required: ["training_style", "strengths", "areas_for_development"]
+    },
+    recovery_profile: {
+      type: "object",
+      description: "Recovery patterns and trends",
+      properties: {
+        recovery_pattern: {
+          type: "string",
+          description: "Overall recovery trend"
+        },
+        hrv_trend: {
+          type: "string",
+          description: "HRV trend analysis"
+        },
+        sleep_quality: {
+          type: "string",
+          description: "Sleep quality assessment"
+        },
+        key_observations: {
+          type: "array",
+          items: { type: "string" },
+          description: "Important recovery observations"
+        }
+      },
+      required: ["recovery_pattern", "key_observations"]
+    },
+    recent_performance: {
+      type: "object",
+      description: "Recent performance analysis from workout AI analysis",
+      properties: {
+        trend: {
+          type: "string",
+          enum: ["improving", "stable", "declining", "variable"],
+          description: "Performance trend"
+        },
+        notable_workouts: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              date: { type: "string" },
+              title: { type: "string" },
+              key_insight: { type: "string" }
+            }
+          },
+          description: "Highlighted workouts with insights"
+        },
+        patterns: {
+          type: "array",
+          items: { type: "string" },
+          description: "Performance patterns observed"
+        }
+      },
+      required: ["trend", "patterns"]
+    },
+    recommendations_summary: {
+      type: "object",
+      description: "Summary from recent coaching recommendations",
+      properties: {
+        recurring_themes: {
+          type: "array",
+          items: { type: "string" },
+          description: "Common themes from recent recommendations"
+        },
+        action_items: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              priority: { type: "string", enum: ["high", "medium", "low"] },
+              action: { type: "string" }
+            }
+          },
+          description: "Prioritized action items"
+        }
+      },
+      required: ["recurring_themes", "action_items"]
+    },
+    planning_context: {
+      type: "object",
+      description: "Context for workout planning",
+      properties: {
+        current_focus: {
+          type: "string",
+          description: "What should be the focus right now"
+        },
+        limitations: {
+          type: "array",
+          items: { type: "string" },
+          description: "Current limitations or constraints"
+        },
+        opportunities: {
+          type: "array",
+          items: { type: "string" },
+          description: "Training opportunities"
+        }
+      },
+      required: ["current_focus"]
+    }
+  },
+  required: ["type", "title", "generated_date", "executive_summary", "current_fitness", "training_characteristics", "recent_performance", "planning_context"]
+};
+
+export const generateAthleteProfileTask = task({
+  id: "generate-athlete-profile",
+  maxDuration: 300, // 5 minutes for AI processing
+  run: async (payload: { userId: string; reportId: string }) => {
+    const { userId, reportId } = payload;
+    
+    logger.log("Starting athlete profile generation", { userId, reportId });
+    
+    // Update report status
+    await prisma.report.update({
+      where: { id: reportId },
+      data: { status: 'PROCESSING' }
+    });
+    
+    try {
+      const now = new Date();
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      
+      logger.log("Fetching comprehensive athlete data");
+      
+      // Fetch all relevant data
+      const [user, recentWorkouts, recentWellness, recentReports, recentRecommendations] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { ftp: true, weight: true, maxHr: true, dob: true }
+        }),
+        prisma.workout.findMany({
+          where: {
+            userId,
+            date: { gte: thirtyDaysAgo, lte: now },
+            durationSec: { gt: 0 },
+            aiAnalysisStatus: 'COMPLETED'
+          },
+          orderBy: { date: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            date: true,
+            title: true,
+            type: true,
+            durationSec: true,
+            tss: true,
+            averageWatts: true,
+            aiAnalysisJson: true
+          }
+        }),
+        prisma.wellness.findMany({
+          where: {
+            userId,
+            date: { gte: thirtyDaysAgo, lte: now }
+          },
+          orderBy: { date: 'desc' },
+          take: 30
+        }),
+        prisma.report.findMany({
+          where: {
+            userId,
+            status: 'COMPLETED',
+            createdAt: { gte: thirtyDaysAgo }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            type: true,
+            createdAt: true,
+            analysisJson: true,
+            suggestions: true
+          }
+        }),
+        prisma.activityRecommendation.findMany({
+          where: {
+            userId,
+            status: 'COMPLETED',
+            date: { gte: sevenDaysAgo }
+          },
+          orderBy: { date: 'desc' },
+          take: 7,
+          select: {
+            date: true,
+            recommendation: true,
+            reasoning: true,
+            analysisJson: true
+          }
+        })
+      ]);
+      
+      logger.log("Data fetched", {
+        workoutsWithAI: recentWorkouts.length,
+        wellnessRecords: recentWellness.length,
+        reportsCount: recentReports.length,
+        recommendationsCount: recentRecommendations.length
+      });
+      
+      // Build workout insights from AI analysis
+      const workoutInsights = recentWorkouts
+        .filter(w => w.aiAnalysisJson)
+        .map(w => {
+          const analysis = w.aiAnalysisJson as any;
+          return `${new Date(w.date).toLocaleDateString()}: ${w.title} - ${analysis.quick_take || analysis.executive_summary || 'Analysis available'}`;
+        })
+        .slice(0, 10)
+        .join('\n');
+      
+      // Build wellness summary
+      const avgRecovery = recentWellness.length > 0
+        ? recentWellness.reduce((sum, w) => sum + (w.recoveryScore || 50), 0) / recentWellness.length
+        : null;
+      const avgHRV = recentWellness.length > 0
+        ? recentWellness.filter(w => w.hrv).reduce((sum, w) => sum + (w.hrv || 0), 0) / recentWellness.filter(w => w.hrv).length
+        : null;
+      
+      const wellnessSummary = `Average Recovery: ${avgRecovery ? avgRecovery.toFixed(0) + '%' : 'N/A'}
+Average HRV: ${avgHRV ? avgHRV.toFixed(0) + ' ms' : 'N/A'}
+Recent sleep: ${recentWellness.slice(0, 7).map(w => `${w.sleepHours?.toFixed(1) || 'N/A'}h`).join(', ')}`;
+      
+      // Build recent recommendations summary
+      const recommendationsSummary = recentRecommendations
+        .map(r => `${new Date(r.date).toLocaleDateString()}: ${r.recommendation.toUpperCase()} - ${r.reasoning}`)
+        .join('\n');
+      
+      // Build recent reports summary
+      const reportsSummary = recentReports
+        .map(r => {
+          const json = r.analysisJson as any;
+          return `${r.type}: ${json?.executive_summary || 'Analysis completed'}`;
+        })
+        .join('\n\n');
+      
+      // Calculate training stats
+      const totalTSS = recentWorkouts.reduce((sum, w) => sum + (w.tss || 0), 0);
+      const avgWorkoutDuration = recentWorkouts.length > 0
+        ? recentWorkouts.reduce((sum, w) => sum + w.durationSec, 0) / recentWorkouts.length / 60
+        : 0;
+      
+      // Build comprehensive prompt
+      const prompt = `You are creating a comprehensive Athlete Profile for training planning purposes. Analyze all available data to create a complete picture of this athlete.
+
+USER PROFILE:
+- FTP: ${user?.ftp || 'Unknown'} watts
+- Weight: ${user?.weight || 'Unknown'} kg
+- W/kg: ${user?.ftp && user?.weight ? (user.ftp / user.weight).toFixed(2) : 'Unknown'}
+- Max HR: ${user?.maxHr || 'Unknown'} bpm
+
+RECENT TRAINING (Last 30 days):
+- Total workouts with AI analysis: ${recentWorkouts.length}
+- Total TSS: ${totalTSS.toFixed(0)}
+- Average workout duration: ${avgWorkoutDuration.toFixed(0)} minutes
+- Workout types: ${[...new Set(recentWorkouts.map(w => w.type))].join(', ')}
+
+WORKOUT INSIGHTS (from AI analysis):
+${workoutInsights || 'No detailed workout analysis available'}
+
+RECOVERY METRICS:
+${wellnessSummary}
+
+RECENT COACHING RECOMMENDATIONS (Last 7 days):
+${recommendationsSummary || 'No recent recommendations'}
+
+RECENT REPORTS & ANALYSIS:
+${reportsSummary || 'No recent reports'}
+
+INSTRUCTIONS:
+Create a comprehensive athlete profile that synthesizes all this data. This profile will be used for:
+1. Planning future workouts
+2. Understanding the athlete's current capabilities and limitations
+3. Identifying patterns and trends
+4. Making informed coaching decisions
+
+Focus on:
+- Current fitness state (not historical achievements, but current capability)
+- Training patterns and how the athlete responds to different stimuli
+- Recovery patterns and how well they handle training load
+- Recent performance trends from workout analysis
+- Key themes from recent recommendations
+- What should be considered when planning future workouts
+
+Be specific, data-driven, and actionable. Reference actual metrics and patterns observed.`;
+
+      logger.log("Generating athlete profile with Gemini");
+      
+      // Generate structured profile
+      const profileJson = await generateStructuredAnalysis(prompt, athleteProfileSchema, 'flash');
+      
+      logger.log("Athlete profile generated successfully");
+      
+      // Save profile as a report
+      await prisma.report.update({
+        where: { id: reportId },
+        data: {
+          status: 'COMPLETED',
+          type: 'ATHLETE_PROFILE',
+          analysisJson: profileJson as any,
+          modelVersion: 'gemini-2.0-flash-exp',
+          dateRangeStart: thirtyDaysAgo,
+          dateRangeEnd: now
+        }
+      });
+      
+      logger.log("Athlete profile saved to database");
+      
+      return {
+        success: true,
+        reportId,
+        userId
+      };
+    } catch (error) {
+      logger.error("Error generating athlete profile", { error });
+      
+      await prisma.report.update({
+        where: { id: reportId },
+        data: { status: 'FAILED' }
+      });
+      
+      throw error;
+    }
+  }
+});
