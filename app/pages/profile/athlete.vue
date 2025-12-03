@@ -374,7 +374,7 @@ definePageMeta({
 
 // Fetch the most recent athlete profile
 const { data: profile, pending, refresh } = await useFetch('/api/reports', {
-  query: { type: 'RIDER_PROFILE', limit: 1 },
+  query: { type: 'ATHLETE_PROFILE', limit: 1 },
   transform: (data: any) => data && data.length > 0 ? data[0] : null
 })
 
