@@ -40,6 +40,12 @@ model User {
   recoveryCapacityExplanation     String?   // Recovery factors and improvement steps
   nutritionComplianceExplanation  String?   // Nutrition quality analysis and guidance
   trainingConsistencyExplanation  String?   // Consistency patterns and recommendations
+  
+  // Structured Score Explanations (JSON format for rich UI display)
+  currentFitnessExplanationJson       Json?   // Structured explanation with sections and recommendations
+  recoveryCapacityExplanationJson     Json?   // Structured recovery analysis
+  nutritionComplianceExplanationJson  Json?   // Structured nutrition analysis
+  trainingConsistencyExplanationJson  Json?   // Structured consistency analysis
 
   // Relations
   accounts      Account[]
