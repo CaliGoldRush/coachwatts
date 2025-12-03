@@ -151,15 +151,58 @@
               </div>
             </div>
             
-            <div v-if="yazioConnected" class="mt-4 flex items-center gap-4">
+            <div class="flex items-center justify-between p-4 border rounded-lg">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <UIcon name="i-heroicons-bolt" class="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <h3 class="font-semibold">Strava</h3>
+                  <p class="text-sm text-muted">Activities and performance tracking</p>
+                </div>
+              </div>
+              <div v-if="!stravaConnected">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  @click="goToConnectStrava"
+                >
+                  Connect
+                </UButton>
+              </div>
+              <div v-else class="flex items-center gap-2">
+                <UBadge color="success">Connected</UBadge>
+                <UButton
+                  color="error"
+                  variant="ghost"
+                  size="xs"
+                  @click="disconnectIntegration('strava')"
+                >
+                  Disconnect
+                </UButton>
+              </div>
+            </div>
+            
+            <div v-if="yazioConnected || stravaConnected" class="mt-4 flex items-center gap-4">
               <UButton
+                v-if="yazioConnected"
                 color="neutral"
                 variant="outline"
                 size="sm"
                 @click="syncIntegration('yazio')"
                 :disabled="syncingYazio"
               >
-                {{ syncingYazio ? 'Syncing...' : 'Sync Now' }}
+                {{ syncingYazio ? 'Syncing Yazio...' : 'Sync Yazio' }}
+              </UButton>
+              <UButton
+                v-if="stravaConnected"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                @click="syncIntegration('strava')"
+                :disabled="syncingStrava"
+              >
+                {{ syncingStrava ? 'Syncing Strava...' : 'Sync Strava' }}
               </UButton>
             </div>
           </div>
@@ -213,7 +256,12 @@ const yazioConnected = computed(() =>
   integrationStatus.value?.integrations?.some((i: any) => i.provider === 'yazio') ?? false
 )
 
+const stravaConnected = computed(() =>
+  integrationStatus.value?.integrations?.some((i: any) => i.provider === 'strava') ?? false
+)
+
 const syncingYazio = ref(false)
+const syncingStrava = ref(false)
 
 const goToConnectIntervals = () => {
   navigateTo('/connect-intervals')
@@ -227,9 +275,15 @@ const goToConnectYazio = () => {
   navigateTo('/connect-yazio')
 }
 
+const goToConnectStrava = () => {
+  navigateTo('/connect-strava')
+}
+
 const syncIntegration = async (provider: string) => {
   if (provider === 'yazio') {
     syncingYazio.value = true
+  } else if (provider === 'strava') {
+    syncingStrava.value = true
   }
   
   try {
@@ -242,11 +296,17 @@ const syncIntegration = async (provider: string) => {
       ? 'Intervals.icu'
       : provider === 'whoop'
       ? 'WHOOP'
-      : 'Yazio'
+      : provider === 'yazio'
+      ? 'Yazio'
+      : 'Strava'
+    
+    const message = provider === 'intervals'
+      ? `Started syncing ${providerName} data. Note: Strava activities are excluded due to API limitations.`
+      : `Started syncing ${providerName} data`
     
     toast.add({
       title: 'Sync Started',
-      description: `Started syncing ${providerName} data`,
+      description: message,
       color: 'success'
     })
     
@@ -263,13 +323,20 @@ const syncIntegration = async (provider: string) => {
   } finally {
     if (provider === 'yazio') {
       syncingYazio.value = false
+    } else if (provider === 'strava') {
+      syncingStrava.value = false
     }
   }
 }
 
 const disconnectIntegration = async (provider: string) => {
   try {
-    await $fetch(`/api/integrations/${provider}/disconnect`, {
+    // Use provider-specific endpoint if it exists, otherwise use generic
+    const endpoint = provider === 'whoop'
+      ? '/api/integrations/whoop/disconnect'
+      : `/api/integrations/${provider}/disconnect`
+    
+    await $fetch(endpoint, {
       method: 'DELETE'
     })
     
@@ -277,7 +344,9 @@ const disconnectIntegration = async (provider: string) => {
       ? 'Intervals.icu'
       : provider === 'whoop'
       ? 'WHOOP'
-      : 'Yazio'
+      : provider === 'yazio'
+      ? 'Yazio'
+      : 'Strava'
     
     toast.add({
       title: 'Disconnected',
@@ -306,7 +375,7 @@ onMounted(() => {
       description: 'Successfully connected to WHOOP',
       color: 'success'
     })
-    // Clean up URL
+    refreshIntegrations()
     router.replace({ query: {} })
   } else if (route.query.whoop_error) {
     const errorMsg = route.query.whoop_error as string
@@ -317,7 +386,24 @@ onMounted(() => {
         : `Failed to connect to WHOOP: ${errorMsg}`,
       color: 'error'
     })
-    // Clean up URL
+    router.replace({ query: {} })
+  } else if (route.query.strava_success) {
+    toast.add({
+      title: 'Connected!',
+      description: 'Successfully connected to Strava',
+      color: 'success'
+    })
+    refreshIntegrations()
+    router.replace({ query: {} })
+  } else if (route.query.strava_error) {
+    const errorMsg = route.query.strava_error as string
+    toast.add({
+      title: 'Connection Failed',
+      description: errorMsg === 'no_code'
+        ? 'Authorization was cancelled or no code was received'
+        : `Failed to connect to Strava: ${errorMsg}`,
+      color: 'error'
+    })
     router.replace({ query: {} })
   } else if (route.query.connected === 'yazio') {
     toast.add({
@@ -325,7 +411,6 @@ onMounted(() => {
       description: 'Successfully connected to Yazio',
       color: 'success'
     })
-    // Refresh integrations and clean up URL
     refreshIntegrations()
     router.replace({ query: {} })
   }

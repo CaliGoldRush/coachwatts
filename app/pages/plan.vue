@@ -18,92 +18,6 @@
           </p>
         </div>
 
-        <!-- Training Availability Section -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Training Availability</h2>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Select when you can train during the week
-              </p>
-            </div>
-            <button
-              @click="saveAvailability"
-              :disabled="savingAvailability"
-              class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-            >
-              <span v-if="savingAvailability">Saving...</span>
-              <span v-else>Save Availability</span>
-            </button>
-          </div>
-
-          <div class="space-y-4">
-            <div 
-              v-for="day in weekDays" 
-              :key="day.value"
-              class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-            >
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="font-semibold text-gray-900 dark:text-white">{{ day.label }}</h3>
-                <span 
-                  v-if="hasAnySlot(day.value)" 
-                  class="text-xs px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded"
-                >
-                  Available
-                </span>
-              </div>
-              
-              <div class="grid grid-cols-3 gap-3">
-                <label class="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="availability[day.value].morning"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">Morning (5am-12pm)</span>
-                </label>
-                
-                <label class="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="availability[day.value].afternoon"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">Afternoon (12pm-6pm)</span>
-                </label>
-                
-                <label class="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="availability[day.value].evening"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">Evening (6pm-11pm)</span>
-                </label>
-              </div>
-
-              <div class="mt-3 flex items-center space-x-4">
-                <label class="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="availability[day.value].gymAccess"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span class="text-xs text-gray-600 dark:text-gray-400">Gym Access</span>
-                </label>
-                
-                <label class="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="availability[day.value].indoorOnly"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span class="text-xs text-gray-600 dark:text-gray-400">Indoor Only</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Plan Generation Section -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -114,14 +28,115 @@
                 Create an AI-powered training plan based on your availability
               </p>
             </div>
-            <button
-              @click="generatePlan"
-              :disabled="generatingPlan"
-              class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-            >
-              <span v-if="generatingPlan">Generating...</span>
-              <span v-else>Generate Plan</span>
-            </button>
+            <div class="flex gap-3">
+              <USlideover
+                ref="availabilitySlideoverRef"
+                title="Training Availability"
+                description="Select when you can train during the week"
+                :ui="{ wrapper: 'w-full max-w-5xl' }"
+              >
+                <UButton label="Set Availability" color="primary" />
+
+                <template #body>
+                  <div class="space-y-4">
+                    <div
+                      v-for="day in weekDays"
+                      :key="day.value"
+                      class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                    >
+                      <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-gray-900 dark:text-white">{{ day.label }}</h3>
+                        <span
+                          v-if="hasAnySlot(day.value)"
+                          class="text-xs px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded"
+                        >
+                          Available
+                        </span>
+                      </div>
+                      
+                      <div class="grid grid-cols-3 gap-3">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            v-model="availability[day.value].morning"
+                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Morning</span>
+                        </label>
+                        
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            v-model="availability[day.value].afternoon"
+                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Afternoon</span>
+                        </label>
+                        
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            v-model="availability[day.value].evening"
+                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span class="text-sm text-gray-700 dark:text-gray-300">Evening</span>
+                        </label>
+                      </div>
+
+                      <div class="mt-3 grid grid-cols-2 gap-3">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            v-model="availability[day.value].bikeAccess"
+                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span class="text-xs text-gray-600 dark:text-gray-400">Bike/Trainer Access</span>
+                        </label>
+                        
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            v-model="availability[day.value].gymAccess"
+                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span class="text-xs text-gray-600 dark:text-gray-400">Gym Access</span>
+                        </label>
+                        
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            v-model="availability[day.value].indoorOnly"
+                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span class="text-xs text-gray-600 dark:text-gray-400">Indoor Only</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <template #footer>
+                  <div class="flex justify-end gap-3">
+                    <UButton color="neutral" variant="ghost" label="Cancel" @click="closeAvailabilityPanel" />
+                    <UButton
+                      color="primary"
+                      label="Save Availability"
+                      @click="saveAndClose"
+                      :loading="savingAvailability"
+                    />
+                  </div>
+                </template>
+              </USlideover>
+
+              <button
+                @click="generatePlan"
+                :disabled="generatingPlan"
+                class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+              >
+                <span v-if="generatingPlan">Generating...</span>
+                <span v-else>Generate Plan</span>
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -145,14 +160,14 @@
           </div>
         </div>
 
-        <!-- Current Plan Display -->
+        <!-- Recommended Plan Display -->
         <div v-if="currentPlan" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Current Training Plan</h2>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Recommended Training Plan</h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {{ formatDate(currentPlan.weekStartDate) }} - {{ formatDate(currentPlan.weekEndDate) }}
+                  AI-generated recommendation for {{ formatDate(currentPlan.weekStartDate) }} - {{ formatDate(currentPlan.weekEndDate) }}
                 </p>
               </div>
               <div class="text-right">
@@ -180,6 +195,9 @@
                     Date
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Availability
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Workout
                   </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -197,17 +215,25 @@
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Intensity
                   </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                <tr 
-                  v-for="(day, index) in currentPlan.planJson?.days || []" 
+                <tr
+                  v-for="(day, index) in currentPlan.planJson?.days || []"
                   :key="index"
                   class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   :class="day.workoutType === 'Rest' ? 'opacity-60' : ''"
                 >
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {{ formatPlanDate(day.date) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span :class="getAvailabilityBadge(day.dayOfWeek)">
+                      {{ getAvailabilityLabel(day.dayOfWeek) }}
+                    </span>
                   </td>
                   <td class="px-6 py-4 text-sm">
                     <div class="font-medium text-gray-900 dark:text-white">{{ day.title }}</div>
@@ -233,6 +259,17 @@
                     </span>
                     <span v-else class="text-gray-400">-</span>
                   </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <button
+                      v-if="day.workoutType !== 'Rest'"
+                      @click="addToSchedule(day)"
+                      :disabled="schedulingWorkout === index"
+                      class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-xs font-medium py-1 px-3 rounded transition-colors"
+                    >
+                      <span v-if="schedulingWorkout === index">Adding...</span>
+                      <span v-else>Add to Schedule</span>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -248,8 +285,101 @@
           </div>
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Training Plan Yet</h3>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Set your training availability above and generate your first AI-powered training plan
+            Set your training availability and generate your first AI-powered training plan
           </p>
+        </div>
+
+        <!-- Scheduled Workouts Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Scheduled Workouts</h2>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Workouts currently scheduled in Intervals.icu
+              </p>
+            </div>
+            <button
+              @click="refreshScheduledWorkouts"
+              :disabled="refreshingScheduled"
+              class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              <span v-if="refreshingScheduled">Refreshing...</span>
+              <span v-else>Refresh from Intervals.icu</span>
+            </button>
+          </div>
+          
+          <div v-if="loadingScheduled" class="p-8 text-center text-gray-600 dark:text-gray-400">
+            Loading...
+          </div>
+          
+          <div v-else-if="scheduledWorkouts.length === 0" class="p-8 text-center text-gray-600 dark:text-gray-400">
+            No scheduled workouts found. Create workouts in Intervals.icu to see them here.
+          </div>
+          
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Workout
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Duration
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    TSS
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="workout in scheduledWorkouts" :key="workout.id">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {{ formatDate(workout.date) }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {{ workout.title }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ workout.type || '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ workout.durationSec ? formatDuration(workout.durationSec) : '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ workout.tss ? Math.round(workout.tss) : '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span :class="workout.completed ? 'px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'">
+                      {{ workout.completed ? 'Completed' : 'Planned' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <button
+                      v-if="!workout.completed"
+                      @click="removeFromSchedule(workout.id)"
+                      :disabled="removingWorkout === workout.id"
+                      class="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-xs font-medium py-1 px-3 rounded transition-colors"
+                    >
+                      <span v-if="removingWorkout === workout.id">Removing...</span>
+                      <span v-else>Remove</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </template>
@@ -263,10 +393,16 @@ definePageMeta({
 
 const toast = useToast()
 const loading = ref(false)
+const loadingScheduled = ref(false)
+const refreshingScheduled = ref(false)
 const savingAvailability = ref(false)
 const generatingPlan = ref(false)
 const planDays = ref(7)  // Default to 7 days
 const currentPlan = ref<any>(null)
+const scheduledWorkouts = ref<any[]>([])
+const availabilitySlideoverRef = ref<any>(null)
+const schedulingWorkout = ref<number | null>(null)
+const removingWorkout = ref<string | null>(null)
 
 const weekDays = [
   { label: 'Monday', value: 1 },
@@ -279,13 +415,13 @@ const weekDays = [
 ]
 
 const availability = ref<Record<number, any>>({
-  0: { morning: false, afternoon: false, evening: false, gymAccess: false, indoorOnly: false },
-  1: { morning: false, afternoon: false, evening: false, gymAccess: false, indoorOnly: false },
-  2: { morning: false, afternoon: false, evening: false, gymAccess: false, indoorOnly: false },
-  3: { morning: false, afternoon: false, evening: false, gymAccess: false, indoorOnly: false },
-  4: { morning: false, afternoon: false, evening: false, gymAccess: false, indoorOnly: false },
-  5: { morning: false, afternoon: false, evening: false, gymAccess: false, indoorOnly: false },
-  6: { morning: false, afternoon: false, evening: false, gymAccess: false, indoorOnly: false }
+  0: { morning: false, afternoon: false, evening: false, bikeAccess: false, gymAccess: false, indoorOnly: false },
+  1: { morning: false, afternoon: false, evening: false, bikeAccess: false, gymAccess: false, indoorOnly: false },
+  2: { morning: false, afternoon: false, evening: false, bikeAccess: false, gymAccess: false, indoorOnly: false },
+  3: { morning: false, afternoon: false, evening: false, bikeAccess: false, gymAccess: false, indoorOnly: false },
+  4: { morning: false, afternoon: false, evening: false, bikeAccess: false, gymAccess: false, indoorOnly: false },
+  5: { morning: false, afternoon: false, evening: false, bikeAccess: false, gymAccess: false, indoorOnly: false },
+  6: { morning: false, afternoon: false, evening: false, bikeAccess: false, gymAccess: false, indoorOnly: false }
 })
 
 function hasAnySlot(dayOfWeek: number) {
@@ -303,12 +439,19 @@ async function loadAvailability() {
         morning: item.morning,
         afternoon: item.afternoon,
         evening: item.evening,
+        bikeAccess: item.bikeAccess || false,
         gymAccess: item.gymAccess,
         indoorOnly: item.indoorOnly
       }
     })
   } catch (error) {
     console.error('Error loading availability:', error)
+  }
+}
+
+function closeAvailabilityPanel() {
+  if (availabilitySlideoverRef.value) {
+    availabilitySlideoverRef.value.close()
   }
 }
 
@@ -340,6 +483,13 @@ async function saveAvailability() {
     })
   } finally {
     savingAvailability.value = false
+  }
+}
+
+async function saveAndClose() {
+  await saveAvailability()
+  if (!savingAvailability.value) {
+    closeAvailabilityPanel()
   }
 }
 
@@ -395,6 +545,29 @@ async function loadCurrentPlan() {
   }
 }
 
+async function loadScheduledWorkouts() {
+  loadingScheduled.value = true
+  try {
+    const planned = await $fetch('/api/planned-workouts', {
+      query: { limit: 20 }
+    })
+    scheduledWorkouts.value = Array.isArray(planned) ? planned : []
+  } catch (error) {
+    console.error('Error loading scheduled workouts:', error)
+  } finally {
+    loadingScheduled.value = false
+  }
+}
+
+function formatDuration(seconds: number) {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+  return `${minutes}m`
+}
+
 function formatDate(date: string | Date) {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -441,9 +614,133 @@ function formatIntensity(intensity: string) {
   return intensity.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
+function getAvailabilityLabel(dayOfWeek: number) {
+  const day = availability.value[dayOfWeek]
+  if (!day) return 'Not Set'
+  
+  const slots = []
+  if (day.morning) slots.push('M')
+  if (day.afternoon) slots.push('A')
+  if (day.evening) slots.push('E')
+  
+  if (slots.length === 0) return 'Unavailable'
+  if (slots.length === 3) return 'All Day'
+  return slots.join('+')
+}
+
+function getAvailabilityBadge(dayOfWeek: number) {
+  const day = availability.value[dayOfWeek]
+  const baseClass = 'px-2 py-1 rounded text-xs font-medium'
+  
+  if (!day || (!day.morning && !day.afternoon && !day.evening)) {
+    return `${baseClass} bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400`
+  }
+  
+  return `${baseClass} bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300`
+}
+
+async function addToSchedule(day: any) {
+  const index = currentPlan.value?.planJson?.days?.indexOf(day)
+  if (index === -1 || index === undefined) return
+  
+  schedulingWorkout.value = index
+  try {
+    await $fetch('/api/planned-workouts', {
+      method: 'POST',
+      body: {
+        date: day.date,
+        title: day.title,
+        description: day.description,
+        type: day.workoutType,
+        durationSec: (day.durationMinutes || 60) * 60,
+        tss: day.targetTSS,
+        intensity: day.intensity
+      }
+    })
+    
+    toast.add({
+      title: 'Workout Scheduled',
+      description: `${day.title} has been added to your schedule and synced to Intervals.icu`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle'
+    })
+    
+    // Refresh scheduled workouts
+    await loadScheduledWorkouts()
+  } catch (error: any) {
+    toast.add({
+      title: 'Scheduling Failed',
+      description: error.data?.message || 'Failed to schedule workout',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle'
+    })
+  } finally {
+    schedulingWorkout.value = null
+  }
+}
+
+async function removeFromSchedule(workoutId: string) {
+  removingWorkout.value = workoutId
+  try {
+    await $fetch(`/api/planned-workouts/${workoutId}`, {
+      method: 'delete' as any
+    })
+    
+    toast.add({
+      title: 'Workout Removed',
+      description: 'Workout has been removed from your schedule and Intervals.icu',
+      color: 'success',
+      icon: 'i-heroicons-check-circle'
+    })
+    
+    // Refresh scheduled workouts
+    await loadScheduledWorkouts()
+  } catch (error: any) {
+    toast.add({
+      title: 'Removal Failed',
+      description: error.data?.message || 'Failed to remove workout',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle'
+    })
+  } finally {
+    removingWorkout.value = null
+  }
+}
+
+async function refreshScheduledWorkouts() {
+  refreshingScheduled.value = true
+  try {
+    // Trigger sync from Intervals.icu
+    await $fetch('/api/integrations/sync', {
+      method: 'POST',
+      body: { provider: 'intervals' }
+    })
+    
+    // Reload scheduled workouts
+    await loadScheduledWorkouts()
+    
+    toast.add({
+      title: 'Sync Complete',
+      description: 'Scheduled workouts have been refreshed from Intervals.icu',
+      color: 'success',
+      icon: 'i-heroicons-check-circle'
+    })
+  } catch (error: any) {
+    toast.add({
+      title: 'Sync Failed',
+      description: error.data?.message || 'Failed to sync with Intervals.icu',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle'
+    })
+  } finally {
+    refreshingScheduled.value = false
+  }
+}
+
 // Load data on mount
 onMounted(async () => {
   await loadAvailability()
   await loadCurrentPlan()
+  await loadScheduledWorkouts()
 })
 </script>

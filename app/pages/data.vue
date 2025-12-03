@@ -17,7 +17,7 @@
         </div>
 
         <!-- Integration Status Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <!-- Intervals.icu Card -->
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="flex items-center justify-between mb-4">
@@ -116,6 +116,40 @@
               class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
             >
               <span v-if="syncing === 'yazio'">Syncing...</span>
+              <span v-else>Sync Now</span>
+            </button>
+          </div>
+
+          <!-- Strava Card -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Strava</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Activity tracking</p>
+              </div>
+              <div v-if="stravaStatus" :class="getStatusClass(stravaStatus.syncStatus)">
+                {{ stravaStatus.syncStatus || 'Not Connected' }}
+              </div>
+            </div>
+            
+            <div v-if="stravaStatus" class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Last Sync:</span>
+                <span class="text-gray-900 dark:text-white">
+                  {{ stravaStatus.lastSyncAt ? formatDate(stravaStatus.lastSyncAt) : 'Never' }}
+                </span>
+              </div>
+              <div v-if="stravaStatus.errorMessage" class="text-red-600 text-xs mt-2">
+                {{ stravaStatus.errorMessage }}
+              </div>
+            </div>
+
+            <button
+              @click="syncIntegration('strava')"
+              :disabled="syncing === 'strava'"
+              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              <span v-if="syncing === 'strava'">Syncing...</span>
               <span v-else>Sync Now</span>
             </button>
           </div>
@@ -231,6 +265,46 @@
               </tbody>
             </table>
           </div>
+          
+          <!-- Fitness Pagination -->
+          <div v-if="fitnessTotalPages > 1" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                Showing {{ (fitnessPage - 1) * fitnessItemsPerPage + 1 }} to {{ Math.min(fitnessPage * fitnessItemsPerPage, fitnessTotalItems) }} of {{ fitnessTotalItems }} entries
+              </div>
+              <div class="flex gap-2">
+                <button
+                  @click="changeFitnessPage(fitnessPage - 1)"
+                  :disabled="fitnessPage === 1"
+                  class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Previous
+                </button>
+                <div class="flex gap-1">
+                  <button
+                    v-for="page in fitnessTotalPages"
+                    :key="page"
+                    @click="changeFitnessPage(page)"
+                    :class="[
+                      'px-3 py-1 rounded text-sm',
+                      page === fitnessPage
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                <button
+                  @click="changeFitnessPage(fitnessPage + 1)"
+                  :disabled="fitnessPage === fitnessTotalPages"
+                  class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Planned Workouts Section -->
@@ -296,6 +370,46 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+          
+          <!-- Planned Workouts Pagination -->
+          <div v-if="plannedWorkoutsTotalPages > 1" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                Showing {{ (plannedWorkoutsPage - 1) * plannedWorkoutsItemsPerPage + 1 }} to {{ Math.min(plannedWorkoutsPage * plannedWorkoutsItemsPerPage, plannedWorkoutsTotalItems) }} of {{ plannedWorkoutsTotalItems }} entries
+              </div>
+              <div class="flex gap-2">
+                <button
+                  @click="changePlannedWorkoutsPage(plannedWorkoutsPage - 1)"
+                  :disabled="plannedWorkoutsPage === 1"
+                  class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Previous
+                </button>
+                <div class="flex gap-1">
+                  <button
+                    v-for="page in plannedWorkoutsTotalPages"
+                    :key="page"
+                    @click="changePlannedWorkoutsPage(page)"
+                    :class="[
+                      'px-3 py-1 rounded text-sm',
+                      page === plannedWorkoutsPage
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                <button
+                  @click="changePlannedWorkoutsPage(plannedWorkoutsPage + 1)"
+                  :disabled="plannedWorkoutsPage === plannedWorkoutsTotalPages"
+                  class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -383,6 +497,46 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+          
+          <!-- Workouts Pagination -->
+          <div v-if="workoutsTotalItems > 0" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                Showing {{ (workoutsPage - 1) * workoutsItemsPerPage + 1 }} to {{ Math.min(workoutsPage * workoutsItemsPerPage, workoutsTotalItems) }} of {{ workoutsTotalItems }} entries
+              </div>
+              <div class="flex gap-2">
+                <button
+                  @click="changeWorkoutsPage(workoutsPage - 1)"
+                  :disabled="workoutsPage === 1"
+                  class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Previous
+                </button>
+                <div class="flex gap-1">
+                  <button
+                    v-for="page in workoutsTotalPages"
+                    :key="page"
+                    @click="changeWorkoutsPage(page)"
+                    :class="[
+                      'px-3 py-1 rounded text-sm',
+                      page === workoutsPage
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                <button
+                  @click="changeWorkoutsPage(workoutsPage + 1)"
+                  :disabled="workoutsPage === workoutsTotalPages"
+                  class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -480,6 +634,46 @@
               </tbody>
             </table>
           </div>
+          
+          <!-- Nutrition Pagination -->
+          <div v-if="nutritionTotalPages > 1" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                Showing {{ (nutritionPage - 1) * nutritionItemsPerPage + 1 }} to {{ Math.min(nutritionPage * nutritionItemsPerPage, nutritionTotalItems) }} of {{ nutritionTotalItems }} entries
+              </div>
+              <div class="flex gap-2">
+                <button
+                  @click="changeNutritionPage(nutritionPage - 1)"
+                  :disabled="nutritionPage === 1"
+                  class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Previous
+                </button>
+                <div class="flex gap-1">
+                  <button
+                    v-for="page in nutritionTotalPages"
+                    :key="page"
+                    @click="changeNutritionPage(page)"
+                    :class="[
+                      'px-3 py-1 rounded text-sm',
+                      page === nutritionPage
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                <button
+                  @click="changeNutritionPage(nutritionPage + 1)"
+                  :disabled="nutritionPage === nutritionTotalPages"
+                  class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -499,6 +693,7 @@ const analyzingNutrition = ref(false)
 const intervalsStatus = ref<any>(null)
 const whoopStatus = ref<any>(null)
 const yazioStatus = ref<any>(null)
+const stravaStatus = ref<any>(null)
 const dataSummary = ref({
   workouts: 0,
   wellness: 0,
@@ -511,6 +706,23 @@ const plannedWorkouts = ref<any[]>([])
 const fitnessData = ref<any[]>([])
 const nutritionData = ref<any[]>([])
 
+// Pagination state
+const fitnessPage = ref(1)
+const fitnessItemsPerPage = 14
+const fitnessTotalItems = ref(0)
+
+const plannedWorkoutsPage = ref(1)
+const plannedWorkoutsItemsPerPage = 10
+const plannedWorkoutsTotalItems = ref(0)
+
+const workoutsPage = ref(1)
+const workoutsItemsPerPage = 15
+const workoutsTotalItems = ref(0)
+
+const nutritionPage = ref(1)
+const nutritionItemsPerPage = 14
+const nutritionTotalItems = ref(0)
+
 // Fetch integration status
 async function fetchStatus() {
   try {
@@ -520,6 +732,7 @@ async function fetchStatus() {
     intervalsStatus.value = integrations.find((i: any) => i.provider === 'intervals')
     whoopStatus.value = integrations.find((i: any) => i.provider === 'whoop')
     yazioStatus.value = integrations.find((i: any) => i.provider === 'yazio')
+    stravaStatus.value = integrations.find((i: any) => i.provider === 'strava')
   } catch (error) {
     console.error('Error fetching integration status:', error)
   }
@@ -549,7 +762,10 @@ async function fetchRecentWorkouts() {
   loading.value = true
   try {
     const workouts = await $fetch('/api/workouts')
-    recentWorkouts.value = workouts.slice(0, 10)
+    workoutsTotalItems.value = workouts.length
+    const start = (workoutsPage.value - 1) * workoutsItemsPerPage
+    const end = start + workoutsItemsPerPage
+    recentWorkouts.value = workouts.slice(start, end)
   } catch (error) {
     console.error('Error fetching workouts:', error)
   } finally {
@@ -560,10 +776,11 @@ async function fetchRecentWorkouts() {
 // Fetch planned workouts
 async function fetchPlannedWorkouts() {
   try {
-    const planned = await $fetch('/api/planned-workouts', {
-      query: { limit: 10 }
-    })
-    plannedWorkouts.value = planned
+    const planned = await $fetch('/api/planned-workouts')
+    plannedWorkoutsTotalItems.value = planned.length
+    const start = (plannedWorkoutsPage.value - 1) * plannedWorkoutsItemsPerPage
+    const end = start + plannedWorkoutsItemsPerPage
+    plannedWorkouts.value = planned.slice(start, end)
   } catch (error) {
     console.error('Error fetching planned workouts:', error)
   }
@@ -582,12 +799,15 @@ async function fetchFitnessData() {
       w.sleepScore !== null || w.sleepHours !== null
     )
     
-    // Sort by date descending and take last 14 days
-    fitnessData.value = withData
-      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 14)
+    // Sort by date descending
+    const sorted = withData.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    
+    fitnessTotalItems.value = sorted.length
+    const start = (fitnessPage.value - 1) * fitnessItemsPerPage
+    const end = start + fitnessItemsPerPage
+    fitnessData.value = sorted.slice(start, end)
       
-    console.log(`Fetched ${wellness.length} total wellness records, ${withData.length} with data, showing ${fitnessData.value.length}`)
+    console.log(`Fetched ${wellness.length} total wellness records, ${withData.length} with data, showing ${fitnessData.value.length} on page ${fitnessPage.value}`)
   } catch (error) {
     console.error('Error fetching fitness data:', error)
   }
@@ -597,12 +817,14 @@ async function fetchFitnessData() {
 async function fetchNutritionData() {
   try {
     console.log('Fetching nutrition data...')
-    const response: any = await $fetch('/api/nutrition', {
-      query: { limit: 14 }
-    })
+    const response: any = await $fetch('/api/nutrition')
     console.log('Nutrition API response:', response)
-    nutritionData.value = response.nutrition || []
-    console.log(`Loaded ${nutritionData.value.length} nutrition entries`)
+    const allNutrition = response.nutrition || []
+    nutritionTotalItems.value = allNutrition.length
+    const start = (nutritionPage.value - 1) * nutritionItemsPerPage
+    const end = start + nutritionItemsPerPage
+    nutritionData.value = allNutrition.slice(start, end)
+    console.log(`Loaded ${nutritionData.value.length} nutrition entries on page ${nutritionPage.value}`)
   } catch (error) {
     console.error('Error fetching nutrition data:', error)
     nutritionData.value = []
@@ -660,6 +882,13 @@ async function syncIntegration(provider: string) {
           color: 'success',
           icon: 'i-heroicons-check-badge'
         })
+      } else if (provider === 'strava' && stravaStatus.value?.syncStatus === 'SUCCESS') {
+        toast.add({
+          title: 'Sync Completed',
+          description: 'Strava data has been successfully synced',
+          color: 'success',
+          icon: 'i-heroicons-check-badge'
+        })
       }
     }, 5000)
   } catch (error: any) {
@@ -711,6 +940,7 @@ function getSourceBadgeClass(source: string) {
   const baseClass = 'px-2 py-1 rounded text-xs font-medium'
   if (source === 'intervals') return `${baseClass} bg-blue-100 text-blue-800`
   if (source === 'whoop') return `${baseClass} bg-purple-100 text-purple-800`
+  if (source === 'strava') return `${baseClass} bg-orange-100 text-orange-800`
   return `${baseClass} bg-gray-100 text-gray-800`
 }
 
@@ -815,6 +1045,33 @@ async function analyzeAllNutrition() {
   } finally {
     analyzingNutrition.value = false
   }
+}
+
+// Computed properties for pagination
+const fitnessTotalPages = computed(() => Math.ceil(fitnessTotalItems.value / fitnessItemsPerPage))
+const plannedWorkoutsTotalPages = computed(() => Math.ceil(plannedWorkoutsTotalItems.value / plannedWorkoutsItemsPerPage))
+const workoutsTotalPages = computed(() => Math.ceil(workoutsTotalItems.value / workoutsItemsPerPage))
+const nutritionTotalPages = computed(() => Math.ceil(nutritionTotalItems.value / nutritionItemsPerPage))
+
+// Pagination handlers
+function changeFitnessPage(page: number) {
+  fitnessPage.value = page
+  fetchFitnessData()
+}
+
+function changePlannedWorkoutsPage(page: number) {
+  plannedWorkoutsPage.value = page
+  fetchPlannedWorkouts()
+}
+
+function changeWorkoutsPage(page: number) {
+  workoutsPage.value = page
+  fetchRecentWorkouts()
+}
+
+function changeNutritionPage(page: number) {
+  nutritionPage.value = page
+  fetchNutritionData()
 }
 
 // Load data on mount
