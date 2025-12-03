@@ -116,9 +116,10 @@
               </div>
             </template>
             
-            <div v-if="loadingRecommendation" class="text-sm text-muted py-4 text-center">
+            <div v-if="loadingRecommendation || generatingRecommendation" class="text-sm text-muted py-4 text-center">
               <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 animate-spin inline" />
-              Analyzing...
+              <p class="mt-2">{{ generatingRecommendation ? 'Generating recommendation...' : 'Loading...' }}</p>
+              <p v-if="generatingRecommendation" class="text-xs mt-1">This may take up to 60 seconds</p>
             </div>
             
             <div v-else-if="!todayRecommendation">
@@ -139,7 +140,7 @@
             <template #footer>
               <div class="flex gap-2">
                 <UButton
-                  v-if="todayRecommendation"
+                  v-if="todayRecommendation && !generatingRecommendation"
                   variant="outline"
                   @click="openRecommendationModal"
                   block
@@ -151,10 +152,10 @@
                   @click="generateTodayRecommendation"
                   :loading="generatingRecommendation"
                   :disabled="generatingRecommendation"
-                  :block="!todayRecommendation"
+                  :block="!todayRecommendation || generatingRecommendation"
                   icon="i-heroicons-arrow-path"
                 >
-                  {{ generatingRecommendation ? 'Analyzing...' : (todayRecommendation ? 'Refresh' : 'Get Recommendation') }}
+                  {{ generatingRecommendation ? 'Running...' : (todayRecommendation ? 'Refresh' : 'Get Recommendation') }}
                 </UButton>
               </div>
             </template>
@@ -348,6 +349,7 @@ const todayRecommendation = ref<any>(null)
 const loadingRecommendation = ref(false)
 const generatingRecommendation = ref(false)
 const generatingProfile = ref(false)
+const currentRecommendationId = ref<string | null>(null) // Track the recommendation being generated
 
 const profile = computed(() => profileData.value?.profile || null)
 
@@ -383,26 +385,51 @@ async function generateTodayRecommendation() {
   }
   
   generatingRecommendation.value = true
+  
   try {
     console.log('Triggering recommendation generation...')
-    const result = await $fetch('/api/recommendations/today', { method: 'POST' })
+    const result: any = await $fetch('/api/recommendations/today', { method: 'POST' })
     console.log('Generation triggered:', result)
     
-    // Poll for result with exponential backoff
+    // Store the recommendation ID to track this specific generation
+    currentRecommendationId.value = result.recommendationId
+    
+    // Immediately fetch and show the PROCESSING status
+    await fetchTodayRecommendation()
+    
+    toast.add({
+      title: 'Analysis Started',
+      description: 'Analyzing your recovery and planned workout...',
+      color: 'success',
+      icon: 'i-heroicons-arrow-path'
+    })
+    
+    // Poll for result
     let attempts = 0
-    const maxAttempts = 12 // Poll for up to 60 seconds
+    const maxAttempts = 15 // Poll for up to 75 seconds
     
     const pollForResult = async () => {
       attempts++
-      console.log(`Polling attempt ${attempts}/${maxAttempts}`)
+      console.log(`Polling attempt ${attempts}/${maxAttempts} for recommendation ${currentRecommendationId.value}`)
       
       try {
         await fetchTodayRecommendation()
         console.log('Current recommendation after fetch:', todayRecommendation.value)
         
-        if (todayRecommendation.value && todayRecommendation.value.status === 'COMPLETED') {
+        // Check if the current recommendation matches the one we're tracking
+        if (todayRecommendation.value &&
+            todayRecommendation.value.id === currentRecommendationId.value &&
+            todayRecommendation.value.status === 'COMPLETED') {
           console.log('Recommendation completed!')
           generatingRecommendation.value = false
+          currentRecommendationId.value = null
+          
+          toast.add({
+            title: 'Analysis Complete',
+            description: 'Your training recommendation is ready!',
+            color: 'success',
+            icon: 'i-heroicons-check-circle'
+          })
           return
         }
       } catch (error) {
@@ -416,16 +443,32 @@ async function generateTodayRecommendation() {
       } else {
         console.log('Max polling attempts reached, stopping')
         generatingRecommendation.value = false
+        currentRecommendationId.value = null
+        
+        toast.add({
+          title: 'Analysis Taking Longer',
+          description: 'The analysis is still running. Please check back in a moment.',
+          color: 'warning',
+          icon: 'i-heroicons-clock'
+        })
       }
     }
     
     // Start polling after initial delay
-    console.log('Starting polling in 5 seconds...')
-    setTimeout(pollForResult, 5000)
+    console.log('Starting polling in 3 seconds...')
+    setTimeout(pollForResult, 3000)
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating recommendation:', error)
     generatingRecommendation.value = false
+    currentRecommendationId.value = null
+    
+    toast.add({
+      title: 'Generation Failed',
+      description: error.data?.message || 'Failed to generate recommendation',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle'
+    })
   }
 }
 
