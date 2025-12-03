@@ -46,8 +46,25 @@ export const ingestIntervalsTask = task({
       
       // Fetch activities
       logger.log("Fetching activities...");
-      const activities = await fetchIntervalsWorkouts(integration, start, end);
-      logger.log(`Fetched ${activities.length} activities from Intervals.icu`);
+      const allActivities = await fetchIntervalsWorkouts(integration, start, end);
+      logger.log(`Fetched ${allActivities.length} activities from Intervals.icu`);
+      
+      // Filter out incomplete Strava activities (they don't have full data available via API)
+      const activities = allActivities.filter(activity => {
+        // Check if this is a Strava activity with no data
+        const isIncompleteStrava = activity.source === 'STRAVA' && activity._note?.includes('not available via the API');
+        if (isIncompleteStrava) {
+          logger.log(`Skipping incomplete Strava activity: ${activity.id} (${activity.start_date_local})`);
+          return false;
+        }
+        return true;
+      });
+      
+      const filteredCount = allActivities.length - activities.length;
+      if (filteredCount > 0) {
+        logger.log(`Filtered out ${filteredCount} incomplete Strava activities (details not available via Intervals.icu API)`);
+      }
+      logger.log(`Processing ${activities.length} activities with complete data`);
       
       // Fetch wellness data
       logger.log("Fetching wellness data...");
@@ -136,6 +153,7 @@ export const ingestIntervalsTask = task({
         workouts: workoutsUpserted,
         wellness: wellnessUpserted,
         plannedWorkouts: plannedWorkoutsUpserted,
+        stravaActivitiesSkipped: filteredCount,
         userId,
         startDate,
         endDate

@@ -143,11 +143,27 @@ export const generateWeeklyPlanTask = task({
       if (a.evening) slots.push('evening');
       
       const constraints = [];
+      if (a.bikeAccess) constraints.push('bike/trainer available');
+      if (a.gymAccess) constraints.push('gym available');
       if (a.indoorOnly) constraints.push('indoor only');
       if (a.outdoorOnly) constraints.push('outdoor only');
-      if (a.gymAccess) constraints.push('gym available');
       
-      return `${dayNames[a.dayOfWeek]}: ${slots.length > 0 ? slots.join(', ') : 'rest day'}${constraints.length > 0 ? ` (${constraints.join(', ')})` : ''}`;
+      // Build the line
+      let line = `${dayNames[a.dayOfWeek]}: ${slots.length > 0 ? slots.join(', ') : 'rest day'}`;
+      if (constraints.length > 0) {
+        line += ` (${constraints.join(', ')})`;
+      }
+      
+      // Add explicit warnings for equipment limitations
+      if (slots.length > 0 && !a.bikeAccess && !a.gymAccess) {
+        line += ' [NO EQUIPMENT - only bodyweight activities]';
+      } else if (slots.length > 0 && !a.bikeAccess && a.gymAccess) {
+        line += ' [NO BIKE - gym strength training only]';
+      } else if (slots.length > 0 && a.bikeAccess && !a.gymAccess) {
+        line += ' [cycling only, no gym]';
+      }
+      
+      return line;
     }).join('\n');
     
     // Calculate recent training load
@@ -222,25 +238,36 @@ PLANNING PERIOD:
 - End: ${weekEnd.toLocaleDateString()}
 - Days to plan: ${daysToPlann}
 
-INSTRUCTIONS:
-1. Create a progressive training plan that respects user's availability
-2. Balance intensity across the week (easy days, hard days, rest days)
-3. Consider recent training load and recovery status
-4. For days with multiple time slots, choose the best one based on workout type
-5. If no availability is set for a day, suggest rest or active recovery
-6. Include variety: endurance rides, intervals, recovery rides, strength work
-7. Ensure adequate recovery between hard efforts
-8. Target weekly TSS should be appropriate for fitness level (aim for 200-600 based on recent load)
-9. Each workout should have clear objectives and be actionable
-10. Consider location constraints (indoor vs outdoor vs gym)
+CRITICAL EQUIPMENT CONSTRAINTS:
+- NEVER suggest cycling workouts (Ride) on days without "bike/trainer available"
+- Days with ONLY "gym available" MUST use Gym workouts (strength training)
+- Days with NO equipment can only have: Rest, Active Recovery (walking, stretching, mobility)
+- Days with "bike/trainer available" can have cycling workouts
+- Respect indoor/outdoor constraints strictly
 
-WORKOUT TYPES:
-- Ride: Outdoor or indoor cycling
-- Run: Running workout
-- Gym: Strength training
-- Swim: Swimming workout
-- Rest: Complete rest day
-- Active Recovery: Very easy activity (walk, easy spin)
+INSTRUCTIONS:
+1. **STRICTLY RESPECT EQUIPMENT AVAILABILITY** - This is the #1 priority
+2. Create a progressive training plan that respects user's availability and equipment
+3. Balance intensity across the week (easy days, hard days, rest days)
+4. Consider recent training load and recovery status
+5. For days with multiple time slots, choose the best one based on workout type
+6. If no availability is set for a day, suggest rest or light stretching/mobility work
+7. Include variety based on available equipment:
+   - With bike: endurance rides, intervals, recovery rides
+   - With gym: strength training, core work, leg/upper body splits
+   - Without equipment: mobility, stretching, walking, yoga
+8. Ensure adequate recovery between hard efforts
+9. Target weekly TSS should be appropriate for fitness level (aim for 200-600 based on recent load)
+10. Each workout should have clear objectives and be actionable
+11. Consider location constraints (indoor vs outdoor vs gym)
+
+WORKOUT TYPES AND EQUIPMENT REQUIREMENTS:
+- Ride: Requires bike/trainer available - DO NOT use if not available
+- Run: Running workout (minimal equipment)
+- Gym: Requires gym available - strength training, weights
+- Swim: Swimming workout (requires pool access)
+- Rest: Complete rest day (no equipment needed)
+- Active Recovery: Very easy activity - walking, stretching, light mobility (no equipment needed)
 
 Create a structured, progressive plan for the next ${daysToPlann} days.`;
 
