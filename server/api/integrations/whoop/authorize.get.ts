@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
   authUrl.searchParams.set('client_id', clientId)
   authUrl.searchParams.set('redirect_uri', redirectUri)
   authUrl.searchParams.set('response_type', 'code')
-  authUrl.searchParams.set('scope', 'read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement')
+  authUrl.searchParams.set('scope', 'offline read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement')
   authUrl.searchParams.set('state', state)
 
   // Redirect to WHOOP authorization page

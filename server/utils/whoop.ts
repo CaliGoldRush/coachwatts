@@ -1,5 +1,92 @@
 import type { Integration } from '@prisma/client'
 
+interface WhoopTokenResponse {
+  access_token: string
+  expires_in: number
+  refresh_token: string
+  scope: string
+  token_type: string
+}
+
+/**
+ * Refreshes an expired Whoop access token using the refresh token
+ */
+export async function refreshWhoopToken(integration: Integration): Promise<Integration> {
+  if (!integration.refreshToken) {
+    throw new Error('No refresh token available for Whoop integration')
+  }
+
+  const clientId = process.env.WHOOP_CLIENT_ID
+  const clientSecret = process.env.WHOOP_CLIENT_SECRET
+
+  if (!clientId || !clientSecret) {
+    throw new Error('WHOOP credentials not configured')
+  }
+
+  console.log('Refreshing Whoop token for integration:', integration.id)
+
+  const response = await fetch('https://api.prod.whoop.com/oauth/oauth2/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: integration.refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret,
+      scope: 'offline read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement'
+    }).toString(),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('Whoop token refresh failed:', errorText)
+    throw new Error(`Failed to refresh Whoop token: ${response.status} ${response.statusText}`)
+  }
+
+  const tokenData: WhoopTokenResponse = await response.json()
+  const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000)
+
+  console.log('Whoop token refreshed successfully, expires at:', expiresAt)
+
+  // Update the integration in the database
+  const updatedIntegration = await prisma.integration.update({
+    where: { id: integration.id },
+    data: {
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt,
+    }
+  })
+
+  return updatedIntegration
+}
+
+/**
+ * Checks if a token is expired or about to expire (within 5 minutes)
+ */
+function isTokenExpired(integration: Integration): boolean {
+  if (!integration.expiresAt) {
+    return false // If no expiry is set, assume it's valid
+  }
+  
+  const now = new Date()
+  const expiryWithBuffer = new Date(integration.expiresAt.getTime() - 5 * 60 * 1000) // 5 minutes buffer
+  return now >= expiryWithBuffer
+}
+
+/**
+ * Ensures the integration has a valid access token, refreshing if necessary
+ */
+async function ensureValidToken(integration: Integration): Promise<Integration> {
+  if (isTokenExpired(integration)) {
+    console.log('Whoop token expired or expiring soon, refreshing...')
+    return await refreshWhoopToken(integration)
+  }
+  return integration
+}
+
 interface WhoopSleep {
   id: string
   created_at: string
@@ -55,6 +142,9 @@ export async function fetchWhoopRecovery(
   startDate: Date,
   endDate: Date
 ): Promise<WhoopRecovery[]> {
+  // Ensure we have a valid token before making the request
+  const validIntegration = await ensureValidToken(integration)
+  
   const url = new URL('https://api.prod.whoop.com/developer/v2/recovery')
   url.searchParams.set('start', startDate.toISOString())
   url.searchParams.set('end', endDate.toISOString())
@@ -70,7 +160,7 @@ export async function fetchWhoopRecovery(
 
     const response = await fetch(url.toString(), {
       headers: {
-        'Authorization': `Bearer ${integration.accessToken}`
+        'Authorization': `Bearer ${validIntegration.accessToken}`
       }
     })
     
@@ -98,9 +188,12 @@ export async function fetchWhoopRecovery(
 
 export async function fetchWhoopSleep(integration: Integration, sleepId: string): Promise<WhoopSleep | null> {
   try {
+    // Ensure we have a valid token before making the request
+    const validIntegration = await ensureValidToken(integration)
+    
     const response = await fetch(`https://api.prod.whoop.com/developer/v2/activity/sleep/${sleepId}`, {
       headers: {
-        'Authorization': `Bearer ${integration.accessToken}`
+        'Authorization': `Bearer ${validIntegration.accessToken}`
       }
     })
     
@@ -116,7 +209,20 @@ export async function fetchWhoopSleep(integration: Integration, sleepId: string)
   }
 }
 
-export async function fetchWhoopUser(accessToken: string): Promise<WhoopUser> {
+export async function fetchWhoopUser(accessToken: string): Promise<WhoopUser>
+export async function fetchWhoopUser(integration: Integration): Promise<WhoopUser>
+export async function fetchWhoopUser(tokenOrIntegration: string | Integration): Promise<WhoopUser> {
+  let accessToken: string
+  
+  if (typeof tokenOrIntegration === 'string') {
+    // Called with just an access token (e.g., during initial OAuth flow)
+    accessToken = tokenOrIntegration
+  } else {
+    // Called with an integration object - ensure valid token
+    const validIntegration = await ensureValidToken(tokenOrIntegration)
+    accessToken = validIntegration.accessToken
+  }
+  
   const response = await fetch('https://api.prod.whoop.com/developer/v2/user/profile/basic', {
     headers: {
       'Authorization': `Bearer ${accessToken}`
