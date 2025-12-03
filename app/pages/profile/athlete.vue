@@ -58,11 +58,27 @@
                   Generated: {{ formatDate(profile.createdAt) }}
                 </p>
               </div>
-              <UBadge :color="statusColor as any" size="lg">
-                {{ profile.status }}
-              </UBadge>
+              <div class="flex items-center gap-2">
+                <UBadge v-if="isViewingHistorical" color="info" size="lg">
+                  <UIcon name="i-heroicons-clock" class="w-4 h-4 mr-1" />
+                  Historical View
+                </UBadge>
+                <UBadge :color="statusColor as any" size="lg">
+                  {{ profile.status }}
+                </UBadge>
+              </div>
             </div>
           </div>
+          
+          <!-- Historical View Alert -->
+          <UAlert
+            v-if="isViewingHistorical"
+            color="info"
+            icon="i-heroicons-information-circle"
+            title="Viewing Historical Profile"
+            :description="`You are viewing the athlete profile as it was generated on ${formatDate(profile.createdAt)}. This profile cannot be regenerated as it reflects past data.`"
+            class="mb-6"
+          />
           
           <!-- Status Alert -->
           <UAlert
@@ -369,6 +385,16 @@
             </UButton>
             
             <UButton
+              v-if="isViewingHistorical"
+              color="primary"
+              @click="resetToLatest"
+            >
+              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-2" />
+              View Latest Profile
+            </UButton>
+            
+            <UButton
+              v-else
               color="primary"
               @click="generateNewProfile"
               :loading="generating"
@@ -381,10 +407,19 @@
         </div>
         
         <div v-else class="text-center py-20">
-          <p class="text-gray-600 dark:text-gray-400">No athlete profile found</p>
-          <UButton @click="generateNewProfile" class="mt-4" :loading="generating">
-            Generate Profile
-          </UButton>
+          <p class="text-gray-600 dark:text-gray-400">
+            {{ isViewingHistorical ? 'No athlete profile found for this date' : 'No athlete profile found' }}
+          </p>
+          <div v-if="isViewingHistorical" class="mt-4">
+            <UButton @click="resetToLatest" color="primary">
+              View Latest Profile
+            </UButton>
+          </div>
+          <div v-else class="mt-4">
+            <UButton @click="generateNewProfile" :loading="generating">
+              Generate Profile
+            </UButton>
+          </div>
         </div>
       </div>
     </template>
@@ -439,6 +474,11 @@ const { data: profile, pending, refresh } = await useFetch('/api/reports', {
   query: queryParams,
   transform: (data: any) => data && data.length > 0 ? data[0] : null,
   watch: [queryParams]
+})
+
+// Check if viewing a historical profile (not the latest)
+const isViewingHistorical = computed(() => {
+  return selectedDate.value !== null
 })
 
 // Date change handler

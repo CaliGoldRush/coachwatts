@@ -180,16 +180,65 @@
         <!-- Row 2: Recent Activity / Next Steps / Connection Status -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <!-- Recent Activity Card -->
-          <UCard>
+          <UCard class="lg:col-span-2">
             <template #header>
-              <h3 class="font-semibold">Recent Activity</h3>
+              <div class="flex items-center justify-between">
+                <h3 class="font-semibold">Recent Activity</h3>
+                <UBadge v-if="recentActivity && recentActivity.items.length > 0" color="neutral" variant="subtle">
+                  Past 5 days
+                </UBadge>
+              </div>
             </template>
-            <p v-if="!intervalsConnected" class="text-sm text-muted text-center py-4">
-              No workouts found. Connect your Intervals.icu account to sync your training data.
-            </p>
-            <p v-else class="text-sm text-muted text-center py-4">
-              Your workouts are syncing. Check back soon or view the Reports page.
-            </p>
+            
+            <!-- Loading state -->
+            <div v-if="loadingActivity" class="text-center py-8">
+              <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin inline text-primary" />
+              <p class="text-sm text-muted mt-2">Loading activity...</p>
+            </div>
+            
+            <!-- No connection -->
+            <div v-else-if="!intervalsConnected" class="text-center py-8">
+              <UIcon name="i-heroicons-exclamation-circle" class="w-12 h-12 mx-auto text-muted mb-3" />
+              <p class="text-sm text-muted">
+                Connect your Intervals.icu account to see your recent activity.
+              </p>
+              <UButton to="/settings" color="primary" class="mt-4">
+                Connect Now
+              </UButton>
+            </div>
+            
+            <!-- No activity -->
+            <div v-else-if="!recentActivity || recentActivity.items.length === 0" class="text-center py-8">
+              <UIcon name="i-heroicons-calendar" class="w-12 h-12 mx-auto text-muted mb-3" />
+              <p class="text-sm text-muted">
+                No recent activity found. Your data is syncing...
+              </p>
+            </div>
+            
+            <!-- Timeline -->
+            <UTimeline v-else :items="recentActivity.items" class="max-h-96 overflow-y-auto">
+              <template #default="{ item }">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex-1 min-w-0">
+                    <NuxtLink
+                      v-if="item.link"
+                      :to="item.link"
+                      class="font-medium text-sm hover:text-primary transition-colors"
+                    >
+                      {{ item.title }}
+                    </NuxtLink>
+                    <p v-else class="font-medium text-sm">{{ item.title }}</p>
+                    
+                    <p v-if="item.description" class="text-xs text-muted mt-0.5">
+                      {{ item.description }}
+                    </p>
+                  </div>
+                  <time class="text-xs text-muted whitespace-nowrap">
+                    {{ formatActivityDate(item.date) }}
+                  </time>
+                </div>
+              </template>
+            </UTimeline>
           </UCard>
           
           <!-- Next Steps Card -->
@@ -351,7 +400,11 @@ const generatingRecommendation = ref(false)
 const generatingProfile = ref(false)
 const currentRecommendationId = ref<string | null>(null) // Track the recommendation being generated
 
-const profile = computed(() => profileData.value?.profile || null)
+const profile = computed(() => profileData.value?.profile as any || null)
+
+// Recent activity state
+const recentActivity = ref<any>(null)
+const loadingActivity = ref(false)
 
 // Fetch today's recommendation
 async function fetchTodayRecommendation() {
@@ -528,11 +581,51 @@ async function generateAthleteProfile() {
   }
 }
 
-// Watch for intervals connection and fetch recommendation
+// Fetch recent activity
+async function fetchRecentActivity() {
+  if (!intervalsConnected.value) {
+    console.log('Intervals not connected, skipping activity fetch')
+    return
+  }
+  
+  try {
+    console.log('Fetching recent activity...')
+    loadingActivity.value = true
+    const data = await $fetch('/api/activity/recent')
+    console.log('Recent activity fetched:', data)
+    recentActivity.value = data
+  } catch (error: any) {
+    console.error('Error fetching recent activity:', error)
+    // Don't show error toast for initial load
+  } finally {
+    loadingActivity.value = false
+  }
+}
+
+// Format date for timeline display
+function formatActivityDate(date: string | Date): string {
+  const activityDate = new Date(date)
+  const now = new Date()
+  const diffMs = now.getTime() - activityDate.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) {
+    return 'Today'
+  } else if (diffDays === 1) {
+    return 'Yesterday'
+  } else if (diffDays < 7) {
+    return `${diffDays} days ago`
+  } else {
+    return activityDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+}
+
+// Watch for intervals connection and fetch data
 watch(intervalsConnected, async (connected) => {
   console.log('Intervals connection changed:', connected)
   if (connected) {
     await fetchTodayRecommendation()
+    await fetchRecentActivity()
   }
 }, { immediate: true })
 </script>

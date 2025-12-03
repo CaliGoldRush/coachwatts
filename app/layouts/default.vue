@@ -35,6 +35,13 @@ const links = [[{
     open.value = false
   }
 }, {
+  label: 'Performance',
+  icon: 'i-lucide-trending-up',
+  to: '/performance',
+  onSelect: () => {
+    open.value = false
+  }
+}, {
   label: 'Settings',
   icon: 'i-lucide-settings',
   to: '/settings',
