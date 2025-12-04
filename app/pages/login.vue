@@ -1,112 +1,123 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center">
-    <UAuthForm
-      :fields="fields"
-      :providers="providers"
-      align="top"
-      title="Welcome Back!"
-      description="Sign in to your Coach Watts account."
-      icon="i-lucide-zap"
-      :ui="{
-        base: 'w-full max-w-md',
-        footer: 'text-sm text-gray-500 dark:text-gray-400',
-        header: {
-          description: 'mt-2 text-gray-600 dark:text-gray-300',
-          icon: 'w-10 h-10 text-primary mb-4',
-          title: 'text-3xl font-bold',
-        },
-      }"
-      :loading="loading"
-      @submit="onSubmit"
-    >
-      <template #description>
-        <p class="text-center text-gray-600 dark:text-gray-300">
-          Sign in to start analyzing your training data and get personalized coaching insights.
-        </p>
-      </template>
+  <div class="py-12 sm:py-20 bg-gray-50 dark:bg-gray-950 flex-grow flex items-center">
+    <UContainer class="w-full">
+      <div class="grid lg:grid-cols-12 bg-white dark:bg-gray-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 min-h-[600px]">
+        
+        <!-- Left: Marketing Section -->
+        <div class="lg:col-span-5 relative bg-gray-900 text-white p-8 sm:p-12 flex flex-col justify-between">
+          <!-- Background Image with Overlay -->
+          <div class="absolute inset-0 z-0">
+            <img 
+              src="https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2670&auto=format&fit=crop" 
+              alt="Cycling" 
+              class="w-full h-full object-cover opacity-40"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
+          </div>
+          
+          <!-- Content -->
+          <div class="relative z-10">
+            <div class="w-12 h-12 bg-primary/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-8 text-primary">
+              <UIcon name="i-lucide-zap" class="w-6 h-6" />
+            </div>
+            
+            <h2 class="text-3xl font-bold leading-tight mb-4">
+              Unlock Your <br/>
+              <span class="text-primary">True Potential</span>
+            </h2>
+            <p class="text-gray-300 text-lg leading-relaxed">
+              Experience AI-powered coaching that adapts to your life, recovery, and goals in real-time.
+            </p>
+          </div>
 
-      <template #footer>
-        <p class="text-center text-sm text-gray-500 dark:text-gray-400">
-          By signing in, you agree to our
-          <NuxtLink to="#" class="text-primary hover:underline">Terms of Service</NuxtLink>
-          and
-          <NuxtLink to="#" class="text-primary hover:underline">Privacy Policy</NuxtLink>.
-        </p>
-      </template>
-
-      <template #bottom>
-        <div class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
-          Don't have an account? <NuxtLink to="#" class="text-primary hover:underline">Sign up here</NuxtLink>.
+          <div class="relative z-10 mt-12">
+            <div class="flex -space-x-3 mb-4">
+              <UAvatar src="https://i.pravatar.cc/150?u=1" alt="User" size="sm" class="ring-2 ring-gray-900" />
+              <UAvatar src="https://i.pravatar.cc/150?u=2" alt="User" size="sm" class="ring-2 ring-gray-900" />
+              <UAvatar src="https://i.pravatar.cc/150?u=3" alt="User" size="sm" class="ring-2 ring-gray-900" />
+              <div class="w-8 h-8 rounded-full bg-gray-800 ring-2 ring-gray-900 flex items-center justify-center text-xs font-bold text-white">
+                +2k
+              </div>
+            </div>
+            <p class="text-sm font-medium text-gray-400">
+              Join 2,000+ athletes training smarter.
+            </p>
+          </div>
         </div>
-      </template>
-    </UAuthForm>
+
+        <!-- Right: Auth Form -->
+        <div class="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-center bg-white dark:bg-gray-900">
+          <div class="max-w-md mx-auto w-full">
+            <div class="mb-10">
+              <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                Get Started
+              </h1>
+              <p class="text-gray-500 dark:text-gray-400 text-lg">
+                Join Coach Watts today. No credit card required.
+              </p>
+            </div>
+
+            <div class="space-y-6">
+               <UButton 
+                 block 
+                 size="xl" 
+                 icon="i-lucide-chrome" 
+                 color="white"
+                 variant="solid"
+                 class="shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-all py-4"
+                 :loading="loading"
+                 @click="handleGoogleLogin"
+               >
+                 Continue with Google
+               </UButton>
+
+               <div class="relative">
+                  <div class="absolute inset-0 flex items-center">
+                    <span class="w-full border-t border-gray-200 dark:border-gray-700" />
+                  </div>
+                  <div class="relative flex justify-center text-sm">
+                    <span class="bg-white dark:bg-gray-900 px-2 text-gray-500">Only Google Login supported</span>
+                  </div>
+               </div>
+            </div>
+
+            <div class="mt-10 text-center space-y-4">
+              <p class="text-xs text-gray-400 dark:text-gray-500">
+                By continuing, you agree to our 
+                <NuxtLink to="#" class="text-primary hover:underline underline-offset-4">Terms of Service</NuxtLink> 
+                and 
+                <NuxtLink to="#" class="text-primary hover:underline underline-offset-4">Privacy Policy</NuxtLink>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </UContainer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { z } from 'zod'
-
 const { signIn } = useAuth()
 const toast = useToast()
 
 definePageMeta({
   layout: 'home',
   middleware: ['guest'],
-  auth: false // Explicitly disable auth middleware for this page
+  auth: false
 })
 
 const loading = ref(false)
 
-// Dummy fields for email/password for UAuthForm. 
-// Real implementation would use credentials provider.
-const fields = [{
-  name: 'email',
-  type: 'text',
-  label: 'Email',
-  placeholder: 'Enter your email'
-}, {
-  name: 'password',
-  type: 'password',
-  label: 'Password',
-  placeholder: 'Enter your password'
-}]
-
-const providers = [{
-  label: 'Continue with Google',
-  icon: 'i-lucide-chrome' as const,
-  color: 'gray' as const,
-  variant: 'outline' as const,
-  click: () => {
-    loading.value = true
-    signIn('google', { callbackUrl: '/dashboard' })
-  }
-}]
-
-const schema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(8, 'Must be at least 8 characters')
-})
-
-type Schema = z.output<typeof schema>
-
-async function onSubmit(data: any) {
+async function handleGoogleLogin() {
   loading.value = true
   try {
-    // This part would typically call signIn('credentials', data)
-    // For now, it's a placeholder to demonstrate form submission.
-    console.log('Form submitted with:', data)
-    toast.add({
-      title: 'Login Attempt',
-      description: 'Email/password login is not yet configured.',
-      color: 'info'
-    })
+    await signIn('google', { callbackUrl: '/dashboard' })
   } catch (error: any) {
     toast.add({
       title: 'Login Failed',
-      description: error.data?.message || 'An unexpected error occurred.',
+      description: error.message || 'Could not initiate Google login.',
       color: 'error'
     })
-  } finally {
     loading.value = false
   }
 }
