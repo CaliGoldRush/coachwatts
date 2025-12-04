@@ -6,6 +6,67 @@
           <UDashboardSidebarCollapse />
         </template>
       </UDashboardNavbar>
+
+      <UDashboardToolbar>
+        <div class="flex gap-2 overflow-x-auto">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            @click="scrollToSection('integrations')"
+          >
+            <UIcon name="i-lucide-plug" class="w-4 h-4 mr-2" />
+            Integrations
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            @click="scrollToSection('summary')"
+          >
+            <UIcon name="i-lucide-bar-chart-3" class="w-4 h-4 mr-2" />
+            Summary
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            @click="scrollToSection('fitness')"
+          >
+            <UIcon name="i-lucide-heart-pulse" class="w-4 h-4 mr-2" />
+            Fitness
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            @click="scrollToSection('planned')"
+          >
+            <UIcon name="i-lucide-calendar" class="w-4 h-4 mr-2" />
+            Planned
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            @click="scrollToSection('workouts')"
+          >
+            <UIcon name="i-lucide-bike" class="w-4 h-4 mr-2" />
+            Workouts
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            @click="scrollToSection('nutrition')"
+          >
+            <UIcon name="i-lucide-utensils" class="w-4 h-4 mr-2" />
+            Nutrition
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
+            @click="scrollToSection('pipeline')"
+          >
+            <UIcon name="i-lucide-workflow" class="w-4 h-4 mr-2" />
+            Pipeline
+          </UButton>
+        </div>
+      </UDashboardToolbar>
     </template>
 
     <template #body>
@@ -158,6 +219,7 @@
         </div>
 
         <!-- Data Summary -->
+        <div id="summary" class="scroll-mt-20"></div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Data Summary</h2>
       
@@ -193,6 +255,7 @@
         </div>
         
         <!-- Fitness Data Table (WHOOP & Wellness) -->
+        <div id="fitness" class="scroll-mt-20"></div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Fitness & Recovery Data</h2>
@@ -310,6 +373,7 @@
         </div>
 
         <!-- Planned Workouts Section -->
+        <div id="planned" class="scroll-mt-20"></div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Upcoming Planned Workouts</h2>
@@ -416,6 +480,7 @@
         </div>
 
         <!-- Recent Workouts Table -->
+        <div id="workouts" class="scroll-mt-20"></div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Workouts</h2>
@@ -552,6 +617,7 @@
         </div>
 
         <!-- Nutrition Data Table -->
+        <div id="nutrition" class="scroll-mt-20"></div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div class="flex justify-between items-center">
@@ -695,6 +761,10 @@
             </div>
           </div>
         </div>
+
+        <!-- Task Dependency Graph -->
+        <div id="pipeline" class="scroll-mt-20"></div>
+        <TaskDependencyGraph />
       </div>
     </template>
   </UDashboardPanel>
@@ -1100,6 +1170,14 @@ function changeWorkoutsPage(page: number) {
 function changeNutritionPage(page: number) {
   nutritionPage.value = page
   fetchNutritionData()
+}
+
+// Scroll to section
+function scrollToSection(sectionId: string) {
+  const element = document.getElementById(sectionId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 }
 
 // Load data on mount
