@@ -14,46 +14,59 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { provider } = body
   
-  if (!provider || !['intervals', 'whoop', 'yazio', 'strava'].includes(provider)) {
+  if (!provider || !['intervals', 'whoop', 'yazio', 'strava', 'all'].includes(provider)) {
     throw createError({
       statusCode: 400,
-      message: 'Invalid provider. Must be "intervals", "whoop", "yazio", or "strava"'
+      message: 'Invalid provider. Must be "intervals", "whoop", "yazio", "strava", or "all"'
     })
   }
   
-  // Check if integration exists
-  const integration = await prisma.integration.findUnique({
-    where: {
-      userId_provider: {
-        userId: (session.user as any).id,
-        provider
-      }
-    }
-  })
-  
-  if (!integration) {
-    throw createError({ 
-      statusCode: 404,
-      message: `${provider} integration not found. Please connect your account first.` 
-    })
-  }
-  
-  // Calculate date range
-  // For Intervals: last 90 days + next 30 days (to capture future planned workouts)
-  // For Whoop: last 90 days
-  // For Yazio: last 5 days (to avoid rate limiting - older data is kept as-is)
-  // For Strava: last 7 days (to respect API rate limits - 200 req/15min, 2000/day)
+  // Calculate date range based on the most comprehensive sync window
+  // When syncing all, use the most comprehensive date range (Intervals.icu's range)
   const now = new Date()
   const startDate = new Date(now)
-  const daysBack = provider === 'yazio' ? 5 : provider === 'strava' ? 7 : 90
-  startDate.setDate(startDate.getDate() - daysBack)
+  
+  if (provider === 'all') {
+    // For batch sync, use a moderate 7-day window for recent data
+    // This balances API rate limits across all services
+    startDate.setDate(startDate.getDate() - 7)
+  } else {
+    // Individual provider sync windows
+    // For Intervals: last 90 days + next 30 days (to capture future planned workouts)
+    // For Whoop: last 90 days
+    // For Yazio: last 5 days (to avoid rate limiting - older data is kept as-is)
+    // For Strava: last 7 days (to respect API rate limits - 200 req/15min, 2000/day)
+    const daysBack = provider === 'yazio' ? 5 : provider === 'strava' ? 7 : 90
+    startDate.setDate(startDate.getDate() - daysBack)
+  }
   
   const endDate = provider === 'intervals'
     ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)  // +30 days for planned workouts
-    : new Date(now)  // Today for Whoop, Yazio, and Strava
+    : new Date(now)  // Today for Whoop, Yazio, Strava, and batch "all"
+  
+  // Check if integration exists (skip for 'all' since it syncs all available)
+  if (provider !== 'all') {
+    const integration = await prisma.integration.findUnique({
+      where: {
+        userId_provider: {
+          userId: (session.user as any).id,
+          provider
+        }
+      }
+    })
+    
+    if (!integration) {
+      throw createError({
+        statusCode: 404,
+        message: `${provider} integration not found. Please connect your account first.`
+      })
+    }
+  }
   
   // Trigger the appropriate job
-  const taskId = provider === 'intervals'
+  const taskId = provider === 'all'
+    ? 'ingest-all'
+    : provider === 'intervals'
     ? 'ingest-intervals'
     : provider === 'whoop'
     ? 'ingest-whoop'

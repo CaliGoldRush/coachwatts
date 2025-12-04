@@ -78,12 +78,85 @@ export default defineEventHandler(async (event) => {
     
     // Get most recent values
     const mostRecent = recentWellness[0]
-    const recentRestingHR = mostRecent?.restingHr || recentWellness.find(w => w.restingHr)?.restingHr
-    const recentHRV = mostRecent?.hrv || recentWellness.find(w => w.hrv)?.hrv
-    const recentWeight = mostRecent?.weight || user.weight
+    const recentRestingHR = mostRecent?.restingHr ?? recentWellness.find(w => w.restingHr != null)?.restingHr ?? null
+    const recentHRV = mostRecent?.hrv ?? recentWellness.find(w => w.hrv != null)?.hrv ?? null
+    const recentWeight = mostRecent?.weight ?? user.weight
+    
+    // Check if user has any reports
+    const reportCount = await prisma.report.count({
+      where: {
+        userId: user.id,
+        status: 'COMPLETED'
+      }
+    })
+    
+    // Get user's integrations
+    const integrations = await prisma.integration.findMany({
+      where: { userId: user.id },
+      select: {
+        provider: true,
+        lastSyncAt: true
+      }
+    })
+    
+    // Check data sync status for different categories
+    const [workoutCount, nutritionCount, wellnessCount] = await Promise.all([
+      prisma.workout.count({ where: { userId: user.id } }),
+      prisma.nutrition.count({ where: { userId: user.id } }),
+      prisma.wellness.count({ where: { userId: user.id } })
+    ])
+    
+    // Determine which integrations provide data for each category
+    const workoutProviders: string[] = []
+    const nutritionProviders: string[] = []
+    const wellnessProviders: string[] = []
+    
+    for (const integration of integrations) {
+      switch (integration.provider) {
+        case 'intervals':
+          workoutProviders.push('Intervals.icu')
+          wellnessProviders.push('Intervals.icu')
+          break
+        case 'strava':
+          workoutProviders.push('Strava')
+          break
+        case 'yazio':
+          nutritionProviders.push('Yazio')
+          break
+        case 'whoop':
+          wellnessProviders.push('Whoop')
+          break
+      }
+    }
+    
+    // Debug logging
+    console.log('[Dashboard API] Recent wellness query results:', {
+      recordsFound: recentWellness.length,
+      mostRecent: mostRecent ? {
+        date: mostRecent.date,
+        restingHr: mostRecent.restingHr,
+        hrv: mostRecent.hrv,
+        weight: mostRecent.weight
+      } : null,
+      extracted: {
+        recentRestingHR,
+        recentHRV,
+        recentWeight
+      },
+      reportCount
+    })
     
     return {
       connected: true,
+      hasReports: reportCount > 0,
+      dataSyncStatus: {
+        workouts: workoutCount > 0,
+        nutrition: nutritionCount > 0,
+        wellness: wellnessCount > 0,
+        workoutCount,
+        nutritionCount,
+        wellnessCount
+      },
       profile: {
         name: user.name,
         age: user.dob ? calculateAge(user.dob) : null,
