@@ -32,32 +32,33 @@ export default defineEventHandler(async (event) => {
   try {
     // Fetch metadata for all tasks
     const [
-      workoutStats,
-      nutritionStats,
+      lastAnalyzedWorkout,
+      lastAnalyzedNutrition,
       integrationStats
     ] = await Promise.all([
-      // Workout analysis stats
-      prisma.workout.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          date: true,
-          aiAnalysisStatus: true
+      // Last analyzed workout (excluding duplicates)
+      prisma.workout.findFirst({
+        where: {
+          userId,
+          isDuplicate: false,
+          aiAnalysisStatus: 'COMPLETED'
         },
-        orderBy: { date: 'desc' },
-        take: 1
+        select: {
+          aiAnalyzedAt: true
+        },
+        orderBy: { aiAnalyzedAt: 'desc' }
       }),
       
-      // Nutrition analysis stats
-      prisma.nutrition.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          date: true,
-          aiAnalysisStatus: true
+      // Last analyzed nutrition
+      prisma.nutrition.findFirst({
+        where: {
+          userId,
+          aiAnalysisStatus: 'COMPLETED'
         },
-        orderBy: { date: 'desc' },
-        take: 1
+        select: {
+          aiAnalyzedAt: true
+        },
+        orderBy: { aiAnalyzedAt: 'desc' }
       }),
       
       // Integration sync times
@@ -70,11 +71,12 @@ export default defineEventHandler(async (event) => {
       })
     ])
     
-    // Count pending analyses
-    const [workoutPendingCount, nutritionPendingCount, totalWorkouts, totalNutrition] = await Promise.all([
+    // Count pending analyses and duplicates
+    const [workoutPendingCount, nutritionPendingCount, totalWorkouts, totalNutrition, duplicateCount] = await Promise.all([
       prisma.workout.count({
         where: {
           userId,
+          isDuplicate: false,
           OR: [
             { aiAnalysisStatus: 'PENDING' },
             { aiAnalysisStatus: null }
@@ -90,8 +92,9 @@ export default defineEventHandler(async (event) => {
           ]
         }
       }),
-      prisma.workout.count({ where: { userId } }),
-      prisma.nutrition.count({ where: { userId } })
+      prisma.workout.count({ where: { userId, isDuplicate: false } }),
+      prisma.nutrition.count({ where: { userId } }),
+      prisma.workout.count({ where: { userId, isDuplicate: true } })
     ])
     
     // Build metadata object
@@ -105,21 +108,44 @@ export default defineEventHandler(async (event) => {
       }
     })
     
+    // Deduplication metadata
+    metadata['deduplicate-workouts'] = {
+      duplicateCount: duplicateCount,
+      totalCount: totalWorkouts + duplicateCount,
+      isUpToDate: duplicateCount === 0
+    }
+    
     // Workout analysis metadata
     metadata['analyze-workouts'] = {
       pendingCount: workoutPendingCount,
       totalCount: totalWorkouts,
-      lastSync: workoutStats[0]?.date || null
+      lastSync: lastAnalyzedWorkout?.aiAnalyzedAt || null,
+      isUpToDate: workoutPendingCount === 0 && totalWorkouts > 0
     }
     
     // Nutrition analysis metadata
     metadata['analyze-nutrition'] = {
       pendingCount: nutritionPendingCount,
       totalCount: totalNutrition,
-      lastSync: nutritionStats[0]?.date || null
+      lastSync: lastAnalyzedNutrition?.aiAnalyzedAt || null,
+      isUpToDate: nutritionPendingCount === 0 && totalNutrition > 0
     }
     
-    // Profile generation metadata - check latest athlete profile report
+    // Get latest workout/nutrition dates for comparison
+    const [latestWorkout, latestNutrition] = await Promise.all([
+      prisma.workout.findFirst({
+        where: { userId, isDuplicate: false },
+        orderBy: { date: 'desc' },
+        select: { date: true }
+      }),
+      prisma.nutrition.findFirst({
+        where: { userId },
+        orderBy: { date: 'desc' },
+        select: { date: true }
+      })
+    ])
+    
+    // Profile generation metadata - check if profile is current
     const lastProfile = await prisma.report.findFirst({
       where: {
         userId,
@@ -130,11 +156,17 @@ export default defineEventHandler(async (event) => {
       select: { createdAt: true }
     })
     
+    // Profile is up to date if generated after latest analyzed workout/nutrition
+    const profileUpToDate = lastProfile &&
+      (!lastAnalyzedWorkout || !lastAnalyzedWorkout.aiAnalyzedAt || lastProfile.createdAt >= lastAnalyzedWorkout.aiAnalyzedAt) &&
+      (!lastAnalyzedNutrition || !lastAnalyzedNutrition.aiAnalyzedAt || lastProfile.createdAt >= lastAnalyzedNutrition.aiAnalyzedAt)
+    
     metadata['generate-athlete-profile'] = {
-      lastSync: lastProfile?.createdAt || null
+      lastSync: lastProfile?.createdAt || null,
+      isUpToDate: !!profileUpToDate
     }
     
-    // Workout report metadata
+    // Workout report metadata - should cover last 7 days
     const lastWorkoutReport = await prisma.report.findFirst({
       where: {
         userId,
@@ -142,19 +174,30 @@ export default defineEventHandler(async (event) => {
         status: 'COMPLETED'
       },
       orderBy: { createdAt: 'desc' },
-      select: { createdAt: true }
+      select: {
+        createdAt: true,
+        dateRangeEnd: true
+      }
     })
     
+    // Report is up to date if it covers data through at least 24 hours ago
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const workoutReportUpToDate = lastWorkoutReport &&
+      lastWorkoutReport.dateRangeEnd &&
+      new Date(lastWorkoutReport.dateRangeEnd) >= oneDayAgo
+    
     metadata['generate-weekly-workout-report'] = {
-      lastSync: lastWorkoutReport?.createdAt || null
+      lastSync: lastWorkoutReport?.createdAt || null,
+      isUpToDate: !!workoutReportUpToDate
     }
     
     // Nutrition report metadata (for now, same as workout report)
     metadata['generate-weekly-nutrition-report'] = {
-      lastSync: lastWorkoutReport?.createdAt || null
+      lastSync: lastWorkoutReport?.createdAt || null,
+      isUpToDate: !!workoutReportUpToDate
     }
     
-    // Plan metadata - check latest plan report
+    // Plan metadata - should cover current/upcoming week
     const lastPlan = await prisma.report.findFirst({
       where: {
         userId,
@@ -162,25 +205,48 @@ export default defineEventHandler(async (event) => {
         status: 'COMPLETED'
       },
       orderBy: { createdAt: 'desc' },
-      select: { createdAt: true }
+      select: {
+        createdAt: true,
+        dateRangeStart: true,
+        dateRangeEnd: true
+      }
     })
     
+    // Plan is up to date if it covers today through at least 3 days from now
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    
+    const planUpToDate = lastPlan &&
+      lastPlan.dateRangeStart &&
+      lastPlan.dateRangeEnd &&
+      new Date(lastPlan.dateRangeStart) <= today &&
+      new Date(lastPlan.dateRangeEnd) >= threeDaysFromNow
+    
     metadata['generate-weekly-plan'] = {
-      lastSync: lastPlan?.createdAt || null
+      lastSync: lastPlan?.createdAt || null,
+      isUpToDate: !!planUpToDate
     }
     
-    // Today's training metadata
+    // Today's training metadata - should be for today
+    const today2 = new Date()
+    today2.setHours(0, 0, 0, 0)
+    
     const lastRecommendation = await prisma.activityRecommendation.findFirst({
       where: {
         userId,
-        status: 'COMPLETED'
+        status: 'COMPLETED',
+        date: {
+          gte: today2
+        }
       },
       orderBy: { date: 'desc' },
       select: { date: true }
     })
     
     metadata['generate-daily-recommendations'] = {
-      lastSync: lastRecommendation?.date || null
+      lastSync: lastRecommendation?.date || null,
+      isUpToDate: !!lastRecommendation
     }
     
     return {

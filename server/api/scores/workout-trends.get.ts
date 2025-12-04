@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
   const workouts = await prisma.workout.findMany({
     where: {
       userId: user.id,
+      isDuplicate: false,
       date: {
         gte: startDate
       },

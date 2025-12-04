@@ -18,10 +18,11 @@ export default defineEventHandler(async (event) => {
   startDate.setDate(startDate.getDate() - 5)
   
   try {
-    // Fetch workouts from the past 5 days
+    // Fetch workouts from the past 5 days (excluding duplicates)
     const workouts = await prisma.workout.findMany({
       where: {
         userId,
+        isDuplicate: false,
         date: {
           gte: startDate,
           lte: endDate

@@ -173,13 +173,14 @@ export const generateWeeklyReportTask = task({
       
       logger.log("Fetching data", { startDate, endDate });
       
-      // Fetch data
+      // Fetch data (excluding duplicate workouts)
       const [workouts, metrics, user] = await Promise.all([
         prisma.workout.findMany({
           where: {
             userId,
             date: { gte: startDate, lte: endDate },
-            durationSec: { gt: 0 }  // Filter out workouts without duration
+            durationSec: { gt: 0 },  // Filter out workouts without duration
+            isDuplicate: false  // Exclude duplicate workouts
           },
           orderBy: { date: 'asc' }
         }),
@@ -254,7 +255,7 @@ Be supportive and specific. Use actual data points and metrics. Scores should re
       logger.log("Generating structured report with Gemini");
       
       // Generate structured analysis
-      const analysisJson = await generateStructuredAnalysis(prompt, analysisSchema);
+      const analysisJson = await generateStructuredAnalysis<any>(prompt, analysisSchema);
       
       logger.log("Structured report generated successfully");
       
@@ -270,17 +271,17 @@ Be supportive and specific. Use actual data points and metrics. Scores should re
             dateRangeStart: startDate,
             dateRangeEnd: endDate,
             // Store scores for easy querying and tracking
-            overallScore: analysisJson.scores?.overall,
-            trainingLoadScore: analysisJson.scores?.training_load,
-            recoveryScore: analysisJson.scores?.recovery,
-            progressScore: analysisJson.scores?.progress,
-            consistencyScore: analysisJson.scores?.consistency,
+            overallScore: analysisJson.scores?.overall ?? null,
+            trainingLoadScore: analysisJson.scores?.training_load ?? null,
+            recoveryScore: analysisJson.scores?.recovery ?? null,
+            progressScore: analysisJson.scores?.progress ?? null,
+            consistencyScore: analysisJson.scores?.consistency ?? null,
             // Store explanations for user guidance
-            trainingLoadExplanation: analysisJson.scores?.training_load_explanation,
-            recoveryBalanceExplanation: analysisJson.scores?.recovery_explanation,
-            progressTrendExplanation: analysisJson.scores?.progress_explanation,
-            adaptationReadinessExplanation: analysisJson.scores?.consistency_explanation,
-            injuryRiskExplanation: analysisJson.scores?.overall_explanation
+            trainingLoadExplanation: analysisJson.scores?.training_load_explanation ?? null,
+            recoveryBalanceExplanation: analysisJson.scores?.recovery_explanation ?? null,
+            progressTrendExplanation: analysisJson.scores?.progress_explanation ?? null,
+            adaptationReadinessExplanation: analysisJson.scores?.consistency_explanation ?? null,
+            injuryRiskExplanation: analysisJson.scores?.overall_explanation ?? null
           }
         });
         

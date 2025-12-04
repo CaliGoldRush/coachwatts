@@ -14,10 +14,11 @@ export default defineEventHandler(async (event) => {
   const userId = (session.user as any).id
   
   try {
-    // Find all workouts that need analysis
+    // Find all workouts that need analysis (excluding duplicates)
     const workoutsToAnalyze = await prisma.workout.findMany({
       where: {
         userId,
+        isDuplicate: false,
         OR: [
           { aiAnalysisStatus: null },
           { aiAnalysisStatus: 'NOT_STARTED' },
