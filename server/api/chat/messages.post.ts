@@ -122,10 +122,16 @@ ${athleteContext}
 Always provide specific, data-driven insights when possible. Use the tools to access real data rather than making assumptions.`
 
   // 6. Build Chat History for Model
-  const historyForModel = chronologicalHistory.map((msg: any) => ({
+  // Gemini requires the first message to be from user, so filter out any leading AI messages
+  let historyForModel = chronologicalHistory.map((msg: any) => ({
     role: msg.senderId === 'ai_agent' ? 'model' : 'user',
     parts: [{ text: msg.content }]
   }))
+
+  // Remove any leading 'model' messages to ensure first message is 'user'
+  while (historyForModel.length > 0 && historyForModel[0].role === 'model') {
+    historyForModel = historyForModel.slice(1)
+  }
 
   // 7. Initialize Model with Tools
   const model = genAI.getGenerativeModel({

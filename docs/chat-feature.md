@@ -112,9 +112,18 @@ Fetches recent workout summaries.
 - **Use Case**: "How did my last 3 rides go?"
 
 #### 2. `get_workout_details`
-Gets comprehensive details for a specific workout.
-- **Parameters**: `workout_id` (required)
-- **Use Case**: "Tell me more about that 2-hour ride"
+Gets comprehensive details for a specific workout. Can search by ID OR by natural language description.
+- **Parameters**:
+  - `workout_id` - Exact ID if known
+  - `title_search` - Search by workout title (e.g., "Morning Elliptical")
+  - `type` - Filter by workout type (Ride, Run, Walk, etc.)
+  - `date` - Specific date (YYYY-MM-DD)
+  - `relative_position` - "latest", "longest", "hardest", "fastest"
+- **Use Cases**:
+  - "Tell me about the morning elliptical" → Searches by title
+  - "Show me my latest ride" → Finds most recent Ride
+  - "What about yesterday's longest walk?" → Finds longest Walk from yesterday
+  - "My hardest workout this week" → Finds workout with highest TSS
 
 #### 3. `get_nutrition_log`
 Retrieves nutrition data for date ranges.
@@ -130,6 +139,28 @@ Fetches recovery and wellness data.
 Advanced workout search with filters.
 - **Parameters**: `query`, `min_duration_minutes`, `max_duration_minutes`, `min_tss`, `date_from`, `date_to`, `limit`
 - **Use Case**: "Find my hardest workouts from last month"
+
+#### 6. `get_performance_metrics`
+Get comprehensive performance analytics and trends.
+- **Parameters**:
+  - `period_days` - Analysis period (default: 30, options: 7, 14, 30, 60, 90)
+  - `include_activity_distribution` - Breakdown by workout type
+  - `include_training_load` - Daily training load trends
+  - `include_weekly_hours` - Weekly training hours (last 8 weeks)
+  - `include_intensity_analysis` - Intensity distribution analysis
+- **Returns**:
+  - Activity distribution (count, %, hours, TSS by type)
+  - Training load trends (daily TSS, training load, duration)
+  - Weekly training hours (last 8 weeks breakdown)
+  - Intensity analysis (high/moderate/low intensity counts)
+  - Fitness metrics (CTL, ATL, TSB if available)
+  - Summary stats (total hours, distance, TSS, workouts/week)
+- **Use Cases**:
+  - "How's my training been going this month?"
+  - "Show me my activity distribution"
+  - "What are my training load trends?"
+  - "How many hours am I training per week?"
+  - "Analyze my performance over the last 30 days"
 
 ### How It Works
 
@@ -150,13 +181,21 @@ Advanced workout search with filters.
 3. AI analyzes the data
 4. AI responds: "Your last three rides show great progression..."
 
-**User**: "Tell me more about the second one"
+**User**: "Tell me more about the morning elliptical"
 
 **Behind the scenes**:
-1. AI identifies workout ID from previous context
-2. AI calls: `get_workout_details(workout_id: "...")`
-3. System returns comprehensive workout data
+1. AI recognizes title reference
+2. AI calls: `get_workout_details(title_search: "Morning Elliptical")`
+3. System searches by title and returns workout data
 4. AI responds with detailed analysis
+
+**User**: "What about my latest ride?"
+
+**Behind the scenes**:
+1. AI understands "latest ride" means most recent Ride
+2. AI calls: `get_workout_details(type: "Ride", relative_position: "latest")`
+3. System finds most recent Ride workout
+4. AI provides insights
 
 This creates a natural, conversational experience where the AI can reference actual training data rather than making assumptions.
 

@@ -28,16 +28,31 @@ export const chatToolDeclarations: FunctionDeclaration[] = [
   },
   {
     name: 'get_workout_details',
-    description: 'Get comprehensive details for a specific workout by ID. Use this when you need detailed information about a specific workout that was mentioned or identified.',
+    description: 'Get comprehensive details for a specific workout. Can search by ID or by description (title, date, type). Use this when the user refers to a workout by name like "the morning elliptical" or "my latest ride" or "yesterday\'s longest walk".',
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
         workout_id: {
           type: SchemaType.STRING,
-          description: 'The workout ID to fetch details for',
+          description: 'The exact workout ID if known from previous tool calls',
+        },
+        title_search: {
+          type: SchemaType.STRING,
+          description: 'Search by workout title (e.g., "Morning Elliptical", "Lunch Run")',
+        },
+        type: {
+          type: SchemaType.STRING,
+          description: 'Filter by workout type (Ride, Run, Walk, etc.)',
+        },
+        date: {
+          type: SchemaType.STRING,
+          description: 'Specific date in ISO format (YYYY-MM-DD)',
+        },
+        relative_position: {
+          type: SchemaType.STRING,
+          description: 'Relative position like "latest", "most recent", "longest", "hardest"',
         },
       },
-      required: ['workout_id'],
     },
   },
   {
@@ -113,6 +128,35 @@ export const chatToolDeclarations: FunctionDeclaration[] = [
       },
     },
   },
+  {
+    name: 'get_performance_metrics',
+    description: 'Get comprehensive performance analytics including activity distribution, training load trends, weekly hours, and fitness metrics. Use this when user asks about their performance, progress, training patterns, or trends over time.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        period_days: {
+          type: SchemaType.NUMBER,
+          description: 'Number of days to analyze (default: 30, options: 7, 14, 30, 60, 90)',
+        },
+        include_activity_distribution: {
+          type: SchemaType.BOOLEAN,
+          description: 'Include breakdown by workout type',
+        },
+        include_training_load: {
+          type: SchemaType.BOOLEAN,
+          description: 'Include training load trends',
+        },
+        include_weekly_hours: {
+          type: SchemaType.BOOLEAN,
+          description: 'Include weekly training hours breakdown',
+        },
+        include_intensity_analysis: {
+          type: SchemaType.BOOLEAN,
+          description: 'Include intensity and effort analysis',
+        },
+      },
+    },
+  },
 ]
 
 /**
@@ -130,7 +174,7 @@ export async function executeToolCall(
         return await getRecentWorkouts(userId, args.limit, args.type, args.days)
 
       case 'get_workout_details':
-        return await getWorkoutDetails(userId, args.workout_id)
+        return await getWorkoutDetails(userId, args)
 
       case 'get_nutrition_log':
         return await getNutritionLog(userId, args.start_date, args.end_date)
@@ -140,6 +184,9 @@ export async function executeToolCall(
 
       case 'search_workouts':
         return await searchWorkouts(userId, args)
+
+      case 'get_performance_metrics':
+        return await getPerformanceMetrics(userId, args)
 
       default:
         return { error: `Unknown tool: ${toolName}` }
@@ -232,17 +279,67 @@ async function getRecentWorkouts(
 
 /**
  * Get comprehensive details for a specific workout
+ * Can search by ID or by description/criteria
  */
-async function getWorkoutDetails(userId: string, workoutId: string): Promise<any> {
-  const workout = await prisma.workout.findFirst({
-    where: {
-      id: workoutId,
-      userId,
-    },
-  })
+async function getWorkoutDetails(userId: string, args: any): Promise<any> {
+  let workout = null
+
+  // If workout_id is provided, use it directly
+  if (args.workout_id) {
+    workout = await prisma.workout.findFirst({
+      where: {
+        id: args.workout_id,
+        userId,
+      },
+    })
+  } else {
+    // Search by criteria
+    const where: any = { userId }
+    
+    if (args.title_search) {
+      where.title = { contains: args.title_search, mode: 'insensitive' }
+    }
+    
+    if (args.type) {
+      where.type = args.type
+    }
+    
+    if (args.date) {
+      const startOfDay = new Date(args.date)
+      const endOfDay = new Date(args.date)
+      endOfDay.setHours(23, 59, 59, 999)
+      where.date = { gte: startOfDay, lte: endOfDay }
+    }
+    
+    // Determine ordering based on relative_position
+    let orderBy: any = { date: 'desc' } // Default to most recent
+    
+    if (args.relative_position) {
+      const position = args.relative_position.toLowerCase()
+      if (position.includes('longest')) {
+        orderBy = { durationSec: 'desc' }
+      } else if (position.includes('hardest') || position.includes('toughest')) {
+        orderBy = { tss: 'desc' }
+      } else if (position.includes('fastest')) {
+        orderBy = { averageSpeed: 'desc' }
+      }
+    }
+    
+    // Find the workout
+    const workouts = await prisma.workout.findMany({
+      where,
+      orderBy,
+      take: 1,
+    })
+    
+    workout = workouts[0]
+  }
 
   if (!workout) {
-    return { error: 'Workout not found' }
+    return {
+      error: 'Workout not found',
+      suggestion: 'Try using get_recent_workouts first to see available workouts, then reference them by ID'
+    }
   }
 
   return {
@@ -274,17 +371,34 @@ async function getWorkoutDetails(userId: string, workoutId: string): Promise<any
         training_load: workout.trainingLoad ? Math.round(workout.trainingLoad) : null,
         intensity_factor: workout.intensity ? workout.intensity.toFixed(2) : null,
         kilojoules: workout.kilojoules,
+        trimp: workout.trimp,
       },
       performance: {
         variability_index: workout.variabilityIndex ? workout.variabilityIndex.toFixed(2) : null,
         power_hr_ratio: workout.powerHrRatio ? workout.powerHrRatio.toFixed(2) : null,
         efficiency_factor: workout.efficiencyFactor ? workout.efficiencyFactor.toFixed(2) : null,
         decoupling: workout.decoupling ? workout.decoupling.toFixed(1) : null,
+        polarization_index: workout.polarizationIndex ? workout.polarizationIndex.toFixed(2) : null,
       },
       fitness: {
         ctl: workout.ctl ? Math.round(workout.ctl) : null,
         atl: workout.atl ? Math.round(workout.atl) : null,
+        ftp_at_time: workout.ftp,
       },
+    },
+    scores: {
+      overall: workout.overallScore,
+      technical: workout.technicalScore,
+      effort: workout.effortScore,
+      pacing: workout.pacingScore,
+      execution: workout.executionScore,
+    },
+    score_explanations: {
+      overall_quality: workout.overallQualityExplanation,
+      technical_execution: workout.technicalExecutionExplanation,
+      effort_management: workout.effortManagementExplanation,
+      pacing_strategy: workout.pacingStrategyExplanation,
+      execution_consistency: workout.executionConsistencyExplanation,
     },
     elevation_gain: workout.elevationGain,
     avg_speed_kmh: workout.averageSpeed ? (workout.averageSpeed * 3.6).toFixed(1) : null,
@@ -302,6 +416,19 @@ async function getWorkoutDetails(userId: string, workoutId: string): Promise<any
     },
     ai_analysis: workout.aiAnalysis || null,
     ai_analysis_json: workout.aiAnalysisJson || null,
+    duplicate_info: {
+      is_duplicate: workout.isDuplicate,
+      duplicate_of_id: workout.duplicateOf || null,
+      completeness_score: workout.completenessScore,
+    },
+    metadata: {
+      external_id: workout.externalId,
+      created_at: workout.createdAt.toISOString(),
+      updated_at: workout.updatedAt.toISOString(),
+      ai_analyzed_at: workout.aiAnalyzedAt?.toISOString() || null,
+      ai_analysis_status: workout.aiAnalysisStatus,
+    },
+    raw_data: workout.rawJson || null,
   }
 }
 
@@ -444,6 +571,176 @@ async function getWellnessMetrics(
       },
     })),
   }
+}
+/**
+ * Get comprehensive performance metrics and analytics
+ */
+async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
+  const periodDays = args.period_days || 30
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - periodDays)
+
+  // Fetch all workouts in the period
+  const workouts = await prisma.workout.findMany({
+    where: {
+      userId,
+      date: { gte: cutoff },
+    },
+    orderBy: { date: 'asc' },
+    select: {
+      id: true,
+      date: true,
+      title: true,
+      type: true,
+      durationSec: true,
+      distanceMeters: true,
+      averageWatts: true,
+      averageHr: true,
+      tss: true,
+      trainingLoad: true,
+      intensity: true,
+      kilojoules: true,
+      ctl: true,
+      atl: true,
+    },
+  })
+
+  if (workouts.length === 0) {
+    return {
+      message: `No workouts found in the last ${periodDays} days`,
+      period_days: periodDays,
+    }
+  }
+
+  const response: any = {
+    period: {
+      days: periodDays,
+      start_date: cutoff.toISOString().split('T')[0],
+      end_date: new Date().toISOString().split('T')[0],
+      total_workouts: workouts.length,
+    },
+    summary: {
+      total_duration_hours: (workouts.reduce((sum, w) => sum + w.durationSec, 0) / 3600).toFixed(1),
+      total_distance_km: workouts.reduce((sum, w) => sum + (w.distanceMeters || 0), 0) / 1000,
+      total_tss: workouts.reduce((sum, w) => sum + (w.tss || 0), 0),
+      total_training_load: workouts.reduce((sum, w) => sum + (w.trainingLoad || 0), 0),
+      avg_workout_duration_minutes: Math.round(
+        workouts.reduce((sum, w) => sum + w.durationSec, 0) / workouts.length / 60
+      ),
+      workouts_per_week: ((workouts.length / periodDays) * 7).toFixed(1),
+    },
+  }
+
+  // Activity Distribution
+  if (args.include_activity_distribution !== false) {
+    const typeBreakdown = workouts.reduce((acc: any, w) => {
+      const type = w.type || 'Other'
+      if (!acc[type]) {
+        acc[type] = { count: 0, total_duration_hours: 0, total_tss: 0 }
+      }
+      acc[type].count++
+      acc[type].total_duration_hours += w.durationSec / 3600
+      acc[type].total_tss += w.tss || 0
+      return acc
+    }, {})
+
+    response.activity_distribution = Object.entries(typeBreakdown)
+      .map(([type, stats]: [string, any]) => ({
+        type,
+        count: stats.count,
+        percentage: ((stats.count / workouts.length) * 100).toFixed(1),
+        total_hours: stats.total_duration_hours.toFixed(1),
+        total_tss: Math.round(stats.total_tss),
+      }))
+      .sort((a, b) => b.count - a.count)
+  }
+
+  // Training Load Trends
+  if (args.include_training_load !== false) {
+    const dailyLoad: any = {}
+    workouts.forEach((w) => {
+      const date = w.date.toISOString().split('T')[0]
+      if (!dailyLoad[date]) {
+        dailyLoad[date] = { tss: 0, training_load: 0, duration_hours: 0, count: 0 }
+      }
+      dailyLoad[date].tss += w.tss || 0
+      dailyLoad[date].training_load += w.trainingLoad || 0
+      dailyLoad[date].duration_hours += w.durationSec / 3600
+      dailyLoad[date].count++
+    })
+
+    response.training_load_trend = Object.entries(dailyLoad)
+      .map(([date, data]: [string, any]) => ({
+        date,
+        tss: Math.round(data.tss),
+        training_load: Math.round(data.training_load),
+        duration_hours: data.duration_hours.toFixed(1),
+        workout_count: data.count,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  }
+
+  // Weekly Training Hours
+  if (args.include_weekly_hours !== false) {
+    const weeklyData: any = {}
+    workouts.forEach((w) => {
+      const weekStart = new Date(w.date)
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+      const weekKey = weekStart.toISOString().split('T')[0]
+
+      if (!weeklyData[weekKey]) {
+        weeklyData[weekKey] = { duration_hours: 0, tss: 0, count: 0 }
+      }
+      weeklyData[weekKey].duration_hours += w.durationSec / 3600
+      weeklyData[weekKey].tss += w.tss || 0
+      weeklyData[weekKey].count++
+    })
+
+    response.weekly_training_hours = Object.entries(weeklyData)
+      .map(([week_start, data]: [string, any]) => ({
+        week_start,
+        total_hours: data.duration_hours.toFixed(1),
+        total_tss: Math.round(data.tss),
+        workout_count: data.count,
+        avg_hours_per_workout: (data.duration_hours / data.count).toFixed(1),
+      }))
+      .sort((a, b) => a.week_start.localeCompare(b.week_start))
+      .slice(-8) // Last 8 weeks
+  }
+
+  // Intensity Analysis
+  if (args.include_intensity_analysis !== false) {
+    const workoutsWithIntensity = workouts.filter((w) => w.intensity !== null)
+    if (workoutsWithIntensity.length > 0) {
+      const avgIntensity =
+        workoutsWithIntensity.reduce((sum, w) => sum + (w.intensity || 0), 0) /
+        workoutsWithIntensity.length
+
+      response.intensity_analysis = {
+        avg_intensity_factor: avgIntensity.toFixed(2),
+        high_intensity_workouts: workouts.filter((w) => (w.intensity || 0) > 0.85).length,
+        moderate_intensity_workouts: workouts.filter(
+          (w) => (w.intensity || 0) >= 0.65 && (w.intensity || 0) <= 0.85
+        ).length,
+        low_intensity_workouts: workouts.filter((w) => (w.intensity || 0) < 0.65).length,
+      }
+    }
+  }
+
+  // Fitness Trends (CTL/ATL if available)
+  const latestWorkout = workouts[workouts.length - 1]
+  if (latestWorkout && (latestWorkout.ctl !== null || latestWorkout.atl !== null)) {
+    response.fitness_metrics = {
+      current_ctl_fitness: latestWorkout.ctl ? Math.round(latestWorkout.ctl) : null,
+      current_atl_fatigue: latestWorkout.atl ? Math.round(latestWorkout.atl) : null,
+      training_stress_balance:
+        latestWorkout.ctl && latestWorkout.atl
+          ? Math.round(latestWorkout.ctl - latestWorkout.atl)
+          : null,
+    }
+  }
+
+  return response
 }
 
 /**
