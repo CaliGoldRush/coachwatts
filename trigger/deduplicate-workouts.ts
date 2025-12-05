@@ -1,5 +1,6 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { prisma } from "../server/utils/db";
+import { userBackgroundQueue } from "./queues";
 
 interface DuplicateGroup {
   workouts: Array<{
@@ -24,6 +25,7 @@ interface DuplicateGroup {
 export const deduplicateWorkoutsTask = task({
   id: "deduplicate-workouts",
   maxDuration: 300,
+  queue: userBackgroundQueue,
   run: async (payload: { userId: string }) => {
     const { userId } = payload;
     

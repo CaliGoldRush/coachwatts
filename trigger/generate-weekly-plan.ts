@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { userBackgroundQueue } from "./queues";
 
 const weeklyPlanSchema = {
   type: 'object',
@@ -57,6 +58,7 @@ const weeklyPlanSchema = {
 
 export const generateWeeklyPlanTask = task({
   id: "generate-weekly-plan",
+  queue: userBackgroundQueue,
   run: async (payload: { userId: string; startDate: Date; daysToPlann: number }) => {
     const { userId, startDate, daysToPlann } = payload;
     

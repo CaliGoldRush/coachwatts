@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { userReportsQueue } from "./queues";
 
 // Analysis schema for nutrition reports
 const nutritionAnalysisSchema = {
@@ -195,6 +196,7 @@ function convertStructuredToMarkdown(analysis: any): string {
 export const analyzeLast3NutritionTask = task({
   id: "analyze-last-3-nutrition",
   maxDuration: 300, // 5 minutes for AI processing
+  queue: userReportsQueue,
   run: async (payload: { userId: string; reportId: string }) => {
     const { userId, reportId } = payload;
     

@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateCoachAnalysis, generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { userAnalysisQueue } from "./queues";
 
 // TypeScript interface for the structured analysis
 interface StructuredAnalysis {
@@ -200,9 +201,7 @@ const analysisSchema = {
 export const analyzeWorkoutTask = task({
   id: "analyze-workout",
   maxDuration: 300, // 5 minutes for AI processing
-  queue: {
-    concurrencyLimit: 2, // Only run 2 analyses in parallel
-  },
+  queue: userAnalysisQueue,
   run: async (payload: { workoutId: string }) => {
     const { workoutId } = payload;
     

@@ -5,6 +5,7 @@ import {
   buildMetricsSummary
 } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { userReportsQueue } from "./queues";
 
 // Analysis schema for structured JSON output
 const analysisSchema = {
@@ -155,6 +156,7 @@ const analysisSchema = {
 export const generateWeeklyReportTask = task({
   id: "generate-weekly-report",
   maxDuration: 300, // 5 minutes for AI processing
+  queue: userReportsQueue,
   run: async (payload: { userId: string; reportId: string }) => {
     const { userId, reportId } = payload;
     

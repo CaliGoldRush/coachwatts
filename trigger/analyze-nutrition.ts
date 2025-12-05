@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { userAnalysisQueue } from "./queues";
 
 // Analysis schema for nutrition
 const nutritionAnalysisSchema = {
@@ -191,9 +192,7 @@ const nutritionAnalysisSchema = {
 export const analyzeNutritionTask = task({
   id: "analyze-nutrition",
   maxDuration: 300, // 5 minutes for AI processing
-  queue: {
-    concurrencyLimit: 2, // Only run 2 analyses in parallel
-  },
+  queue: userAnalysisQueue,
   run: async (payload: { nutritionId: string }) => {
     const { nutritionId } = payload;
     

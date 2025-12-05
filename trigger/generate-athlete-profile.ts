@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { userReportsQueue } from "./queues";
 
 // Athlete Profile schema for structured JSON output
 const athleteProfileSchema = {
@@ -300,6 +301,7 @@ const athleteProfileSchema = {
 export const generateAthleteProfileTask = task({
   id: "generate-athlete-profile",
   maxDuration: 300, // 5 minutes for AI processing
+  queue: userReportsQueue,
   run: async (payload: { userId: string; reportId: string }) => {
     const { userId, reportId } = payload;
     

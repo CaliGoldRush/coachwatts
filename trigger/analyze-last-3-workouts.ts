@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis, buildWorkoutSummary } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { userReportsQueue } from "./queues";
 
 // Reuse the flexible analysis schema (same as workout analysis)
 const analysisSchema = {
@@ -175,6 +176,7 @@ function convertStructuredToMarkdown(analysis: any): string {
 export const analyzeLast3WorkoutsTask = task({
   id: "analyze-last-3-workouts",
   maxDuration: 300, // 5 minutes for AI processing
+  queue: userReportsQueue,
   run: async (payload: { userId: string; reportId: string }) => {
     const { userId, reportId } = payload;
     

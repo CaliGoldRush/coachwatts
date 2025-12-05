@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { userReportsQueue } from "./queues";
 
 const suggestionSchema = {
   type: 'object',
@@ -28,6 +29,7 @@ const suggestionSchema = {
 
 export const dailyCoachTask = task({
   id: "daily-coach",
+  queue: userReportsQueue,
   run: async (payload: { userId: string }) => {
     const { userId } = payload;
     
