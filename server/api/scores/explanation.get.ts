@@ -70,11 +70,11 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // If no valid explanation exists, trigger generation job
-    // and return a message indicating generation is needed
+    // If no valid explanation exists, trigger generation job with per-user concurrency
     await tasks.trigger(
       "generate-score-explanations",
-      { userId: user.id }
+      { userId: user.id },
+      { concurrencyKey: user.id }
     )
 
     return {

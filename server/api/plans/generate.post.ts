@@ -18,11 +18,13 @@ export default defineEventHandler(async (event) => {
   const daysToPlann = body.days || 7
   const startDate = body.startDate ? new Date(body.startDate) : new Date()
   
-  // Trigger the plan generation job
+  // Trigger the plan generation job with per-user concurrency
   const handle = await tasks.trigger('generate-weekly-plan', {
     userId,
     startDate,
     daysToPlann
+  }, {
+    concurrencyKey: userId
   })
   
   return {

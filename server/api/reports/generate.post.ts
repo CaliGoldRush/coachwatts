@@ -54,27 +54,35 @@ export default defineEventHandler(async (event) => {
   })
   
   try {
-    // Trigger appropriate background job based on report type
+    // Trigger appropriate background job based on report type with per-user concurrency
     let handle
     if (reportType === 'LAST_3_WORKOUTS') {
       handle = await tasks.trigger('analyze-last-3-workouts', {
         userId,
         reportId: report.id
+      }, {
+        concurrencyKey: userId
       })
     } else if (reportType === 'LAST_3_NUTRITION') {
       handle = await tasks.trigger('analyze-last-3-nutrition', {
         userId,
         reportId: report.id
+      }, {
+        concurrencyKey: userId
       })
     } else if (reportType === 'LAST_7_NUTRITION') {
       handle = await tasks.trigger('analyze-last-7-nutrition', {
         userId,
         reportId: report.id
+      }, {
+        concurrencyKey: userId
       })
     } else {
       handle = await tasks.trigger('generate-weekly-report', {
         userId,
         reportId: report.id
+      }, {
+        concurrencyKey: userId
       })
     }
     

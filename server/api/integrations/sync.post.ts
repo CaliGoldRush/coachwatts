@@ -81,10 +81,13 @@ export default defineEventHandler(async (event) => {
     console.log(`[Sync] End date: ${endDate.toISOString()} (${endDate.toISOString().split('T')[0]})`)
     console.log(`[Sync] Days to sync: ${Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000))}`)
     
+    const userId = (session.user as any).id
     const handle = await tasks.trigger(taskId, {
-      userId: (session.user as any).id,
+      userId,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString()
+    }, {
+      concurrencyKey: userId
     })
     
     console.log(`[Sync] Task triggered successfully. Job ID: ${handle.id}`)

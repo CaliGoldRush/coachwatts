@@ -13,9 +13,11 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const userId = (session.user as any).id || session.user.email
     const handle = await tasks.trigger(
       'deduplicate-workouts',
-      { userId: session.user.email }
+      { userId },
+      { concurrencyKey: userId }
     )
 
     return {

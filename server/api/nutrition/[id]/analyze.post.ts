@@ -62,9 +62,11 @@ export default defineEventHandler(async (event) => {
       data: { aiAnalysisStatus: 'PENDING' }
     })
     
-    // Trigger background job
+    // Trigger background job with per-user concurrency
     const handle = await tasks.trigger('analyze-nutrition', {
       nutritionId: id
+    }, {
+      concurrencyKey: (session.user as any).id
     })
     
     return {

@@ -54,11 +54,13 @@ export default defineEventHandler(async (event) => {
       }
     })
     
-    // Trigger analysis jobs for each nutrition record (Trigger.dev will handle concurrency limits)
+    // Trigger analysis jobs for each nutrition record with per-user concurrency
     const triggerPromises = nutritionToAnalyze.map(async (nutrition) => {
       try {
         const handle = await tasks.trigger('analyze-nutrition', {
           nutritionId: nutrition.id
+        }, {
+          concurrencyKey: userId
         })
         return { success: true, nutritionId: nutrition.id, jobId: handle.id }
       } catch (error) {

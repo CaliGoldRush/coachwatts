@@ -28,10 +28,12 @@ export default defineEventHandler(async (event) => {
     }
   })
   
-  // Trigger the background job
+  // Trigger the background job with per-user concurrency
   const handle = await tasks.trigger('generate-athlete-profile', {
     userId,
     reportId: report.id
+  }, {
+    concurrencyKey: userId
   })
   
   return {

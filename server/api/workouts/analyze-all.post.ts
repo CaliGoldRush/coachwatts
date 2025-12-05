@@ -56,11 +56,13 @@ export default defineEventHandler(async (event) => {
       }
     })
     
-    // Trigger analysis jobs for each workout (Trigger.dev will handle concurrency limits)
+    // Trigger analysis jobs for each workout with per-user concurrency
     const triggerPromises = workoutsToAnalyze.map(async (workout) => {
       try {
         const handle = await tasks.trigger('analyze-workout', {
           workoutId: workout.id
+        }, {
+          concurrencyKey: userId
         })
         return { success: true, workoutId: workout.id, jobId: handle.id }
       } catch (error) {
