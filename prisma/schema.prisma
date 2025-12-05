@@ -217,6 +217,10 @@ model Workout {
   // Raw Data storage (for re-analysis and accessing original data)
   rawJson         Json?    // Store the original full payload
   
+  // Custom Notes (user-editable rich text notes)
+  notes           String?  @db.Text // User's custom notes in markdown format
+  notesUpdatedAt  DateTime? // When notes were last updated
+  
   // Duplicate Detection & Management
   isDuplicate     Boolean  @default(false) // True if this workout is a duplicate
   duplicateOf     String?  // ID of the canonical workout this is a duplicate of
@@ -436,6 +440,10 @@ model Nutrition {
   
   // Raw data for re-analysis
   rawJson           Json?
+  
+  // Custom Notes (user-editable rich text notes)
+  notes             String?  @db.Text // User's custom notes in markdown format
+  notesUpdatedAt    DateTime? // When notes were last updated
   
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   reports           ReportNutrition[]
