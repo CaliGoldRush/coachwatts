@@ -54,6 +54,14 @@ async function fetchRooms() {
 async function fetchMessages({ room, options = {} }: any) {
   if (!room?.roomId) return
   
+  // Update current room ID to trigger UI switch
+  roomId.value = room.roomId
+  
+  if (options.reset) {
+    messages.value = []
+    messagesLoaded.value = false
+  }
+  
   try {
     const data = await $fetch(`/api/chat/messages?roomId=${room.roomId}`)
     
@@ -147,6 +155,7 @@ async function createRoom() {
             :current-user-id="currentUserId"
             :rooms="JSON.stringify(rooms)"
             :loading-rooms="loadingRooms"
+            :rooms-loaded="!loadingRooms"
             :messages="JSON.stringify(messages)"
             :room-id="roomId"
             :messages-loaded="messagesLoaded"
