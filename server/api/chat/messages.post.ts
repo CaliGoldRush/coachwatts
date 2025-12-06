@@ -51,30 +51,113 @@ export default defineEventHandler(async (event) => {
       recoveryCapacityExplanation: true,
       nutritionComplianceExplanation: true,
       trainingConsistencyExplanation: true,
+      currentFitnessExplanationJson: true,
+      recoveryCapacityExplanationJson: true,
+      nutritionComplianceExplanationJson: true,
+      trainingConsistencyExplanationJson: true,
       profileLastUpdated: true
     }
   })
 
-  // 3. Fetch Chat History (last 10 messages)
+  // 3. Fetch Chat History (last 50 messages)
   const history = await prisma.chatMessage.findMany({
     where: { roomId },
     orderBy: { createdAt: 'desc' },
-    take: 10
+    take: 50
   })
   
   const chronologicalHistory = history.reverse()
 
-  // 4. Build Athlete Context
-  let athleteContext = ''
+  // 4. Fetch Recent Activity Data (Last 7 Days)
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+  // Fetch recent workouts
+  const recentWorkouts = await prisma.workout.findMany({
+    where: {
+      userId,
+      date: { gte: sevenDaysAgo }
+    },
+    orderBy: { date: 'desc' },
+    select: {
+      id: true,
+      date: true,
+      title: true,
+      type: true,
+      durationSec: true,
+      distanceMeters: true,
+      averageWatts: true,
+      normalizedPower: true,
+      averageHr: true,
+      tss: true,
+      intensity: true,
+      trainingLoad: true,
+      rpe: true,
+      feel: true,
+      description: true,
+      overallScore: true,
+      aiAnalysisJson: true
+    }
+  })
+
+  // Fetch recent nutrition
+  const recentNutrition = await prisma.nutrition.findMany({
+    where: {
+      userId,
+      date: { gte: sevenDaysAgo }
+    },
+    orderBy: { date: 'desc' },
+    select: {
+      id: true,
+      date: true,
+      calories: true,
+      protein: true,
+      carbs: true,
+      fat: true,
+      fiber: true,
+      sugar: true,
+      aiAnalysisJson: true
+    }
+  })
+
+  // Fetch recent wellness
+  const recentWellness = await prisma.wellness.findMany({
+    where: {
+      userId,
+      date: { gte: sevenDaysAgo }
+    },
+    orderBy: { date: 'desc' },
+    select: {
+      id: true,
+      date: true,
+      recoveryScore: true,
+      hrv: true,
+      restingHr: true,
+      sleepHours: true,
+      sleepScore: true,
+      readiness: true,
+      fatigue: true,
+      soreness: true,
+      stress: true,
+      mood: true
+    }
+  })
+
+  // 5. Build Comprehensive Athlete Context
+  let athleteContext = '\n\n## Athlete Profile\n'
+  
   if (userProfile) {
-    athleteContext = '\n\n## Athlete Profile\n'
-    
     if (userProfile.name) athleteContext += `- **Name**: ${userProfile.name}\n`
     
     const metrics: string[] = []
     if (userProfile.ftp) metrics.push(`FTP: ${userProfile.ftp}W`)
     if (userProfile.maxHr) metrics.push(`Max HR: ${userProfile.maxHr} bpm`)
-    if (userProfile.weight) metrics.push(`Weight: ${userProfile.weight}kg`)
+    if (userProfile.weight) {
+      metrics.push(`Weight: ${userProfile.weight}kg`)
+      if (userProfile.ftp) {
+        metrics.push(`W/kg: ${(userProfile.ftp / userProfile.weight).toFixed(2)}`)
+      }
+    }
     if (userProfile.dob) {
       const age = Math.floor((Date.now() - new Date(userProfile.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
       metrics.push(`Age: ${age}`)
@@ -92,22 +175,94 @@ export default defineEventHandler(async (event) => {
       athleteContext += `- **Current Scores**: ${scores.join(', ')}\n`
     }
     
+    // Add detailed explanations with JSON insights
     if (userProfile.currentFitnessExplanation) {
       athleteContext += `\n### Fitness Insights\n${userProfile.currentFitnessExplanation}\n`
+      if (userProfile.currentFitnessExplanationJson) {
+        athleteContext += `\n**Structured Insights**: ${JSON.stringify(userProfile.currentFitnessExplanationJson)}\n`
+      }
     }
     if (userProfile.recoveryCapacityExplanation) {
       athleteContext += `\n### Recovery Insights\n${userProfile.recoveryCapacityExplanation}\n`
+      if (userProfile.recoveryCapacityExplanationJson) {
+        athleteContext += `\n**Structured Insights**: ${JSON.stringify(userProfile.recoveryCapacityExplanationJson)}\n`
+      }
     }
     if (userProfile.nutritionComplianceExplanation) {
       athleteContext += `\n### Nutrition Insights\n${userProfile.nutritionComplianceExplanation}\n`
+      if (userProfile.nutritionComplianceExplanationJson) {
+        athleteContext += `\n**Structured Insights**: ${JSON.stringify(userProfile.nutritionComplianceExplanationJson)}\n`
+      }
     }
     if (userProfile.trainingConsistencyExplanation) {
       athleteContext += `\n### Training Consistency Insights\n${userProfile.trainingConsistencyExplanation}\n`
+      if (userProfile.trainingConsistencyExplanationJson) {
+        athleteContext += `\n**Structured Insights**: ${JSON.stringify(userProfile.trainingConsistencyExplanationJson)}\n`
+      }
     }
     
     if (userProfile.profileLastUpdated) {
       athleteContext += `\n*Profile last updated: ${new Date(userProfile.profileLastUpdated).toLocaleDateString()}*\n`
     }
+  }
+
+  // Add Recent Activity Summary (Last 7 Days)
+  athleteContext += '\n\n## Recent Activity (Last 7 Days)\n'
+  
+  // Recent Workouts Summary
+  if (recentWorkouts.length > 0) {
+    athleteContext += `\n### Workouts (${recentWorkouts.length} activities)\n`
+    for (const workout of recentWorkouts) {
+      athleteContext += `- **${workout.date.toLocaleDateString()}**: ${workout.title || workout.type}\n`
+      athleteContext += `  - Duration: ${Math.round(workout.durationSec / 60)} min`
+      if (workout.distanceMeters) athleteContext += ` | Distance: ${(workout.distanceMeters / 1000).toFixed(1)} km`
+      if (workout.averageWatts) athleteContext += ` | Avg Power: ${workout.averageWatts}W`
+      if (workout.tss) athleteContext += ` | TSS: ${Math.round(workout.tss)}`
+      if (workout.overallScore) athleteContext += ` | Score: ${workout.overallScore}/10`
+      athleteContext += '\n'
+      
+      if (workout.aiAnalysisJson) {
+        athleteContext += `  - AI Analysis: ${JSON.stringify(workout.aiAnalysisJson)}\n`
+      }
+    }
+  } else {
+    athleteContext += '\n### Workouts\nNo workouts in the last 7 days\n'
+  }
+  
+  // Recent Nutrition Summary
+  if (recentNutrition.length > 0) {
+    athleteContext += `\n### Nutrition (${recentNutrition.length} days logged)\n`
+    for (const nutrition of recentNutrition) {
+      athleteContext += `- **${nutrition.date.toLocaleDateString()}**: `
+      athleteContext += `${nutrition.calories || 0} kcal`
+      if (nutrition.protein) athleteContext += ` | Protein: ${Math.round(nutrition.protein)}g`
+      if (nutrition.carbs) athleteContext += ` | Carbs: ${Math.round(nutrition.carbs)}g`
+      if (nutrition.fat) athleteContext += ` | Fat: ${Math.round(nutrition.fat)}g`
+      athleteContext += '\n'
+      
+      if (nutrition.aiAnalysisJson) {
+        athleteContext += `  - AI Analysis: ${JSON.stringify(nutrition.aiAnalysisJson)}\n`
+      }
+    }
+  } else {
+    athleteContext += '\n### Nutrition\nNo nutrition data in the last 7 days\n'
+  }
+  
+  // Recent Wellness Summary
+  if (recentWellness.length > 0) {
+    athleteContext += `\n### Wellness & Recovery (${recentWellness.length} days)\n`
+    for (const wellness of recentWellness) {
+      athleteContext += `- **${wellness.date.toLocaleDateString()}**: `
+      const metrics: string[] = []
+      if (wellness.recoveryScore) metrics.push(`Recovery: ${wellness.recoveryScore}%`)
+      if (wellness.hrv) metrics.push(`HRV: ${wellness.hrv}ms`)
+      if (wellness.sleepHours) metrics.push(`Sleep: ${wellness.sleepHours}h`)
+      if (wellness.sleepScore) metrics.push(`Sleep Score: ${wellness.sleepScore}%`)
+      if (wellness.readiness) metrics.push(`Readiness: ${wellness.readiness}%`)
+      athleteContext += metrics.join(' | ') + '\n'
+    }
+  } else {
+    athleteContext += '\n### Wellness & Recovery\nNo wellness data in the last 7 days\n'
   }
 
   // 5. Build System Instruction

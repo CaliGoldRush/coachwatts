@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
 
 definePageMeta({
   middleware: 'auth'
@@ -125,8 +125,17 @@ async function createRoom() {
     const newRoom = await $fetch('/api/chat/rooms', {
       method: 'POST'
     })
+    // Add new room to the beginning of the list
     rooms.value = [newRoom, ...rooms.value]
-    // Properly select the new room by calling fetchMessages
+    
+    // Wait for Vue to update the DOM with the new rooms list
+    await nextTick()
+    
+    // Now explicitly set the room ID and fetch messages
+    roomId.value = newRoom.roomId
+    await nextTick()
+    
+    // Fetch messages for the new room
     await fetchMessages({ room: newRoom, options: { reset: true } })
   } catch (error: any) {
     console.error('Error creating room:', error)
