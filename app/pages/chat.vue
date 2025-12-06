@@ -120,16 +120,6 @@ async function sendMessage({ content, roomId: rid, files, replyMessage }: any) {
   }
 }
 
-function handleSuggestionClick(suggestion: string, rid: string) {
-  // Send the suggestion as a new message
-  sendMessage({
-    content: suggestion,
-    roomId: rid,
-    files: null,
-    replyMessage: null
-  })
-}
-
 async function createRoom() {
   try {
     const newRoom = await $fetch('/api/chat/rooms', {
