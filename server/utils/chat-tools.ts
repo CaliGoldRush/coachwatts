@@ -12,6 +12,17 @@ import {
 } from './chat-tools/training-plan-tools'
 
 /**
+ * Format a Date object as YYYY-MM-DD string in local timezone
+ * This ensures dates displayed to the AI match what the user sees in the UI
+ */
+function formatDateLocal(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
  * Tool schemas for Gemini function calling
  * These define what tools the AI can use to fetch data from the database
  */
@@ -488,7 +499,7 @@ async function getRecentWorkouts(
     count: workouts.length,
     workouts: workouts.map((w) => ({
       id: w.id,
-      date: w.date.toISOString(),
+      date: w.date.toISOString(), // Keep ISO format for full timestamp
       title: w.title,
       type: w.type,
       duration_minutes: Math.round(w.durationSec / 60),
@@ -713,8 +724,8 @@ async function getNutritionLog(
       end: end.toISOString().split('T')[0],
     },
     entries: nutritionEntries.map((entry) => ({
-      id: entry.id,
-      date: entry.date.toISOString().split('T')[0],
+    id: entry.id,
+    date: formatDateLocal(entry.date),
       macros: {
         calories: entry.calories,
         protein: entry.protein ? Math.round(entry.protein) : null,
@@ -785,7 +796,7 @@ async function getWellnessMetrics(
       end: end.toISOString().split('T')[0],
     },
     metrics: wellness.map((w) => ({
-      date: w.date.toISOString().split('T')[0],
+      date: formatDateLocal(w.date),
       recovery: {
         recovery_score: w.recoveryScore,
         hrv: w.hrv,
@@ -849,8 +860,8 @@ async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
   const response: any = {
     period: {
       days: periodDays,
-      start_date: cutoff.toISOString().split('T')[0],
-      end_date: new Date().toISOString().split('T')[0],
+      start_date: formatDateLocal(cutoff),
+      end_date: formatDateLocal(new Date()),
       total_workouts: workouts.length,
     },
     summary: {
@@ -893,7 +904,7 @@ async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
   if (args.include_training_load !== false) {
     const dailyLoad: any = {}
     workouts.forEach((w) => {
-      const date = w.date.toISOString().split('T')[0]
+      const date = formatDateLocal(w.date)
       if (!dailyLoad[date]) {
         dailyLoad[date] = { tss: 0, training_load: 0, duration_hours: 0, count: 0 }
       }
