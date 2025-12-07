@@ -65,6 +65,9 @@ importers:
       chart.js:
         specifier: ^4.5.1
         version: 4.5.1
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
       marked:
         specifier: ^17.0.1
         version: 17.0.1
@@ -2694,6 +2697,9 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  date-fns@4.1.0:
+    resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
 
   db0@0.3.4:
     resolution: {integrity: sha512-RiXXi4WaNzPTHEOu8UPQKMooIbqOEyqA1t7Z6MsdxSCeb8iUC9ko3LcmsLmeUt2SM5bctfArZKkRQggKZz7JNw==}
@@ -8615,6 +8621,8 @@ snapshots:
       css-tree: 2.2.1
 
   csstype@3.2.3: {}
+
+  date-fns@4.1.0: {}
 
   db0@0.3.4(@electric-sql/pglite@0.3.2)(mysql2@3.15.3):
     optionalDependencies:
