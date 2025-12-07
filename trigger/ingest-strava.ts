@@ -55,6 +55,7 @@ export const ingestStravaTask = task({
       let workoutsUpserted = 0;
       let workoutsSkipped = 0;
       let detailsFetched = 0;
+      const triggeredWorkoutIds = new Set<string>();
       
       for (const activity of activities) {
         // Check if this activity already exists from Intervals.icu
@@ -123,15 +124,16 @@ export const ingestStravaTask = task({
         });
         workoutsUpserted++;
         
-        // Trigger stream ingestion for activities with pacing data
-        const pacingActivityTypes = ['Run', 'Ride', 'VirtualRide', 'Walk', 'Hike'];
-        if (pacingActivityTypes.includes(upsertedWorkout.type)) {
-          logger.log(`Triggering stream ingestion for ${upsertedWorkout.type} workout: ${upsertedWorkout.id}`);
+        // Trigger stream ingestion for activities with heart rate data
+        // This includes HR, power, cadence, altitude, and other time-series data
+        if (detailedActivity.has_heartrate || detailedActivity.device_watts) {
+          logger.log(`Triggering stream ingestion for ${upsertedWorkout.type} workout with HR/power data: ${upsertedWorkout.id}`);
           await tasks.trigger('ingest-strava-streams', {
             userId,
             workoutId: upsertedWorkout.id,
             activityId: activity.id
           });
+          triggeredWorkoutIds.add(upsertedWorkout.id);
         }
         
         // Add a small delay to avoid rate limiting (Strava allows 100 requests per 15 minutes)
@@ -142,6 +144,55 @@ export const ingestStravaTask = task({
         }
       }
       
+      // Check for recent workouts that are missing streams and backfill them (max 5)
+      // This catches workouts that might have been synced without streams initially or where stream ingestion failed
+      // We exclude workouts we just triggered to avoid duplicate jobs
+      logger.log("Checking for recent workouts missing streams...");
+      
+      const workoutsMissingStreams = await prisma.workout.findMany({
+        where: {
+          userId,
+          source: 'strava',
+          streams: null,
+          id: { notIn: Array.from(triggeredWorkoutIds) },
+          // Only backfill workouts that have HR or power data in the summary
+          OR: [
+            { averageHr: { not: null } },
+            { averageWatts: { not: null } }
+          ]
+        },
+        orderBy: {
+          date: 'desc'
+        },
+        take: 5
+      });
+
+      if (workoutsMissingStreams.length > 0) {
+        logger.log(`Found ${workoutsMissingStreams.length} recent workouts missing streams. Triggering ingestion...`);
+        
+        for (const workout of workoutsMissingStreams) {
+          // Verify we have a valid Strava ID
+          const activityId = parseInt(workout.externalId);
+          if (isNaN(activityId)) {
+            logger.log(`Skipping backfill for workout ${workout.id} - invalid externalId: ${workout.externalId}`);
+            continue;
+          }
+
+          logger.log(`Triggering backfill stream ingestion for workout ${workout.id} (Strava ID: ${activityId})`);
+          
+          await tasks.trigger('ingest-strava-streams', {
+            userId,
+            workoutId: workout.id,
+            activityId
+          });
+          
+          // Small delay to be safe
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      } else {
+        logger.log("No recent workouts found missing streams.");
+      }
+
       logger.log(`Strava sync complete: ${workoutsUpserted} upserted, ${workoutsSkipped} skipped, ${detailsFetched} detail API calls made`);
       
       logger.log(`Upserted ${workoutsUpserted} workouts from Strava`);

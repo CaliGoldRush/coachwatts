@@ -99,28 +99,39 @@ export const ingestYazioTask = task({
             continue
           }
           
-          // Check if we already have this date with product names
-          const existing = await prisma.nutrition.findUnique({
-            where: {
-              userId_date: {
-                userId,
-                date: new Date(Date.UTC(
-                  parseInt(date.split('-')[0]),
-                  parseInt(date.split('-')[1]) - 1,
-                  parseInt(date.split('-')[2])
-                ))
+          // Check if this is a recent date (today, yesterday, or last 2 days)
+          // Recent dates should always be re-synced to catch new meals added throughout the day
+          const dateObj = new Date(Date.UTC(
+            parseInt(date.split('-')[0]),
+            parseInt(date.split('-')[1]) - 1,
+            parseInt(date.split('-')[2])
+          ))
+          const today = new Date()
+          const daysDiff = Math.floor((today.getTime() - dateObj.getTime()) / (1000 * 60 * 60 * 24))
+          const isRecentDate = daysDiff <= 2 // Today, yesterday, or 2 days ago
+          
+          if (!isRecentDate) {
+            // For older dates, check if we already have complete data
+            const existing = await prisma.nutrition.findUnique({
+              where: {
+                userId_date: {
+                  userId,
+                  date: dateObj
+                }
+              }
+            })
+            
+            // Skip if record exists and already has product names (check first meal item)
+            if (existing && existing.breakfast) {
+              const firstItem = Array.isArray(existing.breakfast) ? existing.breakfast[0] : null
+              if (firstItem && (firstItem as any).product_name) {
+                cachedCount++
+                logger.log(`[${date}] ✓ Already has product names - skipping (older date)`)
+                continue
               }
             }
-          })
-          
-          // Skip if record exists and already has product names (check first meal item)
-          if (existing && existing.breakfast) {
-            const firstItem = Array.isArray(existing.breakfast) ? existing.breakfast[0] : null
-            if (firstItem && (firstItem as any).product_name) {
-              cachedCount++
-              logger.log(`[${date}] ✓ Already has product names - skipping`)
-              continue
-            }
+          } else {
+            logger.log(`[${date}] Recent date - will update even if data exists`)
           }
           
           logger.log(`[${date}] Processing ${productsCount} products + ${simpleProductsCount} simple_products`)

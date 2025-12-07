@@ -192,23 +192,48 @@ function findDuplicateGroups(workouts: any[]): DuplicateGroup[] {
 
 function areDuplicates(w1: any, w2: any): boolean {
   const timeDiff = Math.abs(new Date(w1.date).getTime() - new Date(w2.date).getTime());
-  const twelveHours = 12 * 60 * 60 * 1000; // Increased to handle timezone differences
-  if (timeDiff > twelveHours) {
-    logger.log(`Time diff too large: ${timeDiff}ms (${(timeDiff / (60 * 60 * 1000)).toFixed(1)}h) for workouts`, {
-      w1: { title: w1.title, date: w1.date, source: w1.source },
-      w2: { title: w2.title, date: w2.date, source: w2.source }
-    });
+  // With corrected UTC timestamps, workouts should be very close in time.
+  // Allow 30 minutes window for slight variations in start time recording between devices/platforms
+  const maxTimeDiff = 30 * 60 * 1000;
+  
+  if (timeDiff > maxTimeDiff) {
+    // Only log if they are somewhat close (e.g. within 2 hours) to avoid log spam for unrelated workouts
+    if (timeDiff < 2 * 60 * 60 * 1000) {
+      logger.log(`Time diff too large: ${timeDiff}ms (${(timeDiff / (60 * 1000)).toFixed(1)}min) for workouts`, {
+        w1: { title: w1.title, date: w1.date, source: w1.source },
+        w2: { title: w2.title, date: w2.date, source: w2.source }
+      });
+    }
     return false;
   }
   
   const durationDiff = Math.abs(w1.durationSec - w2.durationSec);
-  const fiveMinutes = 5 * 60;
+  
+  // Dynamic duration tolerance based on activity type and closeness of start time
+  // For activities like Skiing/Hiking where moving time vs elapsed time varies greatly, be more lenient
+  const isPauseHeavy = (w1.type?.includes('Ski') || w1.type?.includes('Snowboard') || w1.type?.includes('Hike') ||
+                        w2.type?.includes('Ski') || w2.type?.includes('Snowboard') || w2.type?.includes('Hike'));
+  
+  let maxDurationDiff = 5 * 60; // Default 5 mins
   const tenPercent = Math.max(w1.durationSec, w2.durationSec) * 0.1;
-  const maxDiff = Math.max(fiveMinutes, tenPercent);
-  if (durationDiff > maxDiff) {
-    logger.log(`Duration diff too large: ${durationDiff}s (max: ${maxDiff}s)`, {
-      w1: { title: w1.title, duration: w1.durationSec },
-      w2: { title: w2.title, duration: w2.durationSec }
+  maxDurationDiff = Math.max(maxDurationDiff, tenPercent);
+
+  // If start times are very close (< 10 mins), relax duration check significantly
+  // This handles cases where one device records "moving time" and another "elapsed time"
+  if (timeDiff < 10 * 60 * 1000) {
+     if (isPauseHeavy) {
+       // For skiing, etc., allow up to 90% difference or 60 mins
+       maxDurationDiff = Math.max(60 * 60, Math.max(w1.durationSec, w2.durationSec) * 0.9);
+     } else {
+       // For others, allow 50% difference or 30 mins
+       maxDurationDiff = Math.max(30 * 60, Math.max(w1.durationSec, w2.durationSec) * 0.5);
+     }
+  }
+
+  if (durationDiff > maxDurationDiff) {
+    logger.log(`Duration diff too large: ${durationDiff}s (max: ${maxDurationDiff}s)`, {
+      w1: { title: w1.title, duration: w1.durationSec, type: w1.type },
+      w2: { title: w2.title, duration: w2.durationSec, type: w2.type }
     });
     return false;
   }

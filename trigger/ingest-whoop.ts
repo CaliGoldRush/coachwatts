@@ -1,5 +1,5 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
-import { fetchWhoopRecovery, fetchWhoopSleep, normalizeWhoopRecovery } from "../server/utils/whoop";
+import { fetchWhoopRecovery, fetchWhoopSleep, fetchWhoopWorkouts, normalizeWhoopRecovery, normalizeWhoopWorkout } from "../server/utils/whoop";
 import { prisma } from "../server/utils/db";
 
 export const ingestWhoopTask = task({
@@ -40,6 +40,7 @@ export const ingestWhoopTask = task({
     
     try {
       // Fetch recovery data
+      // 1. Fetch Recovery Data (Wellness)
       const recoveryData = await fetchWhoopRecovery(
         integration,
         new Date(startDate),
@@ -49,7 +50,8 @@ export const ingestWhoopTask = task({
       logger.log(`[Whoop Ingest] Fetched ${recoveryData.length} recovery records`);
       
       // Re-fetch integration to get any updated tokens from the recovery fetch
-      const updatedIntegration = await prisma.integration.findUnique({
+      // We need to use the LATEST token for subsequent requests
+      let updatedIntegration = await prisma.integration.findUnique({
         where: { id: integration.id }
       });
       
@@ -89,10 +91,58 @@ export const ingestWhoopTask = task({
         upsertedCount++;
       }
       
-      logger.log(`[Whoop Ingest] Complete - Saved: ${upsertedCount}, Skipped (unscored): ${skippedCount}`);
+      logger.log(`[Whoop Ingest] Wellness Complete - Saved: ${upsertedCount}, Skipped: ${skippedCount}`);
+
+      // 2. Fetch Workout Data - DISABLED
+      // Workout ingestion from Whoop has been disabled to avoid duplicates with other sources
+      // The code below is kept for reference but will not execute
+      const WHOOP_WORKOUTS_ENABLED = false;
       
-      if (skippedCount > 0) {
-        logger.info(`[Whoop Ingest] Note: ${skippedCount} recovery records were skipped because they haven't been scored yet. This is normal for recent/current day data.`);
+      let workoutUpsertCount = 0;
+      
+      if (WHOOP_WORKOUTS_ENABLED) {
+        // Refresh integration again just in case (though unlikely to expire in seconds)
+        updatedIntegration = await prisma.integration.findUnique({ where: { id: integration.id } });
+        if (!updatedIntegration) throw new Error('Integration lost');
+
+        const workouts = await fetchWhoopWorkouts(
+          updatedIntegration,
+          new Date(startDate),
+          new Date(endDate)
+        );
+
+        logger.log(`[Whoop Ingest] Fetched ${workouts.length} workout records`);
+
+        for (const whoopWorkout of workouts) {
+          const normalizedWorkout = normalizeWhoopWorkout(whoopWorkout, userId);
+          
+          if (!normalizedWorkout) {
+            continue; // Skip unscored workouts
+          }
+
+          // Check if a Strava workout exists around the same time (duplicates)
+          // Similar to Strava logic: Match by date (5 min buffer) and type?
+          // Actually, for now, we just want to ingest them. The deduplication logic
+          // usually runs separately or we can rely on manual merging later.
+          // But to avoid obvious clutter, let's check for exact duplicates from Whoop source.
+          
+          await prisma.workout.upsert({
+            where: {
+              userId_source_externalId: {
+                userId,
+                source: 'whoop',
+                externalId: normalizedWorkout.externalId
+              }
+            },
+            update: normalizedWorkout,
+            create: normalizedWorkout
+          });
+          workoutUpsertCount++;
+        }
+        
+        logger.log(`[Whoop Ingest] Workouts Complete - Upserted: ${workoutUpsertCount}`);
+      } else {
+        logger.log(`[Whoop Ingest] Workouts Disabled - Skipping workout ingestion`);
       }
       
       // Update sync status
@@ -107,7 +157,8 @@ export const ingestWhoopTask = task({
       
       return {
         success: true,
-        count: upsertedCount,
+        wellnessCount: upsertedCount,
+        workoutCount: workoutUpsertCount,
         skipped: skippedCount,
         userId,
         startDate,
