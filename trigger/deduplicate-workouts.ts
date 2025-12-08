@@ -17,6 +17,7 @@ interface DuplicateGroup {
     averageWatts: number | null
     averageHr: number | null
     tss: number | null
+    plannedWorkoutId: string | null
   }>
   bestWorkoutId: string
   toDelete: string[]
@@ -67,7 +68,8 @@ export const deduplicateWorkoutsTask = task({
           id: workouts[0].id,
           title: workouts[0].title,
           source: workouts[0].source,
-          date: workouts[0].date
+          date: workouts[0].date,
+          plannedWorkoutId: workouts[0].plannedWorkoutId
         } : null
       });
       
@@ -87,6 +89,49 @@ export const deduplicateWorkoutsTask = task({
         });
         
         if (group.toDelete.length > 0) {
+          // Find if any of the workouts to delete have plannedWorkoutId links
+          const duplicatesToDelete = await prisma.workout.findMany({
+            where: {
+              id: { in: group.toDelete }
+            },
+            select: {
+              id: true,
+              plannedWorkoutId: true
+            }
+          });
+          
+          // Collect planned workout IDs from duplicates
+          const plannedWorkoutIds = duplicatesToDelete
+            .filter(w => w.plannedWorkoutId)
+            .map(w => w.plannedWorkoutId);
+          
+          // Get the best workout
+          const bestWorkout = group.workouts.find(w => w.id === group.bestWorkoutId);
+          
+          // If the best workout doesn't have a planned workout link but duplicates do,
+          // transfer the first planned workout link to the best workout
+          if (bestWorkout && !bestWorkout.plannedWorkoutId && plannedWorkoutIds.length > 0) {
+            logger.log(`Transferring planned workout link from duplicate to best workout`, {
+              bestWorkoutId: group.bestWorkoutId,
+              plannedWorkoutId: plannedWorkoutIds[0]
+            });
+            
+            await prisma.workout.update({
+              where: { id: group.bestWorkoutId },
+              data: {
+                plannedWorkoutId: plannedWorkoutIds[0]
+              }
+            });
+            
+            // Mark the planned workout as completed
+            await prisma.plannedWorkout.update({
+              where: { id: plannedWorkoutIds[0] as string },
+              data: {
+                completed: true
+              }
+            });
+          }
+          
           // Mark duplicates instead of deleting them
           await prisma.workout.updateMany({
             where: {
@@ -99,7 +144,6 @@ export const deduplicateWorkoutsTask = task({
           });
           
           // Update completeness score on the best workout
-          const bestWorkout = group.workouts.find(w => w.id === group.bestWorkoutId);
           if (bestWorkout) {
             await prisma.workout.update({
               where: { id: group.bestWorkoutId },
@@ -171,7 +215,8 @@ function findDuplicateGroups(workouts: any[]): DuplicateGroup[] {
         hasStreams: !!w.streams,
         averageWatts: w.averageWatts,
         averageHr: w.averageHr,
-        tss: w.tss
+        tss: w.tss,
+        plannedWorkoutId: w.plannedWorkoutId
       }));
       
       scoredWorkouts.sort((a, b) => b.completenessScore - a.completenessScore);
