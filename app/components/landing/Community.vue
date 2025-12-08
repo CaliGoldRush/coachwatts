@@ -45,7 +45,7 @@
         <!-- Testimonial 3 -->
         <figure class="rounded-2xl bg-gray-800 p-6 shadow-lg ring-1 ring-gray-700">
           <blockquote class="text-gray-300">
-            <p>"Open source means I can trust the algorithms. No black boxes, just pure data science applied to my physiology."</p>
+            <p>"Transparency means I can trust the algorithms. No black boxes, just pure data science applied to my physiology."</p>
           </blockquote>
           <figcaption class="mt-6 flex items-center gap-x-4">
             <UAvatar alt="David R" class="bg-yellow-500/20 text-yellow-500" size="sm" />

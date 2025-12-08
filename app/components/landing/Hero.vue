@@ -4,7 +4,7 @@
       <div class="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl lg:flex-shrink-0 lg:pt-8">
         <div class="mt-24 sm:mt-32 lg:mt-16">
           <a href="https://github.com/coach-wattz/coach-wattz" target="_blank" class="inline-flex space-x-6">
-            <span class="rounded-full bg-primary-500/10 px-3 py-1 text-sm font-semibold leading-6 text-primary-400 ring-1 ring-inset ring-primary-500/20">Open Source</span>
+            <span class="rounded-full bg-primary-500/10 px-3 py-1 text-sm font-semibold leading-6 text-primary-400 ring-1 ring-inset ring-primary-500/20">Accessible</span>
             <span class="inline-flex items-center space-x-2 text-sm font-medium leading-6 text-gray-300">
               <span>View the Architecture</span>
               <UIcon name="i-heroicons-chevron-right" class="h-5 w-5 text-gray-500" />
@@ -13,10 +13,10 @@
         </div>
         <h1 class="mt-10 text-4xl font-bold tracking-tight text-white sm:text-6xl font-mono">
           Elite Coaching. <br />
-          <span class="text-primary-500">Open Source.</span>
+          <span class="text-primary-500">For Everyone.</span>
         </h1>
         <p class="mt-6 text-lg leading-8 text-gray-300">
-          The first AI Endurance Coach built by cybersecurity experts. Secure, data-driven, and completely free. Turn your Strava data into a gold medal strategy.
+          The first AI Endurance Coach built by cybersecurity experts. Secure, data-driven, and completely free. Turn your fitness data into a gold medal strategy.
         </p>
         <div class="mt-10 flex items-center gap-x-6">
           <UButton

@@ -25,7 +25,7 @@
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <div class="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <p class="text-sm text-gray-400">
-            &copy; 2025 Coach Watts. Open Source MIT License.
+            &copy; 2025 Coach Watts. All rights reserved.
           </p>
           <div class="flex gap-6">
             <a href="https://github.com/coach-wattz/coach-wattz" class="text-sm text-gray-400 hover:text-white">GitHub</a>
