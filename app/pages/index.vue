@@ -16,7 +16,7 @@
           </p>
           <div class="mt-10 flex items-center justify-center gap-x-6">
              <UButton size="xl" to="/login" color="primary">Get Started for Free</UButton>
-             <UButton size="xl" to="https://github.com/coach-wattz/coach-wattz" target="_blank" color="neutral" variant="ghost">View on GitHub <span aria-hidden="true">→</span></UButton>
+             <UButton size="xl" to="/stories" color="neutral" variant="ghost">Read Success Stories <span aria-hidden="true">→</span></UButton>
           </div>
        </div>
     </div>
@@ -29,7 +29,6 @@
             &copy; 2025 Coach Watts. All rights reserved.
           </p>
           <div class="flex gap-6">
-            <a href="https://github.com/coach-wattz/coach-wattz" class="text-sm text-gray-400 hover:text-white">GitHub</a>
             <a href="#" class="text-sm text-gray-400 hover:text-white">Discord</a>
             <a href="#" class="text-sm text-gray-400 hover:text-white">Docs</a>
           </div>

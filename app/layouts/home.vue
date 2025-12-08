@@ -10,7 +10,7 @@
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300">
           <NuxtLink to="/#how-it-works" class="hover:text-primary transition-colors">How it Works</NuxtLink>
           <NuxtLink to="/#pricing" class="hover:text-primary transition-colors">Pricing</NuxtLink>
-          <NuxtLink to="https://github.com/coach-wattz/coach-wattz" target="_blank" class="hover:text-primary transition-colors">GitHub</NuxtLink>
+          <NuxtLink to="/stories" class="hover:text-primary transition-colors">Stories</NuxtLink>
         </nav>
 
         <div class="flex items-center gap-2">
@@ -60,7 +60,6 @@
           </div>
           <div class="flex gap-4">
             <UButton icon="i-lucide-twitter" color="gray" variant="ghost" to="https://twitter.com" target="_blank" />
-            <UButton icon="i-lucide-github" color="gray" variant="ghost" to="https://github.com" target="_blank" />
           </div>
         </div>
       </UContainer>
