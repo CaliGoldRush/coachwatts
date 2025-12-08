@@ -1,10 +1,40 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-    <div class="text-center">
-      <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Coach Watts</h1>
-      <p class="text-gray-600 dark:text-gray-300 mb-8">Your AI-Powered Cycling Coach</p>
-      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 mx-auto animate-spin text-primary" />
+  <div class="bg-gray-900 min-h-screen">
+    <LandingHero />
+    <LandingHowItWorks />
+    <LandingFeatureBento />
+    <LandingCommunity />
+    <LandingPricing />
+    
+    <!-- CTA Final -->
+    <div class="relative isolate overflow-hidden bg-gray-900 px-6 py-24 sm:py-32 lg:px-8">
+       <div class="mx-auto max-w-2xl text-center">
+          <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to reach your peak?</h2>
+          <p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">
+             Join hundreds of endurance athletes using Coach Watts to train smarter every day.
+          </p>
+          <div class="mt-10 flex items-center justify-center gap-x-6">
+             <UButton size="xl" to="/login" color="primary">Get Started for Free</UButton>
+             <UButton size="xl" to="https://github.com/coach-wattz/coach-wattz" target="_blank" color="neutral" variant="ghost">View on GitHub <span aria-hidden="true">→</span></UButton>
+          </div>
+       </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 py-12 border-t border-gray-800">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <div class="flex flex-col items-center justify-between gap-6 sm:flex-row">
+          <p class="text-sm text-gray-400">
+            &copy; 2025 Coach Watts. Open Source MIT License.
+          </p>
+          <div class="flex gap-6">
+            <a href="https://github.com/coach-wattz/coach-wattz" class="text-sm text-gray-400 hover:text-white">GitHub</a>
+            <a href="#" class="text-sm text-gray-400 hover:text-white">Discord</a>
+            <a href="#" class="text-sm text-gray-400 hover:text-white">Docs</a>
+          </div>
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -13,14 +43,13 @@ const { status } = useAuth()
 
 definePageMeta({
   layout: 'home',
-  auth: false // Explicitly disable auth middleware for this page
+  auth: false 
 })
 
+// Only redirect if authenticated, otherwise stay on landing page
 watchEffect(() => {
   if (status.value === 'authenticated') {
     navigateTo('/dashboard')
-  } else if (status.value === 'unauthenticated') {
-    navigateTo('/home') // Redirect to /home for unauthenticated users
   }
 })
 </script>
