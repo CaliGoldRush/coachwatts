@@ -208,7 +208,7 @@ const REPORT_TYPE_CONFIG = {
   'LAST_3_WORKOUTS': {
     label: 'Last 3 Workouts Analysis',
     icon: 'i-heroicons-chart-bar',
-    description: 'Analyze your 3 most recent cycling workouts to identify trends, progression, and recovery patterns.'
+    description: 'Analyze your 3 most recent endurance workouts to identify trends, progression, and recovery patterns.'
   },
   'WEEKLY_ANALYSIS': {
     label: 'Weekly Training Analysis',

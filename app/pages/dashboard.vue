@@ -25,7 +25,7 @@
         <div class="p-6 space-y-6">
           <div>
             <h2 class="text-2xl font-bold">Welcome to Coach Watts!</h2>
-            <p class="mt-2 text-muted">Your AI-powered cycling coach is ready to help you optimize your training.</p>
+            <p class="mt-2 text-muted">Your AI-powered endurance coach is ready to help you optimize your training.</p>
           </div>
         
           <!-- Row 1: Athlete Profile / Today's Training / Performance Overview -->
