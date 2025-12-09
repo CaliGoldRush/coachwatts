@@ -23,9 +23,9 @@
         </div>
       </div>
       
-      <UDropdown :items="actions" position="bottom-end">
+      <UDropdownMenu :items="actions">
         <UButton color="neutral" variant="ghost" icon="i-heroicons-ellipsis-vertical" size="xs" />
-      </UDropdown>
+      </UDropdownMenu>
     </div>
     
     <div class="mt-4">
@@ -97,17 +97,15 @@ const priorityColor = computed(() => {
   }
 })
 
-const actions = [
-  [{
-    label: 'Edit Goal',
-    icon: 'i-heroicons-pencil',
-    click: () => emit('edit', props.goal)
-  }, {
-    label: 'Delete Goal',
-    icon: 'i-heroicons-trash',
-    click: () => emit('delete', props.goal.id)
-  }]
-]
+const actions = [{
+  label: 'Edit Goal',
+  icon: 'i-heroicons-pencil',
+  onSelect: () => emit('edit', props.goal)
+}, {
+  label: 'Delete Goal',
+  icon: 'i-heroicons-trash',
+  onSelect: () => emit('delete', props.goal.id)
+}]
 
 function formatDate(dateString: string) {
   if (!dateString) return ''
