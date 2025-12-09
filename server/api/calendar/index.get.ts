@@ -87,7 +87,8 @@ export default defineEventHandler(async (event) => {
       restingHr: d.restingHr,
       sleepScore: d.sleepScore,
       hoursSlept: d.hoursSlept,
-      recoveryScore: d.recoveryScore
+      recoveryScore: d.recoveryScore,
+      weight: null
     })
   }
   for (const w of wellness) {
@@ -98,7 +99,8 @@ export default defineEventHandler(async (event) => {
       restingHr: w.restingHr ?? existing.restingHr,
       sleepScore: w.sleepQuality ?? w.sleepScore ?? existing.sleepScore,
       hoursSlept: w.sleepHours ?? existing.hoursSlept,
-      recoveryScore: w.recoveryScore ?? existing.recoveryScore
+      recoveryScore: w.recoveryScore ?? existing.recoveryScore,
+      weight: w.weight ?? existing.weight
     })
   }
   
