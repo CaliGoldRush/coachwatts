@@ -33,9 +33,18 @@
             <!-- Athlete Profile Card - shown when connected -->
             <UCard v-if="intervalsConnected" class="flex flex-col">
               <template #header>
-                <div class="flex items-center gap-2">
-                  <UIcon name="i-heroicons-user-circle" class="w-5 h-5" />
-                  <h3 class="font-semibold">Athlete Profile</h3>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-heroicons-user-circle" class="w-5 h-5" />
+                    <h3 class="font-semibold">Athlete Profile</h3>
+                  </div>
+                  <UButton
+                    to="/profile/settings"
+                    icon="i-heroicons-pencil"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                  />
                 </div>
               </template>
               

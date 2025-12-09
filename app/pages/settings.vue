@@ -10,14 +10,6 @@
       <UDashboardToolbar>
         <div class="flex gap-2">
           <UButton
-            :variant="activeTab === 'profile' ? 'solid' : 'ghost'"
-            :color="activeTab === 'profile' ? 'primary' : 'neutral'"
-            @click="navigateTo('/settings?tab=profile')"
-          >
-            <UIcon name="i-lucide-user" class="w-4 h-4 mr-2" />
-            Profile
-          </UButton>
-          <UButton
             :variant="activeTab === 'connected-apps' ? 'solid' : 'ghost'"
             :color="activeTab === 'connected-apps' ? 'primary' : 'neutral'"
             @click="navigateTo('/settings?tab=connected-apps')"
@@ -39,46 +31,6 @@
 
     <template #body>
       <div class="p-6 max-w-4xl mx-auto space-y-6">
-        <!-- Profile Tab -->
-        <UCard v-if="activeTab === 'profile'">
-          <template #header>
-            <h2 class="text-xl font-semibold">Profile Settings</h2>
-          </template>
-          
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-1">Email</label>
-              <p>{{ user?.email }}</p>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium mb-1">FTP (Watts)</label>
-                <UInput type="number" placeholder="250" />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium mb-1">Max HR</label>
-                <UInput type="number" placeholder="185" />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium mb-1">Weight (kg)</label>
-                <UInput type="number" step="0.1" placeholder="70.0" />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium mb-1">Date of Birth</label>
-                <UInput type="date" />
-              </div>
-            </div>
-            
-            <UButton color="primary">
-              Save Profile
-            </UButton>
-          </div>
-        </UCard>
-
         <!-- Connected Apps Tab -->
         <UCard v-if="activeTab === 'connected-apps'">
           <template #header>
@@ -271,8 +223,8 @@ definePageMeta({
   middleware: 'auth'
 })
 
-// Tab navigation - initialize from URL query parameter or default to 'profile'
-const activeTab = ref<string>(route.query.tab as string || 'profile')
+// Tab navigation - initialize from URL query parameter or default to 'connected-apps'
+const activeTab = ref<string>(route.query.tab as string || 'connected-apps')
 
 // Watch for route query changes to update active tab
 watch(() => route.query.tab, (newTab) => {
