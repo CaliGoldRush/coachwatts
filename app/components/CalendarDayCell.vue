@@ -53,18 +53,33 @@
             </div>
             
             <!-- Metrics -->
-            <div class="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-              <span v-if="activity.duration || activity.plannedDuration">
-                {{ formatDuration(activity.duration || activity.plannedDuration || 0) }}
+            <div class="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+              <span class="inline-block w-10 text-left">
+                <span v-if="activity.duration || activity.plannedDuration">
+                  {{ formatDuration(activity.duration || activity.plannedDuration || 0) }}
+                </span>
               </span>
-              <span v-if="activity.tss || activity.plannedTss" class="flex items-center gap-0.5">
-                <span class="w-3 h-0.5 rounded-full"
-                  :class="{
-                    'bg-green-500': activity.source === 'completed',
-                    'bg-amber-500': activity.source === 'planned'
-                  }"
-                ></span>
-                {{ Math.round(activity.tss || activity.plannedTss || 0) }}
+              <span class="inline-block w-11 text-left">
+                <span v-if="activity.distance || activity.plannedDistance">
+                  {{ formatDistance(activity.distance || activity.plannedDistance || 0) }}
+                </span>
+              </span>
+              <span class="inline-flex items-center gap-0.5 w-8">
+                <template v-if="activity.averageHr">
+                  <UIcon name="i-heroicons-heart" class="w-2.5 h-2.5 flex-shrink-0 text-red-500 dark:text-red-400" />
+                  <span class="text-red-500 dark:text-red-400">{{ Math.round(activity.averageHr) }}</span>
+                </template>
+              </span>
+              <span class="inline-flex items-center gap-0.5">
+                <template v-if="activity.tss || activity.plannedTss">
+                  <span class="w-3 h-0.5 rounded-full flex-shrink-0"
+                    :class="{
+                      'bg-green-500': activity.source === 'completed',
+                      'bg-amber-500': activity.source === 'planned'
+                    }"
+                  ></span>
+                  {{ Math.round(activity.tss || activity.plannedTss || 0) }}
+                </template>
               </span>
             </div>
 
@@ -143,9 +158,19 @@ function formatDuration(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60)
   
   if (h > 0) {
-    return `${h}h${m > 0 ? ` ${m}m` : ''}`
+    return `${h}h${m > 0 ? `${m}m` : ''}`
   }
   return `${m}m`
+}
+
+function formatDistance(meters: number): string {
+  const km = meters / 1000
+  if (km >= 10) {
+    return `${Math.round(km)}km`
+  } else if (km >= 1) {
+    return `${km.toFixed(1)}km`
+  }
+  return `${Math.round(meters)}m`
 }
 
 function getNutritionClass(metric: 'calories' | 'protein' | 'carbs' | 'fat'): string {
