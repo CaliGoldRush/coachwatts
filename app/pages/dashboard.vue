@@ -72,57 +72,69 @@
               
               <!-- Actual profile data -->
               <div v-else class="space-y-3 text-sm flex-grow">
-                <div>
+                <div class="flex items-center gap-2">
                   <p class="font-medium text-base">{{ profile.name || 'Athlete' }}</p>
-                  <p v-if="profile.age" class="text-muted text-xs mt-1">
+                  <p v-if="profile.age" class="text-muted text-xs">
                     {{ profile.age }} years old
                   </p>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 pt-2 border-t">
-                  <div>
-                    <p class="text-xs text-muted">FTP</p>
-                    <p class="font-semibold">{{ profile.ftp ? `${profile.ftp}W` : 'Not set' }}</p>
+                <!-- Performance Section - Clickable -->
+                <NuxtLink
+                  to="/performance"
+                  class="block w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors"
+                >
+                  <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-medium text-yellow-600 dark:text-yellow-400">Performance</p>
+                    <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-gray-400" />
                   </div>
-                  <div>
-                    <p class="text-xs text-muted">Weight</p>
-                    <p class="font-semibold">{{ profile.weight ? `${profile.weight}kg` : 'N/A' }}</p>
+                  <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div class="flex items-center gap-1">
+                      <UIcon name="i-heroicons-bolt-solid" class="w-3 h-3 text-yellow-500" />
+                      <span class="text-muted">FTP:</span>
+                      <span class="font-medium">{{ profile.ftp ? `${profile.ftp}W` : 'N/A' }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <UIcon name="i-heroicons-scale" class="w-3 h-3 text-yellow-500" />
+                      <span class="text-muted">Weight:</span>
+                      <span class="font-medium">{{ profile.weight ? `${profile.weight}kg` : 'N/A' }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <UIcon name="i-heroicons-chart-bar-square" class="w-3 h-3 text-yellow-500" />
+                      <span class="text-muted">W/kg:</span>
+                      <span class="font-medium">{{ profile.ftp && profile.weight ? (profile.ftp / profile.weight).toFixed(2) : 'N/A' }}</span>
+                    </div>
                   </div>
-                  <div>
-                    <p class="text-xs text-muted">W/kg</p>
-                    <p class="font-semibold">{{ profile.ftp && profile.weight ? (profile.ftp / profile.weight).toFixed(2) : 'N/A' }}</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-muted">Resting HR</p>
-                    <p class="font-semibold">{{ profile.restingHR ? `${profile.restingHR}` : 'N/A' }}</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-muted">Recent HRV</p>
-                    <p class="font-semibold">{{ profile.recentHRV ? `${Math.round(profile.recentHRV)}` : 'N/A' }}</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-muted">7d HRV avg</p>
-                    <p class="font-semibold">{{ profile.avgRecentHRV ? `${Math.round(profile.avgRecentHRV)}` : 'N/A' }}</p>
-                  </div>
-                </div>
+                </NuxtLink>
                 
                 <!-- Wellness Section - Clickable -->
                 <button
                   v-if="profile.recentHRV || profile.restingHR || profile.recentSleep || profile.recentRecoveryScore"
                   @click="openWellnessModal"
-                  class="mt-3 pt-3 border-t w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors"
+                  class="w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors"
                 >
                   <div class="flex items-center justify-between mb-2">
                     <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400">Latest Wellness</p>
                     <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-gray-400" />
                   </div>
-                  <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="grid grid-cols-3 gap-2 text-xs">
                     <div v-if="profile.recentSleep" class="flex items-center gap-1">
                       <UIcon name="i-heroicons-moon" class="w-3 h-3 text-indigo-500" />
                       <span class="text-muted">Sleep:</span>
                       <span class="font-medium">{{ profile.recentSleep.toFixed(1) }}h</span>
                     </div>
-                    <div v-if="profile.recentRecoveryScore" class="flex items-center gap-1">
+                    <div v-if="profile.recentHRV" class="flex items-center gap-1">
+                      <UIcon name="i-heroicons-chart-bar" class="w-3 h-3 text-indigo-500" />
+                      <span class="text-muted">HRV:</span>
+                      <span class="font-medium">{{ Math.round(profile.recentHRV) }}</span>
+                      <span v-if="profile.avgRecentHRV" class="text-[10px] text-muted">(7d: {{ Math.round(profile.avgRecentHRV) }})</span>
+                    </div>
+                    <div v-if="profile.restingHR" class="flex items-center gap-1">
+                      <UIcon name="i-heroicons-heart" class="w-3 h-3 text-indigo-500" />
+                      <span class="text-muted">RHR:</span>
+                      <span class="font-medium">{{ profile.restingHR }}</span>
+                    </div>
+                    <div v-if="profile.recentRecoveryScore" class="flex items-center gap-1 col-span-2">
                       <UIcon name="i-heroicons-bolt" class="w-3 h-3 text-indigo-500" />
                       <span class="text-muted">Recovery:</span>
                       <span class="font-medium">{{ profile.recentRecoveryScore }}/100</span>
@@ -633,7 +645,23 @@ const scoreModalData = ref<{
   color: undefined
 })
 
-const profile = computed(() => profileData.value?.profile as any || null)
+const profile = computed(() => {
+  const p = profileData.value?.profile as any || null
+  if (p) {
+    console.log('[Dashboard Vue] Profile data received:', {
+      name: p.name,
+      recentHRV: p.recentHRV,
+      avgRecentHRV: p.avgRecentHRV,
+      restingHR: p.restingHR,
+      recentSleep: p.recentSleep,
+      recentRecoveryScore: p.recentRecoveryScore,
+      latestWellnessDate: p.latestWellnessDate
+    })
+  } else {
+    console.log('[Dashboard Vue] No profile data')
+  }
+  return p
+})
 const hasReports = computed(() => profileData.value?.hasReports ?? false)
 const dataSyncStatus = computed(() => profileData.value?.dataSyncStatus ?? {
   workouts: false,

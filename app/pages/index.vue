@@ -16,7 +16,7 @@
           Join hundreds of endurance athletes using Coach Watts to train smarter every day.
         </p>
         <div class="mt-10 flex items-center justify-center gap-x-6">
-          <UButton size="xl" to="/login" color="primary">Get Started for Free</UButton>
+          <UButton size="xl" to="/join" color="primary">Get Started for Free</UButton>
           <UButton size="xl" to="/stories" color="neutral" variant="ghost">Read Success Stories <span
               aria-hidden="true">→</span></UButton>
         </div>
