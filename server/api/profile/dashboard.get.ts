@@ -58,6 +58,64 @@ export default defineEventHandler(async (event) => {
       }
     })
     
+    // Also check DailyMetric as fallback
+    const recentDailyMetrics = await prisma.dailyMetric.findMany({
+      where: {
+        userId: user.id,
+        date: {
+          gte: sevenDaysAgo
+        }
+      },
+      orderBy: {
+        date: 'desc'
+      },
+      take: 7,
+      select: {
+        date: true,
+        restingHr: true,
+        hrv: true,
+        sleepScore: true,
+        hoursSlept: true
+      }
+    })
+    
+    // Merge wellness data, preferring Wellness table over DailyMetric
+    const mergedWellness = [...recentWellness]
+    for (const metric of recentDailyMetrics) {
+      const existing = mergedWellness.find(w =>
+        w.date.toISOString().split('T')[0] === metric.date.toISOString().split('T')[0]
+      )
+      if (!existing) {
+        // No Wellness entry for this date, use DailyMetric
+        mergedWellness.push({
+          date: metric.date,
+          restingHr: metric.restingHr,
+          hrv: metric.hrv,
+          weight: null,
+          readiness: null,
+          sleepHours: metric.hoursSlept,
+          recoveryScore: metric.sleepScore
+        })
+      } else {
+        // Wellness exists, but fill in null values from DailyMetric
+        if (existing.restingHr == null && metric.restingHr != null) {
+          existing.restingHr = metric.restingHr
+        }
+        if (existing.hrv == null && metric.hrv != null) {
+          existing.hrv = metric.hrv
+        }
+        if (existing.sleepHours == null && metric.hoursSlept != null) {
+          existing.sleepHours = metric.hoursSlept
+        }
+        if (existing.recoveryScore == null && metric.sleepScore != null) {
+          existing.recoveryScore = metric.sleepScore
+        }
+      }
+    }
+    
+    // Sort merged data by date
+    mergedWellness.sort((a, b) => b.date.getTime() - a.date.getTime())
+    
     // Calculate age from date of birth
     const calculateAge = (dob: Date): number | null => {
       if (!dob) return null
@@ -71,23 +129,26 @@ export default defineEventHandler(async (event) => {
     }
     
     // Calculate 7-day HRV average
-    const hrvValues = recentWellness
+    const hrvValues = mergedWellness
       .map(w => w.hrv)
       .filter(v => v != null) as number[]
     const avgRecentHRV = hrvValues.length > 0
       ? hrvValues.reduce((a, b) => a + b, 0) / hrvValues.length
       : null
     
-    // Get most recent values
-    const mostRecent = recentWellness[0]
-    const recentRestingHR = mostRecent?.restingHr ?? recentWellness.find(w => w.restingHr != null)?.restingHr ?? null
-    const recentHRV = mostRecent?.hrv ?? recentWellness.find(w => w.hrv != null)?.hrv ?? null
-    const recentWeight = mostRecent?.weight ?? user.weight
+    // Get most recent values - skip records where key values are all null
+    const mostRecentWithData = mergedWellness.find(w =>
+      w.hrv != null || w.restingHr != null || w.sleepHours != null || w.recoveryScore != null
+    )
     
-    // Get additional wellness metrics from most recent entry
-    const latestWellnessDate = mostRecent?.date ?? null
-    const recentSleep = mostRecent?.sleepHours ?? recentWellness.find(w => w.sleepHours != null)?.sleepHours ?? null
-    const recentRecoveryScore = mostRecent?.recoveryScore ?? recentWellness.find(w => w.recoveryScore != null)?.recoveryScore ?? null
+    const recentRestingHR = mostRecentWithData?.restingHr ?? mergedWellness.find(w => w.restingHr != null)?.restingHr ?? null
+    const recentHRV = mostRecentWithData?.hrv ?? mergedWellness.find(w => w.hrv != null)?.hrv ?? null
+    const recentWeight = mostRecentWithData?.weight ?? user.weight
+    
+    // Get additional wellness metrics from most recent entry with data
+    const latestWellnessDate = mostRecentWithData?.date ?? null
+    const recentSleep = mostRecentWithData?.sleepHours ?? mergedWellness.find(w => w.sleepHours != null)?.sleepHours ?? null
+    const recentRecoveryScore = mostRecentWithData?.recoveryScore ?? mergedWellness.find(w => w.recoveryScore != null)?.recoveryScore ?? null
     
     // Check if user has any reports
     const reportCount = await prisma.report.count({
@@ -139,16 +200,22 @@ export default defineEventHandler(async (event) => {
     // Debug logging
     console.log('[Dashboard API] Recent wellness query results:', {
       recordsFound: recentWellness.length,
-      mostRecent: mostRecent ? {
-        date: mostRecent.date,
-        restingHr: mostRecent.restingHr,
-        hrv: mostRecent.hrv,
-        weight: mostRecent.weight
+      mergedRecordsCount: mergedWellness.length,
+      mostRecentWithData: mostRecentWithData ? {
+        date: mostRecentWithData.date,
+        restingHr: mostRecentWithData.restingHr,
+        hrv: mostRecentWithData.hrv,
+        weight: mostRecentWithData.weight,
+        sleepHours: mostRecentWithData.sleepHours,
+        recoveryScore: mostRecentWithData.recoveryScore
       } : null,
       extracted: {
         recentRestingHR,
         recentHRV,
-        recentWeight
+        recentWeight,
+        recentSleep,
+        recentRecoveryScore,
+        latestWellnessDate: latestWellnessDate?.toISOString()
       },
       reportCount
     })
