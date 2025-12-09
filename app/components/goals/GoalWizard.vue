@@ -22,16 +22,16 @@
 
     <!-- Step 2: Configure -->
     <div v-else-if="step === 2" class="space-y-6">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
           <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" @click="step = 1" />
-          <h3 class="text-lg font-semibold">Configure {{ selectedTypeLabel }} Goal</h3>
+          <h3 class="text-xl font-semibold">Configure {{ selectedTypeLabel }} Goal</h3>
         </div>
-        <UButton 
-          v-if="aiSuggestionAvailable" 
-          icon="i-heroicons-sparkles" 
-          size="xs" 
-          color="primary" 
+        <UButton
+          v-if="aiSuggestionAvailable"
+          icon="i-heroicons-sparkles"
+          size="sm"
+          color="primary"
           variant="soft"
           @click="generateAiSuggestion"
           :loading="generatingSuggestion"
@@ -40,109 +40,161 @@
         </UButton>
       </div>
 
-      <div class="space-y-6">
-        <UFormGroup label="Goal Title" help="Give your goal a clear, inspiring name">
-          <UInput v-model="form.title" placeholder="e.g. Sub-3 Hour Marathon" icon="i-heroicons-tag" autofocus />
-        </UFormGroup>
+      <div class="space-y-5">
+        <div>
+          <label class="flex items-center gap-2 text-sm font-medium mb-2">
+            <UIcon name="i-heroicons-tag" class="w-4 h-4 text-muted" />
+            Goal Title
+          </label>
+          <UInput v-model="form.title" placeholder="e.g. Lose 3kg in 8 weeks" size="lg" autofocus />
+        </div>
 
         <!-- Body Composition Fields -->
         <template v-if="selectedType === 'BODY_COMPOSITION'">
-          <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <UFormGroup label="Start Weight" help="Current">
-                <UInput v-model="form.startValue" type="number" placeholder="0.0">
-                  <template #trailing><span class="text-gray-500 text-xs">kg</span></template>
-                </UInput>
-              </UFormGroup>
-              <UFormGroup label="Target Weight" help="Goal">
-                <UInput v-model="form.targetValue" type="number" placeholder="0.0">
-                  <template #trailing><span class="text-gray-500 text-xs">kg</span></template>
-                </UInput>
-              </UFormGroup>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium mb-2 block">Start Weight</label>
+              <UInputNumber
+                v-model="form.startValue"
+                placeholder="99.0"
+                size="lg"
+                :min="0"
+                :step="0.1"
+                :format-options="{ minimumFractionDigits: 1, maximumFractionDigits: 1 }"
+              />
+              <p class="text-xs text-muted mt-1">Current weight in kg</p>
             </div>
-            <UFormGroup label="Target Date" help="When do you want to achieve this?">
-              <UInput v-model="form.targetDate" type="date" icon="i-heroicons-calendar" />
-            </UFormGroup>
+            <div>
+              <label class="text-sm font-medium mb-2 block">Target Weight</label>
+              <UInputNumber
+                v-model="form.targetValue"
+                placeholder="96.0"
+                size="lg"
+                :min="0"
+                :step="0.1"
+                :format-options="{ minimumFractionDigits: 1, maximumFractionDigits: 1 }"
+              />
+              <p class="text-xs text-muted mt-1">Goal weight in kg</p>
+            </div>
+          </div>
+          <div>
+            <label class="flex items-center gap-2 text-sm font-medium mb-2">
+              <UIcon name="i-heroicons-calendar" class="w-4 h-4 text-muted" />
+              Target Date
+            </label>
+            <UInput v-model="form.targetDate" type="date" size="lg" />
+            <p class="text-xs text-muted mt-1">When do you want to achieve this?</p>
           </div>
         </template>
 
         <!-- Event Fields -->
         <template v-if="selectedType === 'EVENT'">
-          <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg space-y-4">
-            <UFormGroup label="Event Date" help="The big day">
-              <UInput v-model="form.eventDate" type="date" icon="i-heroicons-calendar" />
-            </UFormGroup>
-            <UFormGroup label="Event Type" help="What kind of challenge is it?">
-              <USelectMenu 
-                v-model="form.eventType" 
-                :options="['Race', 'Gran Fondo', 'Time Trial', 'Triathlon', 'Running Race', 'Other']" 
-                icon="i-heroicons-trophy"
-              />
-            </UFormGroup>
+          <div>
+            <label class="flex items-center gap-2 text-sm font-medium mb-2">
+              <UIcon name="i-heroicons-calendar" class="w-4 h-4 text-muted" />
+              Event Date
+            </label>
+            <UInput v-model="form.eventDate" type="date" size="lg" />
+            <p class="text-xs text-muted mt-1">The big day</p>
+          </div>
+          <div>
+            <label class="flex items-center gap-2 text-sm font-medium mb-2">
+              <UIcon name="i-heroicons-trophy" class="w-4 h-4 text-muted" />
+              Event Type
+            </label>
+            <USelect
+              v-model="form.eventType"
+              :items="['Race', 'Gran Fondo', 'Time Trial', 'Triathlon', 'Running Race', 'Other']"
+              size="lg"
+            />
+            <p class="text-xs text-muted mt-1">What kind of challenge is it?</p>
           </div>
         </template>
 
         <!-- Performance Fields -->
         <template v-if="selectedType === 'PERFORMANCE'">
-          <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg space-y-4">
-            <UFormGroup label="Metric" help="What do you want to improve?">
-              <USelectMenu 
-                v-model="form.metric" 
-                :options="['FTP (Watts)', 'VO2 Max', '5k Pace (min/km)', '10k Pace (min/km)', 'Max Heart Rate']" 
-                icon="i-heroicons-chart-bar"
-              />
-            </UFormGroup>
-            <div class="grid grid-cols-2 gap-4">
-              <UFormGroup label="Current Value">
-                <UInput v-model="form.startValue" type="number" placeholder="0" />
-              </UFormGroup>
-              <UFormGroup label="Target Value">
-                <UInput v-model="form.targetValue" type="number" placeholder="0" />
-              </UFormGroup>
+          <div>
+            <label class="flex items-center gap-2 text-sm font-medium mb-2">
+              <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 text-muted" />
+              Metric
+            </label>
+            <USelect
+              v-model="form.metric"
+              :items="['FTP (Watts)', 'VO2 Max', '5k Pace (min/km)', '10k Pace (min/km)', 'Max Heart Rate']"
+              size="lg"
+            />
+            <p class="text-xs text-muted mt-1">What do you want to improve?</p>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium mb-2 block">Current Value</label>
+              <UInputNumber v-model="form.startValue" placeholder="250" size="lg" :min="0" />
+            </div>
+            <div>
+              <label class="text-sm font-medium mb-2 block">Target Value</label>
+              <UInputNumber v-model="form.targetValue" placeholder="260" size="lg" :min="0" />
             </div>
           </div>
         </template>
         
         <!-- Consistency Fields -->
         <template v-if="selectedType === 'CONSISTENCY'">
-           <div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg space-y-4">
-             <UFormGroup label="Weekly Target" help="Commitment per week">
-               <div class="flex gap-2">
-                  <UInput v-model="form.targetValue" type="number" class="flex-1" placeholder="e.g. 10" />
-                  <USelectMenu v-model="form.metric" :options="['Hours', 'Workouts', 'TSS']" class="w-32" />
-               </div>
-             </UFormGroup>
-           </div>
+          <div>
+            <label class="text-sm font-medium mb-2 block">Weekly Target</label>
+            <div class="flex gap-3">
+              <UInputNumber v-model="form.targetValue" class="flex-1" placeholder="10" size="lg" :min="0" />
+              <USelect v-model="form.metric" :items="['Hours', 'Workouts', 'TSS']" size="lg" class="w-40" />
+            </div>
+            <p class="text-xs text-muted mt-1">Commitment per week</p>
+          </div>
         </template>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <UFormGroup label="Priority" help="How important is this?">
-            <div class="flex flex-col gap-2">
-              <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <URadio v-model="form.priority" value="HIGH" />
-                <span class="text-sm font-medium text-error">High</span>
-                <span class="text-xs text-muted">Primary focus</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <URadio v-model="form.priority" value="MEDIUM" />
-                <span class="text-sm font-medium text-warning">Medium</span>
-                <span class="text-xs text-muted">Important</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <URadio v-model="form.priority" value="LOW" />
-                <span class="text-sm font-medium text-success">Low</span>
-                <span class="text-xs text-muted">Nice to have</span>
-              </label>
-            </div>
-          </UFormGroup>
-          
-          <UFormGroup label="Description" help="Optional notes or motivation">
-            <UTextarea v-model="form.description" :rows="4" placeholder="I want to achieve this because..." />
-          </UFormGroup>
+        <div>
+          <label class="text-sm font-medium mb-3 block">Priority</label>
+          <div class="flex flex-col gap-2">
+            <button
+              type="button"
+              @click="form.priority = 'HIGH'"
+              class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left"
+              :class="form.priority === 'HIGH' ? 'border-error bg-error/5' : 'border-gray-200 dark:border-gray-800 hover:border-error/50'"
+            >
+              <span class="text-error font-semibold">High</span>
+              <span class="text-sm text-muted">Primary focus</span>
+            </button>
+            <button
+              type="button"
+              @click="form.priority = 'MEDIUM'"
+              class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left"
+              :class="form.priority === 'MEDIUM' ? 'border-warning bg-warning/5' : 'border-gray-200 dark:border-gray-800 hover:border-warning/50'"
+            >
+              <span class="text-warning font-semibold">Medium</span>
+              <span class="text-sm text-muted">Important</span>
+            </button>
+            <button
+              type="button"
+              @click="form.priority = 'LOW'"
+              class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left"
+              :class="form.priority === 'LOW' ? 'border-success bg-success/5' : 'border-gray-200 dark:border-gray-800 hover:border-success/50'"
+            >
+              <span class="text-success font-semibold">Low</span>
+              <span class="text-sm text-muted">Nice to have</span>
+            </button>
+          </div>
+        </div>
+        
+        <div>
+          <label class="text-sm font-medium mb-2 block">Description</label>
+          <UTextarea
+            v-model="form.description"
+            :rows="3"
+            placeholder="Based on your recent activity, a moderate deficit is sustainable..."
+            size="lg"
+          />
+          <p class="text-xs text-muted mt-1">Optional notes or motivation</p>
         </div>
 
-        <div class="pt-4 border-t border-gray-200 dark:border-gray-800 flex justify-end">
-          <UButton size="lg" color="primary" @click="saveGoal" :loading="saving" icon="i-heroicons-check">
+        <div class="pt-6 flex justify-end">
+          <UButton size="xl" color="primary" @click="saveGoal" :loading="saving" icon="i-heroicons-check" class="px-8">
             {{ isEditMode ? 'Update Goal' : 'Create Goal' }}
           </UButton>
         </div>
