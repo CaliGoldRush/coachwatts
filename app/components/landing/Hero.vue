@@ -22,7 +22,7 @@
                secure, private, and insanely effective.
             </p>
             <div class="mt-10 flex items-center gap-x-6">
-               <UButton to="/login" size="xl" color="primary" variant="solid"
+               <UButton to="/join" size="xl" color="primary" variant="solid"
                   class="px-8 py-3 text-base font-semibold shadow-sm hover:bg-primary-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400">
                   Claim Your Digital Twin (Free)
                </UButton>
