@@ -25,4 +25,11 @@ export interface CalendarActivity {
     carbsGoal?: number | null
     fatGoal?: number | null
   } | null
+  wellness?: {
+    hrv?: number | null // Heart Rate Variability (ms)
+    restingHr?: number | null // Resting heart rate
+    sleepScore?: number | null // Sleep score 0-100
+    hoursSlept?: number | null // Hours slept
+    recoveryScore?: number | null // Recovery score 0-100
+  } | null
 }
