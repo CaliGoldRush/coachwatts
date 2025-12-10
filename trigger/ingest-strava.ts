@@ -5,6 +5,7 @@ import {
   normalizeStravaActivity
 } from "../server/utils/strava";
 import { prisma } from "../server/utils/db";
+import { calculateWorkoutStress } from "../server/utils/calculate-workout-stress";
 
 export const ingestStravaTask = task({
   id: "ingest-strava",
@@ -123,6 +124,14 @@ export const ingestStravaTask = task({
           create: workout
         });
         workoutsUpserted++;
+        
+        // Calculate CTL/ATL for the workout
+        try {
+          await calculateWorkoutStress(upsertedWorkout.id, userId);
+        } catch (error) {
+          logger.error(`Failed to calculate workout stress for ${upsertedWorkout.id}:`, { error });
+          // Don't fail the sync if stress calculation fails
+        }
         
         // Trigger stream ingestion for ALL activities to capture time-series data
         // This includes HR, power, GPS, altitude, speed, cadence - whatever Strava has
