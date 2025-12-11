@@ -760,7 +760,7 @@ OR
   // Maximum 5 rounds of tool calls to prevent infinite loops
   let roundCount = 0
   const MAX_ROUNDS = 5
-  const toolCallsUsed: Array<{ name: string; args: any }> = []
+  const toolCallsUsed: Array<{ name: string; args: any; response: any; timestamp: string }> = []
   const chartData: any[] = []
 
   while (roundCount < MAX_ROUNDS) {
@@ -776,7 +776,7 @@ OR
     // Process ALL function calls and build responses array
     const functionResponses = await Promise.all(
       functionCalls.map(async (functionCall, index) => {
-        toolCallsUsed.push({ name: functionCall.name, args: functionCall.args })
+        const callTimestamp = new Date().toISOString()
         
         console.log(`[Tool Call ${roundCount}.${index + 1}] ${functionCall.name}`, functionCall.args)
         
@@ -791,6 +791,14 @@ OR
             typeof toolResult === 'object' ? JSON.stringify(toolResult).substring(0, 200) + '...' : toolResult
           )
           
+          // Store complete tool call information including response
+          toolCallsUsed.push({
+            name: functionCall.name,
+            args: functionCall.args,
+            response: toolResult,
+            timestamp: callTimestamp
+          })
+          
           return {
             functionResponse: {
               name: functionCall.name,
@@ -800,10 +808,20 @@ OR
         } catch (error: any) {
           console.error(`[Tool Error ${roundCount}.${index + 1}] ${functionCall.name}:`, error?.message || error)
           
+          const errorResponse = { error: `Failed to execute tool: ${error?.message || 'Unknown error'}` }
+          
+          // Store error response as well
+          toolCallsUsed.push({
+            name: functionCall.name,
+            args: functionCall.args,
+            response: errorResponse,
+            timestamp: callTimestamp
+          })
+          
           return {
             functionResponse: {
               name: functionCall.name,
-              response: { error: `Failed to execute tool: ${error?.message || 'Unknown error'}` }
+              response: errorResponse
             }
           }
         }
@@ -938,8 +956,20 @@ Title:`
     ...call.args
   }))
 
-  // 13. Store chart data in message (charts will be passed in metadata to client)
-  // Note: ChatMessage schema doesn't have a metadata field, so we'll pass it in the response
+  // 13. Store chart data and complete tool call information in message metadata
+  if (charts.length > 0 || toolCallsUsed.length > 0) {
+    await prisma.chatMessage.update({
+      where: { id: aiMessage.id },
+      data: {
+        metadata: {
+          charts,
+          toolCalls: toolCallsUsed, // Store complete tool call info with args and responses
+          toolsUsed: toolCallsUsed.map(t => t.name), // Keep for backward compatibility
+          toolCallCount: toolCallsUsed.length
+        }
+      }
+    })
+  }
 
   // 14. Return AI Message in AI SDK v5 format
   return {
@@ -954,6 +984,7 @@ Title:`
     ],
     metadata: {
       charts,
+      toolCalls: toolCallsUsed, // Include complete tool call info in response
       toolsUsed: toolCallsUsed.map(t => t.name),
       toolCallCount: toolCallsUsed.length,
       createdAt: aiMessage.createdAt

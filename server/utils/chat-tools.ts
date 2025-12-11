@@ -379,6 +379,31 @@ export const chatToolDeclarations: FunctionDeclaration[] = [
     },
   },
   {
+    name: 'get_workout_stream',
+    description: 'Get second-by-second time-series data for a specific workout. Use this when you need detailed analysis of pacing, power, heart rate variability, or other metrics that change during the workout. Returns arrays of time-stamped data points.',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        workout_id: {
+          type: SchemaType.STRING,
+          description: 'The exact workout ID to fetch stream data for',
+        },
+        include_streams: {
+          type: SchemaType.ARRAY,
+          description: 'Which data streams to include: "time", "heartrate", "watts", "cadence", "velocity", "distance", "altitude", "grade". If not specified, returns all available streams.',
+          items: {
+            type: SchemaType.STRING
+          }
+        },
+        sample_rate: {
+          type: SchemaType.NUMBER,
+          description: 'Sample every Nth data point to reduce data size (default: 1 = all points, 10 = every 10th point). Use higher values for long workouts to avoid overwhelming the AI.',
+        },
+      },
+      required: ['workout_id'],
+    },
+  },
+  {
     name: 'create_chart',
     description: 'Create an inline chart visualization in the conversation. Use when data would be better understood visually (trends, comparisons, distributions). This will render a chart directly in the chat.',
     parameters: {
@@ -483,6 +508,9 @@ export async function executeToolCall(
       case 'get_current_plan':
         return await getCurrentPlan(userId)
 
+      case 'get_workout_stream':
+        return await getWorkoutStream(userId, args)
+
       case 'create_chart':
         return await createChart(args)
 
@@ -493,6 +521,123 @@ export async function executeToolCall(
     console.error(`Error executing tool ${toolName}:`, error)
     return { error: `Failed to execute ${toolName}: ${error?.message || 'Unknown error'}` }
   }
+}
+
+/**
+ * Get workout stream data (second-by-second time-series)
+ */
+async function getWorkoutStream(userId: string, args: any): Promise<any> {
+  const { workout_id, include_streams, sample_rate = 1 } = args
+  
+  // Verify workout belongs to user
+  const workout = await prisma.workout.findFirst({
+    where: {
+      id: workout_id,
+      userId
+    },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      date: true,
+      durationSec: true
+    }
+  })
+  
+  if (!workout) {
+    return { error: 'Workout not found or access denied' }
+  }
+  
+  // Fetch stream data
+  const stream = await prisma.workoutStream.findUnique({
+    where: { workoutId: workout_id },
+    select: {
+      time: true,
+      heartrate: true,
+      watts: true,
+      cadence: true,
+      velocity: true,
+      distance: true,
+      altitude: true,
+      grade: true,
+      moving: true,
+      avgPacePerKm: true,
+      paceVariability: true,
+      lapSplits: true,
+      paceZones: true,
+      pacingStrategy: true,
+      surges: true
+    }
+  })
+  
+  if (!stream) {
+    return {
+      error: 'No stream data available for this workout',
+      suggestion: 'Stream data is only available for workouts from Strava with detailed GPS/power/HR data'
+    }
+  }
+  
+  // Helper to sample an array
+  const sampleArray = (arr: any[] | null, rate: number) => {
+    if (!arr || !Array.isArray(arr)) return null
+    if (rate === 1) return arr
+    return arr.filter((_, i) => i % rate === 0)
+  }
+  
+  // Determine which streams to include
+  const requestedStreams = include_streams || ['time', 'heartrate', 'watts', 'cadence', 'velocity', 'distance']
+  const includeAll = !include_streams
+  
+  const response: any = {
+    workout_info: {
+      id: workout.id,
+      title: workout.title,
+      type: workout.type,
+      date: workout.date.toISOString(),
+      duration_seconds: workout.durationSec
+    },
+    sample_rate: sample_rate,
+    data_points: stream.time ? Math.floor((stream.time as any[]).length / sample_rate) : 0,
+    streams: {}
+  }
+  
+  // Add requested streams
+  if (includeAll || requestedStreams.includes('time')) {
+    response.streams.time = sampleArray(stream.time as any[], sample_rate)
+  }
+  if (includeAll || requestedStreams.includes('heartrate')) {
+    response.streams.heartrate = sampleArray(stream.heartrate as any[], sample_rate)
+  }
+  if (includeAll || requestedStreams.includes('watts')) {
+    response.streams.watts = sampleArray(stream.watts as any[], sample_rate)
+  }
+  if (includeAll || requestedStreams.includes('cadence')) {
+    response.streams.cadence = sampleArray(stream.cadence as any[], sample_rate)
+  }
+  if (includeAll || requestedStreams.includes('velocity')) {
+    response.streams.velocity = sampleArray(stream.velocity as any[], sample_rate)
+  }
+  if (includeAll || requestedStreams.includes('distance')) {
+    response.streams.distance = sampleArray(stream.distance as any[], sample_rate)
+  }
+  if (includeAll || requestedStreams.includes('altitude')) {
+    response.streams.altitude = sampleArray(stream.altitude as any[], sample_rate)
+  }
+  if (includeAll || requestedStreams.includes('grade')) {
+    response.streams.grade = sampleArray(stream.grade as any[], sample_rate)
+  }
+  
+  // Add computed metrics
+  response.computed_metrics = {
+    avg_pace_per_km: stream.avgPacePerKm,
+    pace_variability: stream.paceVariability,
+    lap_splits: stream.lapSplits,
+    pace_zones: stream.paceZones,
+    pacing_strategy: stream.pacingStrategy,
+    detected_surges: stream.surges
+  }
+  
+  return response
 }
 
 /**

@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Format for vue-advanced-chat
-  return rooms.map(room => {
+  const formattedRooms = rooms.map(room => {
     const lastMessage = room.messages[0]
     
     return {
@@ -99,4 +99,7 @@ export default defineEventHandler(async (event) => {
       typingUsers: []
     }
   })
+
+  // Sort rooms by index (last message timestamp) in descending order (newest first)
+  return formattedRooms.sort((a, b) => b.index - a.index)
 })

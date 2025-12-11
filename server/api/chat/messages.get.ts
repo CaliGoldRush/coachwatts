@@ -33,7 +33,14 @@ export default defineEventHandler(async (event) => {
 
   const messages = await prisma.chatMessage.findMany({
     where: { roomId },
-    orderBy: { createdAt: 'asc' }
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      content: true,
+      senderId: true,
+      createdAt: true,
+      metadata: true
+    }
   })
 
   // Return messages in AI SDK v5 format
@@ -48,6 +55,7 @@ export default defineEventHandler(async (event) => {
       }
     ],
     metadata: {
+      ...(msg.metadata as any || {}),
       createdAt: msg.createdAt,
       senderId: msg.senderId
     }
