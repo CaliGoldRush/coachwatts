@@ -1,180 +1,171 @@
 <script setup lang="ts">
-import { onMounted, ref, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 
 definePageMeta({
   middleware: 'auth'
 })
 
-const isClient = ref(false)
-const colorMode = useColorMode()
-const theme = computed(() => colorMode.value === 'dark' ? 'dark' : 'light')
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  parts: Array<{
+    type: 'text'
+    id: string
+    text: string
+  }>
+  metadata?: {
+    charts?: Array<{
+      id: string
+      type: 'line' | 'bar' | 'doughnut' | 'radar'
+      title: string
+      labels: string[]
+      datasets: Array<{
+        label: string
+        data: number[]
+        color?: string
+      }>
+    }>
+    createdAt?: Date
+    senderId?: string
+  }
+}
 
-const currentUserId = ref('')
-const roomId = ref('')
-const rooms = ref([])
-const messages = ref([])
-const messagesLoaded = ref(false)
-const loadingRooms = ref(true)
-const debugError = ref('')
+// State
+const input = ref('')
+const messages = ref<Message[]>([])
+const status = ref<'ready' | 'submitted' | 'streaming' | 'error'>('ready')
+const error = ref<Error | null>(null)
+const currentRoomId = ref('')
+const loadingMessages = ref(true)
 
-// Track latest charts from the most recent AI message
-const latestCharts = computed(() => {
-  // Get the last message with charts
-  const messagesWithCharts = messages.value.filter((m: any) => m.metadata?.charts?.length > 0)
-  if (messagesWithCharts.length === 0) return []
-  
-  // Return charts from the most recent message only
-  const latestMessage = messagesWithCharts[messagesWithCharts.length - 1]
-  return latestMessage.metadata.charts || []
-})
+// Fetch session and initialize
+const { data: session } = await useFetch('/api/auth/session')
+const currentUserId = computed(() => (session.value?.user as any)?.id)
 
-// Initialize chat
+// Load initial room and messages
 onMounted(async () => {
-  if (process.client) {
-    const { register } = await import('vue-advanced-chat')
-    register()
-    isClient.value = true
-    
-    // Fetch user session to get ID
-    const { data: session } = await useFetch('/api/auth/session')
-    if (session.value?.user?.id) {
-      currentUserId.value = session.value.user.id
-      await fetchRooms()
-    }
-  }
+  await loadChat()
 })
 
-async function fetchRooms() {
-  loadingRooms.value = true
-  debugError.value = ''
+async function loadChat() {
   try {
-    const data = await $fetch('/api/chat/rooms')
-    rooms.value = data
-    if (data && data.length > 0) {
-      roomId.value = data[0].roomId
-      await fetchMessages({ room: data[0] })
-    }
-  } catch (error: any) {
-    console.error('Error fetching rooms:', error)
-    debugError.value = `Failed to load rooms: ${error.message || error}`
-  } finally {
-    loadingRooms.value = false
-  }
-}
-
-async function fetchMessages({ room, options = {} }: any) {
-  if (!room?.roomId) return
-  
-  // Update current room ID to trigger UI switch
-  roomId.value = room.roomId
-  
-  if (options.reset) {
-    messages.value = []
-    messagesLoaded.value = false
-  }
-  
-  try {
-    const data = await $fetch(`/api/chat/messages?roomId=${room.roomId}`)
+    loadingMessages.value = true
     
-    if (options.reset) {
-      messages.value = data
-    } else {
-      messages.value = data
+    // Get or create room
+    const rooms = await $fetch<any[]>('/api/chat/rooms')
+    if (rooms && rooms.length > 0) {
+      currentRoomId.value = rooms[0].roomId
+      
+      // Load messages
+      const loadedMessages = await $fetch<Message[]>(`/api/chat/messages?roomId=${currentRoomId.value}`)
+      messages.value = loadedMessages
     }
-    messagesLoaded.value = true
-  } catch (error) {
-    console.error('Error fetching messages:', error)
+  } catch (err: any) {
+    console.error('Failed to load chat:', err)
+    error.value = err
+  } finally {
+    loadingMessages.value = false
   }
 }
 
-async function sendMessage({ content, roomId: rid, files, replyMessage }: any) {
-  const tempId = Date.now().toString()
-  const userMsg = {
-    _id: tempId,
-    content: content,
-    senderId: currentUserId.value,
-    username: 'Me',
-    avatar: rooms.value[0]?.users.find((u: any) => u._id === currentUserId.value)?.avatar,
-    date: new Date().toLocaleDateString(),
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    saved: false,
-    distributed: false,
-    seen: false,
-    disableActions: false,
-    disableReactions: false
-  }
+async function onSubmit() {
+  if (!input.value.trim() || !currentRoomId.value) return
   
-  messages.value = [...messages.value, userMsg]
-
+  const userMessage = input.value.trim()
+  input.value = ''
+  
+  // Add user message immediately
+  const tempUserMessage: Message = {
+    id: `temp-${Date.now()}`,
+    role: 'user',
+    parts: [{
+      type: 'text',
+      id: `text-temp-${Date.now()}`,
+      text: userMessage
+    }],
+    metadata: {
+      createdAt: new Date()
+    }
+  }
+  messages.value.push(tempUserMessage)
+  
   try {
-    const response = await $fetch('/api/chat/messages', {
+    status.value = 'submitted'
+    error.value = null
+    
+    // Send message and get AI response
+    const response = await $fetch<Message>('/api/chat/messages', {
       method: 'POST',
       body: {
-        roomId: rid,
-        content,
-        files,
-        replyMessage
+        roomId: currentRoomId.value,
+        content: userMessage
       }
     })
-
-    const index = messages.value.findIndex((m: any) => m._id === tempId)
-    if (index !== -1) {
-      const newMessages = [...messages.value]
-      newMessages[index] = { ...newMessages[index], saved: true, distributed: true, seen: true }
-      messages.value = newMessages
-    }
-
-    // Response includes metadata with charts
-    messages.value = [...messages.value, response]
     
-    // Scroll to bottom after adding message with potential charts
-    await nextTick()
-    scrollToBottom()
+    // Replace temp message with real one and add AI response
+    messages.value = messages.value.filter(m => m.id !== tempUserMessage.id)
+    messages.value.push({
+      id: `user-${Date.now()}`,
+      role: 'user',
+      parts: [{
+        type: 'text',
+        id: `text-user-${Date.now()}`,
+        text: userMessage
+      }],
+      metadata: {
+        createdAt: new Date()
+      }
+    })
+    messages.value.push(response)
     
-  } catch (error) {
-    console.error('Error sending message:', error)
+    status.value = 'ready'
+  } catch (err: any) {
+    console.error('Failed to send message:', err)
+    error.value = err
+    status.value = 'error'
+    
+    // Remove temp message on error
+    messages.value = messages.value.filter(m => m.id !== tempUserMessage.id)
   }
 }
 
-function scrollToBottom() {
-  // Wait for DOM update and scroll
-  setTimeout(() => {
-    const chatContainer = document.querySelector('.vac-container-scroll')
-    if (chatContainer) {
-      chatContainer.scrollTop = chatContainer.scrollHeight
-    }
-  }, 100)
-}
-
-async function createRoom() {
+async function createNewChat() {
   try {
     const newRoom = await $fetch('/api/chat/rooms', {
       method: 'POST'
     })
-    // Add new room to the beginning of the list
-    rooms.value = [newRoom, ...rooms.value]
-    
-    // Wait for Vue to update the DOM with the new rooms list
-    await nextTick()
-    
-    // Now explicitly set the room ID and fetch messages
-    roomId.value = newRoom.roomId
-    await nextTick()
-    
-    // Fetch messages for the new room
-    await fetchMessages({ room: newRoom, options: { reset: true } })
-  } catch (error: any) {
-    console.error('Error creating room:', error)
-    alert('Failed to create new chat')
+    currentRoomId.value = (newRoom as any).roomId
+    messages.value = []
+    input.value = ''
+  } catch (err: any) {
+    console.error('Failed to create new chat:', err)
   }
+}
+
+// Helper to get text from message
+function getTextFromMessage(message: Message): string {
+  return message.parts.find(p => p.type === 'text')?.text || ''
+}
+
+// Helper to get charts from message
+function getChartsFromMessage(message: Message) {
+  return message.metadata?.charts || []
 }
 </script>
 
 <template>
-  <UDashboardPanel id="chat" :ui="{ body: 'p-0' }">
+  <UDashboardPanel id="chat">
     <template #header>
       <UDashboardNavbar title="Chat with Coach Watts">
         <template #right>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-plus"
+            aria-label="New Chat"
+            size="sm"
+            @click="createNewChat"
+          />
           <UButton
             to="/settings/ai"
             color="neutral"
@@ -188,53 +179,63 @@ async function createRoom() {
     </template>
     
     <template #body>
-      <div class="h-full flex flex-col">
-        <div v-if="debugError" class="bg-red-100 text-red-700 p-2">
-          {{ debugError }}
+      <UContainer class="h-full">
+        <div v-if="loadingMessages" class="flex items-center justify-center h-full">
+          <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
         </div>
         
-        <ClientOnly>
-          <div v-if="isClient && currentUserId" class="flex-1 flex flex-col overflow-hidden">
-            <!-- Chat Component -->
-            <div class="flex-1 overflow-hidden">
-              <vue-advanced-chat
-                height="100%"
-                :current-user-id="currentUserId"
-                :rooms="JSON.stringify(rooms)"
-                :loading-rooms="loadingRooms"
-                :rooms-loaded="!loadingRooms"
-                :messages="JSON.stringify(messages)"
-                :room-id="roomId"
-                :messages-loaded="messagesLoaded"
-                :theme="theme"
-                :show-add-room="true"
-                @send-message="sendMessage($event.detail[0])"
-                @fetch-messages="fetchMessages($event.detail[0])"
-                @add-room="createRoom"
-              />
-            </div>
-            
-            <!-- Charts Container - Rendered below chat when present -->
-            <div
-              v-if="latestCharts.length > 0"
-              class="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 max-h-[400px] overflow-y-auto"
-            >
-              <div class="max-w-4xl mx-auto space-y-4">
-                <div
-                  v-for="chart in latestCharts"
+        <UChatMessages
+          v-else
+          :messages="messages"
+          :status="status"
+          :should-auto-scroll="true"
+          :user="{
+            side: 'right',
+            variant: 'soft'
+          }"
+          :assistant="{
+            side: 'left',
+            variant: 'naked',
+            avatar: { src: '/images/logo.svg' }
+          }"
+        >
+          <!-- Custom content rendering for each message -->
+          <template #content="{ message }">
+            <div class="space-y-4">
+              <!-- Text content with markdown support -->
+              <div v-if="getTextFromMessage(message)" class="prose prose-sm dark:prose-invert max-w-none">
+                <MDC :value="getTextFromMessage(message)" :cache-key="message.id" />
+              </div>
+              
+              <!-- Inline charts -->
+              <div v-if="getChartsFromMessage(message).length > 0" class="space-y-4">
+                <ChatChart
+                  v-for="chart in getChartsFromMessage(message)"
                   :key="chart.id"
-                  class="bg-gray-50 dark:bg-gray-900 rounded-lg"
-                >
-                  <ChatChart :chart-data="chart" />
-                </div>
+                  :chart-data="chart"
+                />
               </div>
             </div>
-          </div>
-          <div v-else class="flex items-center justify-center h-full">
-            <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
-          </div>
-        </ClientOnly>
-      </div>
+          </template>
+        </UChatMessages>
+      </UContainer>
+    </template>
+
+    <template #footer>
+      <UContainer class="pb-4 sm:pb-6">
+        <UChatPrompt
+          v-model="input"
+          :error="error"
+          placeholder="Ask Coach Watts anything about your training..."
+          @submit="onSubmit"
+        >
+          <UChatPromptSubmit
+            :status="status"
+            @stop="() => {}"
+            @reload="() => {}"
+          />
+        </UChatPrompt>
+      </UContainer>
     </template>
   </UDashboardPanel>
 </template>
