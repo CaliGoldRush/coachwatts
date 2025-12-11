@@ -363,6 +363,55 @@
             <span v-else class="text-gray-400">-</span>
           </template>
 
+          <template #calories-cell="{ row }">
+            <span v-if="row.original.calories">
+              {{ Math.round(row.original.calories) }} kcal
+            </span>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+
+          <template #elapsedTime-cell="{ row }">
+            <span v-if="row.original.elapsedTime">
+              {{ formatDurationCompact(row.original.elapsedTime) }}
+            </span>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+
+          <template #deviceName-cell="{ row }">
+            <span v-if="row.original.deviceName" class="text-xs">
+              {{ row.original.deviceName }}
+            </span>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+
+          <template #commute-cell="{ row }">
+            <UBadge
+              v-if="row.original.commute"
+              color="blue"
+              variant="subtle"
+              size="xs"
+            >
+              Commute
+            </UBadge>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+
+          <template #isPrivate-cell="{ row }">
+            <UIcon
+              v-if="row.original.isPrivate"
+              name="i-heroicons-lock-closed"
+              class="text-gray-500"
+            />
+            <span v-else class="text-gray-400">-</span>
+          </template>
+
+          <template #gearId-cell="{ row }">
+            <span v-if="row.original.gearId" class="text-xs">
+              {{ row.original.gearId }}
+            </span>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+
           <template #source-cell="{ row }">
             <UBadge
               :color="row.original.source === 'completed' ? 'green' : 'gray'"
@@ -653,6 +702,12 @@ const availableColumns = [
   { accessorKey: 'normalizedPower', header: 'NP', id: 'normalizedPower' },
   { accessorKey: 'weightedAvgWatts', header: 'Weighted Power', id: 'weightedAvgWatts' },
   { accessorKey: 'kilojoules', header: 'kJ', id: 'kilojoules' },
+  { accessorKey: 'calories', header: 'Calories', id: 'calories' },
+  { accessorKey: 'elapsedTime', header: 'Elapsed Time', id: 'elapsedTime' },
+  { accessorKey: 'deviceName', header: 'Device', id: 'deviceName' },
+  { accessorKey: 'commute', header: 'Commute', id: 'commute' },
+  { accessorKey: 'isPrivate', header: 'Private', id: 'isPrivate' },
+  { accessorKey: 'gearId', header: 'Gear', id: 'gearId' },
   { accessorKey: 'source', header: 'Source', id: 'source' },
   { accessorKey: 'status', header: 'Status', id: 'status' }
 ]
@@ -666,7 +721,13 @@ const columnVisibility = useStorage('activities-list-columns-visibility', {
   feel: false,
   normalizedPower: false,
   weightedAvgWatts: false,
-  kilojoules: false
+  kilojoules: false,
+  calories: false,
+  elapsedTime: false,
+  deviceName: false,
+  commute: false,
+  isPrivate: false,
+  gearId: false
 })
 
 function formatDateForList(dateStr: string) {
