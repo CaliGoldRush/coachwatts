@@ -17,7 +17,7 @@
             <UIcon name="i-heroicons-arrow-trending-up" class="w-4 h-4 text-purple-600 dark:text-purple-400" />
           </div>
           <div class="text-2xl font-bold text-purple-900 dark:text-purple-100">
-            {{ pmcData.summary.currentCTL }}
+            {{ pmcData.summary.currentCTL.toFixed(1) }}
           </div>
           <div class="text-xs text-purple-700 dark:text-purple-300 mt-1">Chronic Training Load</div>
         </div>
@@ -28,7 +28,7 @@
             <UIcon name="i-heroicons-bolt" class="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
           </div>
           <div class="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
-            {{ pmcData.summary.currentATL }}
+            {{ pmcData.summary.currentATL.toFixed(1) }}
           </div>
           <div class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Acute Training Load</div>
         </div>
@@ -39,7 +39,7 @@
             <UIcon name="i-heroicons-chart-bar" class="w-4 h-4" />
           </div>
           <div class="text-2xl font-bold">
-            {{ pmcData.summary.currentTSB > 0 ? '+' : '' }}{{ pmcData.summary.currentTSB }}
+            {{ pmcData.summary.currentTSB > 0 ? '+' : '' }}{{ pmcData.summary.currentTSB.toFixed(1) }}
           </div>
           <div class="text-xs mt-1 capitalize">{{ pmcData.summary.form }}</div>
         </div>
@@ -50,7 +50,7 @@
             <UIcon name="i-heroicons-calculator" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
           </div>
           <div class="text-2xl font-bold text-blue-900 dark:text-blue-100">
-            {{ pmcData.summary.avgTSS }}
+            {{ pmcData.summary.avgTSS.toFixed(1) }}
           </div>
           <div class="text-xs text-blue-700 dark:text-blue-300 mt-1">Training Stress Score</div>
         </div>
