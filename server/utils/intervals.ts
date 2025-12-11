@@ -614,6 +614,16 @@ export function normalizeIntervalsWorkout(activity: IntervalsActivity, userId: s
     // Balance
     lrBalance: activity.avg_lr_balance || null,
     
+    // Energy & Time
+    calories: activity.calories || null,
+    elapsedTimeSec: activity.elapsed_time || null,
+    
+    // Device & Metadata
+    deviceName: null, // Intervals.icu doesn't provide device info
+    commute: false, // Intervals.icu doesn't track commute flag
+    isPrivate: false, // Intervals.icu doesn't provide privacy flag
+    gearId: null, // Intervals.icu doesn't provide gear info
+    
     // Store raw data
     rawJson: activity
   }

@@ -362,14 +362,14 @@ export function normalizeStravaActivity(activity: StravaActivity, userId: string
     // Speed
     averageSpeed: activity.average_speed || null,
     
-    // Training load - Use calories if available for better training load estimation
+    // Training load metrics
     tss: null, // Strava doesn't provide TSS directly
-    trainingLoad: activity.calories || activity.kilojoules || null,
+    trainingLoad: null, // Strava doesn't provide icu_training_load (Intervals.icu metric)
     // Strava doesn't provide Normalized Power or FTP, so we can't calculate proper Intensity Factor
     // If the user has FTP set, we could estimate IF as average_watts / FTP, but that's not accurate
     intensity: null,
     kilojoules: activity.kilojoules ? Math.round(activity.kilojoules) : null,
-    trimp: activity.suffer_score || null,
+    trimp: activity.suffer_score || null, // Strava's suffer_score is similar to TRIMP
     
     // Performance metrics - Calculate some if we have the data
     ftp: null,
@@ -398,6 +398,16 @@ export function normalizeStravaActivity(activity: StravaActivity, userId: string
     
     // Balance
     lrBalance: null,
+    
+    // Energy & Time
+    calories: activity.calories || null,
+    elapsedTimeSec: activity.elapsed_time || null,
+    
+    // Device & Metadata
+    deviceName: activity.device_name || null,
+    commute: activity.commute || false,
+    isPrivate: activity.private || false,
+    gearId: activity.gear_id || null,
     
     // Store raw data with all fields
     rawJson: activity
