@@ -15,25 +15,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // Find all nutrition records that need analysis
-    const nutritionToAnalyze = await prisma.nutrition.findMany({
-      where: {
-        userId,
-        OR: [
-          { aiAnalysisStatus: null },
-          { aiAnalysisStatus: 'NOT_STARTED' },
-          { aiAnalysisStatus: 'PENDING' },
-          { aiAnalysisStatus: 'FAILED' }
-        ]
-      },
-      select: {
-        id: true,
-        date: true,
-        aiAnalysisStatus: true
-      },
-      orderBy: {
-        date: 'desc'
-      }
-    })
+    const nutritionToAnalyze = await nutritionRepository.getPendingAnalysis(userId)
     
     if (nutritionToAnalyze.length === 0) {
       return {
@@ -45,14 +27,14 @@ export default defineEventHandler(async (event) => {
     }
     
     // Update all to PENDING status
-    await prisma.nutrition.updateMany({
-      where: {
+    await nutritionRepository.updateMany(
+      {
         id: { in: nutritionToAnalyze.map(n => n.id) }
       },
-      data: {
+      {
         aiAnalysisStatus: 'PENDING'
       }
-    })
+    )
     
     // Trigger analysis jobs for each nutrition record with per-user concurrency
     const triggerPromises = nutritionToAnalyze.map(async (nutrition) => {
@@ -66,10 +48,7 @@ export default defineEventHandler(async (event) => {
       } catch (error) {
         console.error(`Failed to trigger analysis for nutrition ${nutrition.id}:`, error)
         // Mark as failed if trigger fails
-        await prisma.nutrition.update({
-          where: { id: nutrition.id },
-          data: { aiAnalysisStatus: 'FAILED' }
-        })
+        await nutritionRepository.updateStatus(nutrition.id, 'FAILED')
         return { success: false, nutritionId: nutrition.id, error: error instanceof Error ? error.message : 'Unknown error' }
       }
     })

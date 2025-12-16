@@ -19,24 +19,12 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  const nutrition = await prisma.nutrition.findUnique({
-    where: {
-      id
-    }
-  })
+  const nutrition = await nutritionRepository.getById(id, (session.user as any).id)
   
   if (!nutrition) {
     throw createError({
       statusCode: 404,
       message: 'Nutrition entry not found'
-    })
-  }
-  
-  // Ensure the nutrition entry belongs to the authenticated user
-  if (nutrition.userId !== (session.user as any).id) {
-    throw createError({
-      statusCode: 403,
-      message: 'Forbidden: You do not have access to this nutrition entry'
     })
   }
   

@@ -29,10 +29,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify the nutrition entry belongs to the user
-  const nutrition = await prisma.nutrition.findUnique({
-    where: { id: nutritionId },
-    select: { userId: true }
-  })
+  const nutrition = await nutritionRepository.getById(nutritionId, (session.user as any).id)
 
   if (!nutrition) {
     throw createError({
@@ -41,25 +38,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (nutrition.userId !== (session.user as any).id) {
-    throw createError({
-      statusCode: 403,
-      message: 'You do not have permission to update this nutrition entry'
-    })
-  }
-
   // Update the nutrition notes
-  const updatedNutrition = await prisma.nutrition.update({
-    where: { id: nutritionId },
-    data: {
-      notes: notes,
-      notesUpdatedAt: new Date()
-    },
-    select: {
-      id: true,
-      notes: true,
-      notesUpdatedAt: true
-    }
+  const updatedNutrition = await nutritionRepository.update(nutritionId, {
+    notes: notes,
+    notesUpdatedAt: new Date()
   })
 
   return {

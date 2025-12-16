@@ -21,22 +21,12 @@ export default defineEventHandler(async (event) => {
   }
   
   // Fetch the nutrition record
-  const nutrition = await prisma.nutrition.findUnique({
-    where: { id }
-  })
+  const nutrition = await nutritionRepository.getById(id, (session.user as any).id)
   
   if (!nutrition) {
     throw createError({
       statusCode: 404,
       message: 'Nutrition record not found'
-    })
-  }
-  
-  // Ensure the nutrition record belongs to the authenticated user
-  if (nutrition.userId !== (session.user as any).id) {
-    throw createError({
-      statusCode: 403,
-      message: 'Forbidden: You do not have access to this nutrition record'
     })
   }
   
@@ -57,10 +47,7 @@ export default defineEventHandler(async (event) => {
   
   try {
     // Update status to PENDING
-    await prisma.nutrition.update({
-      where: { id },
-      data: { aiAnalysisStatus: 'PENDING' }
-    })
+    await nutritionRepository.updateStatus(id, 'PENDING')
     
     // Trigger background job with per-user concurrency
     const handle = await tasks.trigger('analyze-nutrition', {
@@ -78,10 +65,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     // Update status to failed
-    await prisma.nutrition.update({
-      where: { id },
-      data: { aiAnalysisStatus: 'FAILED' }
-    })
+    await nutritionRepository.updateStatus(id, 'FAILED')
     
     throw createError({
       statusCode: 500,

@@ -14,14 +14,9 @@ export default defineEventHandler(async (event) => {
   const limit = query.limit ? parseInt(query.limit as string) : 30
   
   try {
-    const nutrition = await prisma.nutrition.findMany({
-      where: {
-        userId: (session.user as any).id
-      },
-      orderBy: {
-        date: 'desc'
-      },
-      take: limit
+    const nutrition = await nutritionRepository.getForUser((session.user as any).id, {
+      limit,
+      orderBy: { date: 'desc' }
     })
     
     // Format dates to avoid timezone issues
