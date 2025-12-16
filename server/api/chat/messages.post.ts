@@ -118,11 +118,8 @@ export default defineEventHandler(async (event) => {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
   // Fetch recent workouts
-  const recentWorkouts = await prisma.workout.findMany({
-    where: {
-      userId,
-      date: { gte: sevenDaysAgo }
-    },
+  const recentWorkouts = await workoutRepository.getForUser(userId, {
+    startDate: sevenDaysAgo,
     orderBy: { date: 'desc' },
     select: {
       id: true,
@@ -146,11 +143,8 @@ export default defineEventHandler(async (event) => {
   })
 
   // Fetch recent nutrition
-  const recentNutrition = await prisma.nutrition.findMany({
-    where: {
-      userId,
-      date: { gte: sevenDaysAgo }
-    },
+  const recentNutrition = await nutritionRepository.getForUser(userId, {
+    startDate: sevenDaysAgo,
     orderBy: { date: 'desc' },
     select: {
       id: true,
@@ -166,11 +160,8 @@ export default defineEventHandler(async (event) => {
   })
 
   // Fetch recent wellness
-  const recentWellness = await prisma.wellness.findMany({
-    where: {
-      userId,
-      date: { gte: sevenDaysAgo }
-    },
+  const recentWellness = await wellnessRepository.getForUser(userId, {
+    startDate: sevenDaysAgo,
     orderBy: { date: 'desc' },
     select: {
       id: true,

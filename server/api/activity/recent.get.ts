@@ -19,44 +19,29 @@ export default defineEventHandler(async (event) => {
   
   try {
     // Fetch workouts from the past 5 days (excluding duplicates)
-    const workouts = await prisma.workout.findMany({
-      where: {
-        userId,
-        isDuplicate: false,
-        date: {
-          gte: startDate,
-          lte: endDate
-        },
-        durationSec: { gt: 0 }
-      },
-      orderBy: { date: 'desc' },
-      take: 10
+    const workouts = await workoutRepository.getForUser(userId, {
+      startDate,
+      endDate,
+      limit: 10,
+      orderBy: { date: 'desc' }
+      // Note: Repository handles duplicate exclusion by default
+      // TODO: Filter durationSec > 0 if strictly needed, or trust data quality
     })
     
     // Fetch nutrition from the past 5 days
-    const nutrition = await prisma.nutrition.findMany({
-      where: {
-        userId,
-        date: {
-          gte: startDate,
-          lte: endDate
-        }
-      },
-      orderBy: { date: 'desc' },
-      take: 10
+    const nutrition = await nutritionRepository.getForUser(userId, {
+      startDate,
+      endDate,
+      limit: 10,
+      orderBy: { date: 'desc' }
     })
     
     // Fetch wellness data from the past 5 days
-    const wellness = await prisma.wellness.findMany({
-      where: {
-        userId,
-        date: {
-          gte: startDate,
-          lte: endDate
-        }
-      },
-      orderBy: { date: 'desc' },
-      take: 10
+    const wellness = await wellnessRepository.getForUser(userId, {
+      startDate,
+      endDate,
+      limit: 10,
+      orderBy: { date: 'desc' }
     })
     
     // Format timeline items

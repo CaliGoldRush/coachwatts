@@ -28,29 +28,12 @@ export default defineEventHandler(async (event) => {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
   
-  const nutrition = await prisma.nutrition.findMany({
-    where: {
-      userId: user.id,
-      date: {
-        gte: startDate
-      }
-    },
-    select: {
-      id: true,
-      date: true,
-      calories: true,
-      protein: true,
-      carbs: true,
-      fat: true,
-      overallScore: true,
-      macroBalanceScore: true,
-      qualityScore: true,
-      adherenceScore: true,
-      hydrationScore: true
-    },
-    orderBy: {
-      date: 'asc'
-    }
+  const nutrition = await nutritionRepository.getForUser(user.id, {
+    startDate,
+    orderBy: { date: 'asc' }
+    // Note: 'select' is not directly exposed in getForUser options currently, returning full objects.
+    // If performance is an issue, we can add 'select' to nutritionRepository.
+    // For now, fetching full objects is acceptable as per standard repo pattern.
   }) as any[]
   
   const nutritionWithScores = nutrition.filter((n: any) => n.overallScore != null)

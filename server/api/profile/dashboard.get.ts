@@ -47,11 +47,8 @@ export default defineEventHandler(async (event) => {
       console.log(`[Dashboard API] Checking wellness for date: ${checkDate.toISOString().split('T')[0]}`)
       
       // Check Wellness table first
-      const wellness = await prisma.wellness.findFirst({
-        where: {
-          userId: user.id,
-          date: checkDate
-        },
+      const wellness = await wellnessRepository.findFirst(user.id, {
+        date: checkDate,
         select: {
           date: true,
           restingHr: true,
@@ -148,14 +145,9 @@ export default defineEventHandler(async (event) => {
       const sevenDaysAgo = new Date(wellnessDate)
       sevenDaysAgo.setDate(wellnessDate.getDate() - 7)
       
-      const weekWellness = await prisma.wellness.findMany({
-        where: {
-          userId: user.id,
-          date: {
-            gte: sevenDaysAgo,
-            lte: wellnessDate
-          }
-        },
+      const weekWellness = await wellnessRepository.getForUser(user.id, {
+        startDate: sevenDaysAgo,
+        endDate: wellnessDate,
         select: {
           hrv: true
         }
@@ -189,9 +181,9 @@ export default defineEventHandler(async (event) => {
     
     // Check data sync status for different categories
     const [workoutCount, nutritionCount, wellnessCount] = await Promise.all([
-      prisma.workout.count({ where: { userId: user.id } }),
-      prisma.nutrition.count({ where: { userId: user.id } }),
-      prisma.wellness.count({ where: { userId: user.id } })
+      workoutRepository.count(user.id, { includeDuplicates: true }), // Match original behavior counting all
+      nutritionRepository.count(user.id),
+      wellnessRepository.count(user.id)
     ])
     
     // Determine which integrations provide data for each category

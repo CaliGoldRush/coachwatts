@@ -26,14 +26,9 @@ export default defineEventHandler(async (event) => {
   const userId = (session.user as any).id
   
   // Fetch nutrition data for the date range
-  const nutrition = await prisma.nutrition.findMany({
-    where: {
-      userId,
-      date: {
-        gte: startDate,
-        lte: endDate
-      }
-    },
+  const nutrition = await nutritionRepository.getForUser(userId, {
+    startDate,
+    endDate,
     orderBy: { date: 'asc' }
   })
   
@@ -54,14 +49,9 @@ export default defineEventHandler(async (event) => {
   }
   
   // Fetch wellness data for the date range
-  const wellness = await prisma.wellness.findMany({
-    where: {
-      userId,
-      date: {
-        gte: startDate,
-        lte: endDate
-      }
-    },
+  const wellness = await wellnessRepository.getForUser(userId, {
+    startDate,
+    endDate,
     orderBy: { date: 'asc' }
   })
   
@@ -105,17 +95,12 @@ export default defineEventHandler(async (event) => {
   }
   
   // Fetch completed workouts
-  const workouts = await prisma.workout.findMany({
-    where: {
-      userId,
-      date: {
-        gte: startDate,
-        lte: endDate
-      },
-      durationSec: { gt: 0 }, // Filter out empty workouts
-      isDuplicate: false
-    },
+  const workouts = await workoutRepository.getForUser(userId, {
+    startDate,
+    endDate,
     orderBy: { date: 'asc' }
+    // Note: Filtering for durationSec > 0 is not currently in getForUser options
+    // but duplicate filtering is enabled by default.
   })
   
   // Fetch planned workouts

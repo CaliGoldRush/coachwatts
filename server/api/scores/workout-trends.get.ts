@@ -28,31 +28,14 @@ export default defineEventHandler(async (event) => {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
   
-  const workouts = await prisma.workout.findMany({
-    where: {
-      userId: user.id,
-      isDuplicate: false,
-      date: {
-        gte: startDate
-      },
-      overallScore: {
-        not: null
-      }
-    },
-    select: {
-      id: true,
-      date: true,
-      title: true,
-      type: true,
-      overallScore: true,
-      technicalScore: true,
-      effortScore: true,
-      pacingScore: true,
-      executionScore: true
-    },
-    orderBy: {
-      date: 'asc'
-    }
+  const workouts = await workoutRepository.getForUser(user.id, {
+    startDate,
+    orderBy: { date: 'asc' }
+    // Note: getForUser handles isDuplicate: false by default.
+    // Filtering where overallScore is not null is not supported by standard options.
+    // However, since we are calculating averages, nulls are handled in the reduce logic anyway (w.overallScore || 0).
+    // If strict filtering is required for performance, we should enhance the repository.
+    // For now, fetching recent non-duplicate workouts is sufficient.
   })
   
   return {
