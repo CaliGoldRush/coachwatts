@@ -11,6 +11,7 @@ Coach Watts is an AI-powered cycling coach that analyzes training data from mult
 | **Framework** | Nuxt 3 | Full Stack: SSR + API Routes |
 | **Database** | PostgreSQL | Primary data store (via Supabase or Neon) |
 | **ORM** | Prisma | Type-safe database access |
+| **Data Access** | Repository Pattern | Centralized data access logic |
 | **Authentication** | NuxtAuth | Based on NextAuth with Google Provider |
 | **Background Jobs** | Trigger.dev (v3) | Async data ingestion and AI processing |
 | **AI Engine** | Google Gemini 2.5 | Flash for daily checks, Pro for deep analysis |
@@ -18,7 +19,18 @@ Coach Watts is an AI-powered cycling coach that analyzes training data from mult
 
 ## 2. Core Functional Modules
 
-### A. Data Ingestion Layer (The "Senses")
+### A. Data Access Layer (Repository Pattern)
+
+To ensure data consistency and encapsulate complex logic (like handling duplicates or permissions), we use the Repository Pattern.
+
+**Key Repositories:**
+- **WorkoutRepository:** Centralizes access to `Workout` data, automatically handling `isDuplicate` filtering and user ownership checks.
+
+**Usage Standard:**
+- **Avoid:** Direct `prisma.model.find...` calls in API handlers for complex models.
+- **Prefer:** `repository.getForUser(...)` or similar encapsulated methods.
+
+### B. Data Ingestion Layer (The "Senses")
 
 The system normalizes data from different sources into a unified `Workout` and `DailyMetric` format.
 
