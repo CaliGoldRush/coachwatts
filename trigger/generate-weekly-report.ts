@@ -5,6 +5,8 @@ import {
   buildMetricsSummary
 } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 import { userReportsQueue } from "./queues";
 
 // Analysis schema for structured JSON output
@@ -177,20 +179,14 @@ export const generateWeeklyReportTask = task({
       
       // Fetch data (excluding duplicate workouts)
       const [workouts, metrics, user] = await Promise.all([
-        prisma.workout.findMany({
-          where: {
-            userId,
-            date: { gte: startDate, lte: endDate },
-            durationSec: { gt: 0 },  // Filter out workouts without duration
-            isDuplicate: false  // Exclude duplicate workouts
-          },
+        workoutRepository.getForUser(userId, {
+          startDate,
+          endDate,
           orderBy: { date: 'asc' }
         }),
-        prisma.wellness.findMany({
-          where: {
-            userId,
-            date: { gte: startDate, lte: endDate }
-          },
+        wellnessRepository.getForUser(userId, {
+          startDate,
+          endDate,
           orderBy: { date: 'asc' }
         }),
         prisma.user.findUnique({

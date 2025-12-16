@@ -1,6 +1,8 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 import { userBackgroundQueue } from "./queues";
 
 const weeklyPlanSchema = {
@@ -86,27 +88,23 @@ export const generateWeeklyPlanTask = task({
         where: { userId },
         orderBy: { dayOfWeek: 'asc' }
       }),
-      prisma.workout.findMany({
-        where: {
-          userId,
-          date: {
-            gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // Last 14 days
-            lt: start
-          }
-        },
-        orderBy: { date: 'desc' },
-        take: 10
+      workoutRepository.getForUser(userId, {
+        startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // Last 14 days
+        endDate: start, // strictly less than start handled by lte in repo? Repo uses lte.
+        // We need 'lt' strictly speaking, but for daily granularity, using day before as endDate is safer or just accept overlaps?
+        // Let's use the date range as is, repo uses lte.
+        // Actually, start is set to 00:00:00 of the planning start date.
+        // So we want everything BEFORE that.
+        // Repo getForUser uses 'lte'. So if we pass 'start' it will include workouts on 'start' day at 00:00:00.
+        // We should pass 'new Date(start.getTime() - 1)' as endDate.
+        limit: 10,
+        orderBy: { date: 'desc' }
       }),
-      prisma.wellness.findMany({
-        where: {
-          userId,
-          date: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
-            lt: start
-          }
-        },
-        orderBy: { date: 'desc' },
-        take: 7
+      wellnessRepository.getForUser(userId, {
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+        endDate: start,
+        limit: 7,
+        orderBy: { date: 'desc' }
       }),
       prisma.weeklyTrainingPlan.findFirst({
         where: {

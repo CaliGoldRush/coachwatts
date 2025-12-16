@@ -1,6 +1,8 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis, buildWorkoutSummary } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 
 const recommendationSchema = {
   type: "object",
@@ -68,17 +70,11 @@ export const recommendTodayActivityTask = task({
       }),
       
       // Today's recovery metrics from Wellness table (WHOOP, Intervals.icu, etc.)
-      prisma.wellness.findUnique({
-        where: { userId_date: { userId, date: today } }
-      }),
+      wellnessRepository.getByDate(userId, today),
       
       // Last 7 days of workouts for context
-      prisma.workout.findMany({
-        where: {
-          userId,
-          date: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-          durationSec: { gt: 0 }
-        },
+      workoutRepository.getForUser(userId, {
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         orderBy: { date: 'desc' }
       }),
       

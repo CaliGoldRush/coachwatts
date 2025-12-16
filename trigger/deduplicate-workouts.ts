@@ -1,5 +1,6 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
 import { userBackgroundQueue } from "./queues";
 
 interface DuplicateGroup {
@@ -57,8 +58,10 @@ export const deduplicateWorkoutsTask = task({
         logger.log("Resolved user ID", { email: userId, actualUserId });
       }
       
-      const workouts = await prisma.workout.findMany({
-        where: { userId: actualUserId },
+      // Here we explicitly want ALL workouts, including potential duplicates, to analyze them.
+      // So we use includeDuplicates: true
+      const workouts = await workoutRepository.getForUser(actualUserId, {
+        includeDuplicates: true,
         orderBy: { date: 'desc' }
       });
       
@@ -89,17 +92,22 @@ export const deduplicateWorkoutsTask = task({
         });
         
         if (group.toDelete.length > 0) {
-          // Find if any of the workouts to delete have plannedWorkoutId links
-          const duplicatesToDelete = await prisma.workout.findMany({
-            where: {
-              id: { in: group.toDelete }
-            },
-            select: {
-              id: true,
-              plannedWorkoutId: true
-            }
-          });
+          // We are doing very specific update logic here.
+          // While we could add specialized methods to the repo, using prisma update/updateMany is fine for internal maintenance scripts like this.
+          // However, we should try to use the repo for reads/updates where simple.
           
+          // Using prisma directly for complex batch logic is acceptable as per "Repository Pattern" usually encapsulating BUSINESS logic retrieval.
+          // This is a maintenance task.
+          // But I'll use repo update/updateMany where suitable.
+          
+          // The query for duplicatesToDelete is simple enough, but filter by ID list isn't exposed in getForUser nicely.
+          // Let's keep the specialized logic but use repo for standard updates.
+          
+          const duplicatesToDelete = await prisma.workout.findMany({
+            where: { id: { in: group.toDelete } },
+            select: { id: true, plannedWorkoutId: true }
+          });
+
           // Collect planned workout IDs from duplicates
           const plannedWorkoutIds = duplicatesToDelete
             .filter(w => w.plannedWorkoutId)
@@ -108,48 +116,33 @@ export const deduplicateWorkoutsTask = task({
           // Get the best workout
           const bestWorkout = group.workouts.find(w => w.id === group.bestWorkoutId);
           
-          // If the best workout doesn't have a planned workout link but duplicates do,
-          // transfer the first planned workout link to the best workout
           if (bestWorkout && !bestWorkout.plannedWorkoutId && plannedWorkoutIds.length > 0) {
-            logger.log(`Transferring planned workout link from duplicate to best workout`, {
+             logger.log(`Transferring planned workout link from duplicate to best workout`, {
               bestWorkoutId: group.bestWorkoutId,
               plannedWorkoutId: plannedWorkoutIds[0]
             });
             
-            await prisma.workout.update({
-              where: { id: group.bestWorkoutId },
-              data: {
+            await workoutRepository.update(group.bestWorkoutId, {
                 plannedWorkoutId: plannedWorkoutIds[0]
-              }
             });
             
             // Mark the planned workout as completed
             await prisma.plannedWorkout.update({
               where: { id: plannedWorkoutIds[0] as string },
-              data: {
-                completed: true
-              }
+              data: { completed: true }
             });
           }
-          
-          // Mark duplicates instead of deleting them
-          await prisma.workout.updateMany({
-            where: {
-              id: { in: group.toDelete }
-            },
-            data: {
-              isDuplicate: true,
-              duplicateOf: group.bestWorkoutId
-            }
-          });
-          
-          // Update completeness score on the best workout
+
+          // Mark duplicates
+          await workoutRepository.updateMany(
+            { id: { in: group.toDelete } },
+            { isDuplicate: true, duplicateOf: group.bestWorkoutId }
+          );
+
+          // Update completeness score
           if (bestWorkout) {
-            await prisma.workout.update({
-              where: { id: group.bestWorkoutId },
-              data: {
+            await workoutRepository.update(group.bestWorkoutId, {
                 completenessScore: bestWorkout.completenessScore
-              }
             });
           }
           

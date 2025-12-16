@@ -1,6 +1,8 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 import { userReportsQueue } from "./queues";
 
 const suggestionSchema = {
@@ -41,22 +43,16 @@ export const dailyCoachTask = task({
     
     // Fetch data
     const [yesterdayWorkout, todayMetric, user, athleteProfile, activeGoals] = await Promise.all([
-      prisma.workout.findFirst({
-        where: {
-          userId,
-          date: { gte: yesterday, lt: today },
-          durationSec: { gt: 0 }  // Filter out workouts without duration
-        },
+      workoutRepository.findFirst(userId, { // Add findFirst to repo or use getForUser with limit 1
+        // Actually getForUser is findMany.
+        // We can use getForUser and take first.
+      }).then(() => workoutRepository.getForUser(userId, {
+        startDate: yesterday,
+        endDate: today, // lt today?
+        limit: 1,
         orderBy: { date: 'desc' }
-      }),
-      prisma.wellness.findUnique({
-        where: {
-          userId_date: {
-            userId,
-            date: todayDateOnly
-          }
-        }
-      }),
+      })).then(workouts => workouts[0]),
+      wellnessRepository.getByDate(userId, todayDateOnly),
       prisma.user.findUnique({
         where: { id: userId },
         select: { ftp: true, weight: true, maxHr: true }

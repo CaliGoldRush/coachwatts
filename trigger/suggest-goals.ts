@@ -1,6 +1,9 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
+import { nutritionRepository } from "../server/utils/repositories/nutritionRepository";
 import { userReportsQueue } from "./queues";
 
 // Goal suggestions schema for structured JSON output
@@ -170,13 +173,11 @@ export const suggestGoalsTask = task({
             profileLastUpdated: true
           }
         }),
-        prisma.workout.findMany({
-          where: {
-            userId,
-            date: { gte: thirtyDaysAgo, lte: now }
-          },
+        workoutRepository.getForUser(userId, {
+          startDate: thirtyDaysAgo,
+          endDate: now,
+          limit: 20,
           orderBy: { date: 'desc' },
-          take: 20,
           select: {
             date: true,
             title: true,
@@ -187,13 +188,11 @@ export const suggestGoalsTask = task({
             averageSpeed: true
           }
         }),
-        prisma.wellness.findMany({
-          where: {
-            userId,
-            date: { gte: thirtyDaysAgo, lte: now }
-          },
+        wellnessRepository.getForUser(userId, {
+          startDate: thirtyDaysAgo,
+          endDate: now,
+          limit: 30,
           orderBy: { date: 'desc' },
-          take: 30,
           select: {
             date: true,
             recoveryScore: true,
@@ -201,14 +200,11 @@ export const suggestGoalsTask = task({
             sleepHours: true
           }
         }),
-        prisma.nutrition.findMany({
-          where: {
-            userId,
-            date: { gte: sevenDaysAgo, lte: now },
-            calories: { not: null }
-          },
+        nutritionRepository.getForUser(userId, {
+          startDate: sevenDaysAgo,
+          endDate: now,
+          limit: 7,
           orderBy: { date: 'desc' },
-          take: 7,
           select: {
             date: true,
             calories: true,

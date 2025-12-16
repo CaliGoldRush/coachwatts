@@ -5,6 +5,7 @@ import {
   normalizeStravaActivity
 } from "../server/utils/strava";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
 import { calculateWorkoutStress } from "../server/utils/calculate-workout-stress";
 
 export const ingestStravaTask = task({
@@ -87,15 +88,7 @@ export const ingestStravaTask = task({
         }
         
         // Check if this exact Strava activity already exists and is up-to-date
-        const existingStrava = await prisma.workout.findUnique({
-          where: {
-            userId_source_externalId: {
-              userId,
-              source: 'strava',
-              externalId: String(activity.id)
-            }
-          }
-        });
+        const existingStrava = await workoutRepository.getByExternalId(userId, 'strava', String(activity.id));
         
         // If activity exists and hasn't been updated on Strava, skip detail fetch
         const stravaUpdatedAt = new Date(activity.updated_at || activity.start_date);
@@ -112,17 +105,13 @@ export const ingestStravaTask = task({
         
         const workout = normalizeStravaActivity(detailedActivity, userId);
         
-        const upsertedWorkout = await prisma.workout.upsert({
-          where: {
-            userId_source_externalId: {
-              userId,
-              source: 'strava',
-              externalId: workout.externalId
-            }
-          },
-          update: workout,
-          create: workout
-        });
+        const upsertedWorkout = await workoutRepository.upsert(
+          userId,
+          'strava',
+          workout.externalId,
+          workout,
+          workout
+        );
         workoutsUpserted++;
         
         // Calculate CTL/ATL for the workout
@@ -156,6 +145,10 @@ export const ingestStravaTask = task({
       // We exclude workouts we just triggered to avoid duplicate jobs
       logger.log("Checking for recent workouts missing streams...");
       
+      // Custom query not supported by generic repo methods yet, kept as is or we can extend repo
+      // But standard 'findMany' is available on prisma client if we really need it,
+      // or we add specific method 'getMissingStreams(userId, source, excludeIds)'
+      // For now, let's leave this complex query using prisma directly as it's very specific maintenance logic
       const workoutsMissingStreams = await prisma.workout.findMany({
         where: {
           userId,

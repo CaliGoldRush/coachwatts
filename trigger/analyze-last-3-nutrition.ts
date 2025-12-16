@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { nutritionRepository } from "../server/utils/repositories/nutritionRepository";
 import { userReportsQueue } from "./queues";
 
 // Analysis schema for nutrition reports
@@ -210,14 +211,15 @@ export const analyzeLast3NutritionTask = task({
     
     try {
       // Fetch last 3 days of nutrition data
-      const nutritionDays = await prisma.nutrition.findMany({
-        where: {
-          userId,
-          calories: { not: null } // Only include days with tracked data
-        },
-        orderBy: { date: 'desc' },
-        take: 3
+      // Using repo getForUser and filtering in memory
+      const recentNutrition = await nutritionRepository.getForUser(userId, {
+        limit: 10,
+        orderBy: { date: 'desc' }
       });
+      
+      const nutritionDays = recentNutrition
+        .filter(n => n.calories != null)
+        .slice(0, 3);
       
       if (nutritionDays.length === 0) {
         throw new Error('No nutrition data found for analysis');

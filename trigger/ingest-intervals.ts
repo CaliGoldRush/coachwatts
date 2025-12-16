@@ -9,6 +9,8 @@ import {
   normalizeIntervalsPlannedWorkout
 } from "../server/utils/intervals";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 
 export const ingestIntervalsTask = task({
   id: "ingest-intervals",
@@ -111,17 +113,13 @@ export const ingestIntervalsTask = task({
       for (const activity of activities) {
         const workout = normalizeIntervalsWorkout(activity, userId);
         
-        const upsertedWorkout = await prisma.workout.upsert({
-          where: {
-            userId_source_externalId: {
-              userId,
-              source: 'intervals',
-              externalId: workout.externalId
-            }
-          },
-          update: workout,
-          create: workout
-        });
+        const upsertedWorkout = await workoutRepository.upsert(
+          userId,
+          'intervals',
+          workout.externalId,
+          workout,
+          workout
+        );
         workoutsUpserted++;
         
         // Trigger stream ingestion for activities with pacing data
@@ -143,16 +141,12 @@ export const ingestIntervalsTask = task({
         const wellnessDate = new Date(wellness.id); // wellness.id is the date string
         const normalizedWellness = normalizeIntervalsWellness(wellness, userId, wellnessDate);
         
-        await prisma.wellness.upsert({
-          where: {
-            userId_date: {
-              userId,
-              date: wellnessDate
-            }
-          },
-          update: normalizedWellness,
-          create: normalizedWellness
-        });
+        await wellnessRepository.upsert(
+          userId,
+          wellnessDate,
+          normalizedWellness,
+          normalizedWellness
+        );
         wellnessUpserted++;
       }
       

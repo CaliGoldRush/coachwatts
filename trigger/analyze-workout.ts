@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateCoachAnalysis, generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
 import { userAnalysisQueue } from "./queues";
 
 // TypeScript interface for the structured analysis
@@ -208,13 +209,18 @@ export const analyzeWorkoutTask = task({
     logger.log("Starting workout analysis", { workoutId });
     
     // Update workout status to PROCESSING
-    await prisma.workout.update({
-      where: { id: workoutId },
-      data: { aiAnalysisStatus: 'PROCESSING' }
-    });
+    await workoutRepository.updateStatus(workoutId, 'PROCESSING');
     
     try {
-      // Fetch the workout
+      // Fetch the workout - passing 'unknown' as userId because we don't have it yet,
+      // but findUnique by ID will work if we use getById without userId check or raw prisma
+      // Actually, standard getById requires userId.
+      // Let's use prisma directly here or update repository to allow system-level fetch
+      // But standard repo pattern suggests always using repo.
+      // I'll assume we can use prisma here for the initial fetch since we don't have userId in payload
+      // OR better, update payload to include userId?
+      // existing code uses prisma.workout.findUnique({ where: { id: workoutId } })
+      
       const workout = await prisma.workout.findUnique({
         where: { id: workoutId }
       });
@@ -260,26 +266,23 @@ export const analyzeWorkoutTask = task({
       });
       
       // Save both formats to the database, including scores and explanations
-      await prisma.workout.update({
-        where: { id: workoutId },
-        data: {
-          aiAnalysis: markdownAnalysis,
-          aiAnalysisJson: structuredAnalysis as any,
-          aiAnalysisStatus: 'COMPLETED',
-          aiAnalyzedAt: new Date(),
-          // Store scores for easy querying and tracking
-          overallScore: structuredAnalysis.scores?.overall,
-          technicalScore: structuredAnalysis.scores?.technical,
-          effortScore: structuredAnalysis.scores?.effort,
-          pacingScore: structuredAnalysis.scores?.pacing,
-          executionScore: structuredAnalysis.scores?.execution,
-          // Store explanations for user guidance
-          overallQualityExplanation: structuredAnalysis.scores?.overall_explanation,
-          technicalExecutionExplanation: structuredAnalysis.scores?.technical_explanation,
-          effortManagementExplanation: structuredAnalysis.scores?.effort_explanation,
-          pacingStrategyExplanation: structuredAnalysis.scores?.pacing_explanation,
-          executionConsistencyExplanation: structuredAnalysis.scores?.execution_explanation
-        }
+      await workoutRepository.update(workoutId, {
+        aiAnalysis: markdownAnalysis,
+        aiAnalysisJson: structuredAnalysis as any,
+        aiAnalysisStatus: 'COMPLETED',
+        aiAnalyzedAt: new Date(),
+        // Store scores for easy querying and tracking
+        overallScore: structuredAnalysis.scores?.overall,
+        technicalScore: structuredAnalysis.scores?.technical,
+        effortScore: structuredAnalysis.scores?.effort,
+        pacingScore: structuredAnalysis.scores?.pacing,
+        executionScore: structuredAnalysis.scores?.execution,
+        // Store explanations for user guidance
+        overallQualityExplanation: structuredAnalysis.scores?.overall_explanation,
+        technicalExecutionExplanation: structuredAnalysis.scores?.technical_explanation,
+        effortManagementExplanation: structuredAnalysis.scores?.effort_explanation,
+        pacingStrategyExplanation: structuredAnalysis.scores?.pacing_explanation,
+        executionConsistencyExplanation: structuredAnalysis.scores?.execution_explanation
       });
       
       logger.log("Analysis saved to database");
@@ -293,12 +296,7 @@ export const analyzeWorkoutTask = task({
     } catch (error) {
       logger.error("Error generating workout analysis", { error });
       
-      await prisma.workout.update({
-        where: { id: workoutId },
-        data: {
-          aiAnalysisStatus: 'FAILED'
-        }
-      });
+      await workoutRepository.updateStatus(workoutId, 'FAILED');
       
       throw error;
     }

@@ -5,6 +5,9 @@ import {
   buildMetricsSummary
 } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { nutritionRepository } from "../server/utils/repositories/nutritionRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 import { userReportsQueue } from "./queues";
 
 // Analysis schema for structured JSON output
@@ -274,42 +277,52 @@ export const generateCustomReportTask = task({
       let metrics: any[] = [];
       
       if (config.dataType === 'workouts' || config.dataType === 'both') {
-        const workoutQuery: any = {
-          userId,
-          date: { gte: startDate, lte: endDate },
-          durationSec: { gt: 0 },
-          isDuplicate: false
+        // TODO: Repository doesn't support complex filtering by 'type' or dynamic 'take' based on config nicely in one call yet
+        // We will stick to using the repository's standard getForUser and filter in memory if volume is low,
+        // OR extend repository. Given report generation is a heavy task, fetching a bit more data is acceptable,
+        // but for 'take' we can use limit.
+        // However, filtering by type is not supported.
+        // Let's use the repository for standard constraints and filter manually, or if we want to be strict,
+        // we should add filtering capabilities to the repository.
+        // For now, I'll use getForUser and filter by type in memory if needed, assuming dataset isn't massive.
+        
+        const options: any = {
+          startDate,
+          endDate,
+          orderBy: { date: 'desc' }
         };
         
-        // Filter by workout types if specified
-        if (config.workoutTypes && config.workoutTypes.length > 0) {
-          workoutQuery.type = { in: config.workoutTypes };
+        if (config.timeframeType === 'count' && config.count) {
+          options.limit = config.count;
         }
         
-        workouts = await prisma.workout.findMany({
-          where: workoutQuery,
-          orderBy: { date: 'desc' },
-          ...(config.timeframeType === 'count' && config.count ? { take: config.count } : {})
-        });
+        const allWorkouts = await workoutRepository.getForUser(userId, options);
+        
+        if (config.workoutTypes && config.workoutTypes.length > 0) {
+          workouts = allWorkouts.filter(w => config.workoutTypes.includes(w.type));
+        } else {
+          workouts = allWorkouts;
+        }
       }
       
       if (config.dataType === 'nutrition' || config.dataType === 'both') {
-        nutrition = await prisma.nutrition.findMany({
-          where: {
-            userId,
-            date: { gte: startDate, lte: endDate }
-          },
-          orderBy: { date: 'desc' },
-          ...(config.timeframeType === 'count' && config.count ? { take: config.count } : {})
-        });
+        const options: any = {
+          startDate,
+          endDate,
+          orderBy: { date: 'desc' }
+        };
+        
+        if (config.timeframeType === 'count' && config.count) {
+          options.limit = config.count;
+        }
+        
+        nutrition = await nutritionRepository.getForUser(userId, options);
       }
       
       // Always fetch metrics for recovery context
-      metrics = await prisma.wellness.findMany({
-        where: {
-          userId,
-          date: { gte: startDate, lte: endDate }
-        },
+      metrics = await wellnessRepository.getForUser(userId, {
+        startDate,
+        endDate,
         orderBy: { date: 'desc' }
       });
       

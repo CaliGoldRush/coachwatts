@@ -1,6 +1,9 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
+import { nutritionRepository } from "../server/utils/repositories/nutritionRepository";
 import { userReportsQueue } from "./queues";
 import { generateTrainingContext, formatTrainingContextForPrompt } from "../server/utils/training-metrics";
 
@@ -327,15 +330,11 @@ export const generateAthleteProfileTask = task({
           where: { id: userId },
           select: { ftp: true, weight: true, maxHr: true, dob: true }
         }),
-        prisma.workout.findMany({
-          where: {
-            userId,
-            date: { gte: thirtyDaysAgo, lte: now },
-            durationSec: { gt: 0 },
-            aiAnalysisStatus: 'COMPLETED'
-          },
+        workoutRepository.getForUser(userId, {
+          startDate: thirtyDaysAgo,
+          endDate: now,
+          limit: 20,
           orderBy: { date: 'desc' },
-          take: 20,
           select: {
             id: true,
             date: true,
@@ -347,22 +346,17 @@ export const generateAthleteProfileTask = task({
             aiAnalysisJson: true
           }
         }),
-        prisma.wellness.findMany({
-          where: {
-            userId,
-            date: { gte: thirtyDaysAgo, lte: now }
-          },
-          orderBy: { date: 'desc' },
-          take: 30
+        wellnessRepository.getForUser(userId, {
+          startDate: thirtyDaysAgo,
+          endDate: now,
+          limit: 30,
+          orderBy: { date: 'desc' }
         }),
-        prisma.nutrition.findMany({
-          where: {
-            userId,
-            date: { gte: sevenDaysAgo, lte: now },
-            calories: { not: null } // Only include days with tracked data
-          },
+        nutritionRepository.getForUser(userId, {
+          startDate: sevenDaysAgo,
+          endDate: now,
+          limit: 14,
           orderBy: { date: 'desc' },
-          take: 14, // Last 2 weeks
           select: {
             id: true,
             date: true,
@@ -578,7 +572,7 @@ Be specific, data-driven, and actionable. Reference actual metrics and patterns 
       logger.log("Generating athlete profile with Gemini");
       
       // Generate structured profile
-      const profileJson = await generateStructuredAnalysis(
+      const profileJson = await generateStructuredAnalysis<any>(
         prompt,
         athleteProfileSchema,
         'flash',

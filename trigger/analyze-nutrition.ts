@@ -1,6 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { nutritionRepository } from "../server/utils/repositories/nutritionRepository";
 import { userAnalysisQueue } from "./queues";
 
 // Analysis schema for nutrition
@@ -199,10 +200,7 @@ export const analyzeNutritionTask = task({
     logger.log("Starting nutrition analysis", { nutritionId });
     
     // Update nutrition status to PROCESSING
-    await prisma.nutrition.update({
-      where: { id: nutritionId },
-      data: { aiAnalysisStatus: 'PROCESSING' }
-    });
+    await nutritionRepository.updateStatus(nutritionId, 'PROCESSING');
     
     try {
       // Fetch the nutrition record
@@ -252,26 +250,23 @@ export const analyzeNutritionTask = task({
       });
       
       // Save both formats to the database, including scores and explanations
-      await prisma.nutrition.update({
-        where: { id: nutritionId },
-        data: {
-          aiAnalysis: markdownAnalysis,
-          aiAnalysisJson: structuredAnalysis as any,
-          aiAnalysisStatus: 'COMPLETED',
-          aiAnalyzedAt: new Date(),
-          // Store scores for easy querying and tracking
-          overallScore: structuredAnalysis.scores?.overall,
-          macroBalanceScore: structuredAnalysis.scores?.macro_balance,
-          qualityScore: structuredAnalysis.scores?.quality,
-          adherenceScore: structuredAnalysis.scores?.adherence,
-          hydrationScore: structuredAnalysis.scores?.hydration,
-          // Store explanations for user guidance
-          nutritionalBalanceExplanation: structuredAnalysis.scores?.overall_explanation,
-          calorieAdherenceExplanation: structuredAnalysis.scores?.adherence_explanation,
-          macroDistributionExplanation: structuredAnalysis.scores?.macro_balance_explanation,
-          hydrationStatusExplanation: structuredAnalysis.scores?.hydration_explanation,
-          timingOptimizationExplanation: structuredAnalysis.scores?.quality_explanation
-        }
+      await nutritionRepository.update(nutritionId, {
+        aiAnalysis: markdownAnalysis,
+        aiAnalysisJson: structuredAnalysis as any,
+        aiAnalysisStatus: 'COMPLETED',
+        aiAnalyzedAt: new Date(),
+        // Store scores for easy querying and tracking
+        overallScore: structuredAnalysis.scores?.overall,
+        macroBalanceScore: structuredAnalysis.scores?.macro_balance,
+        qualityScore: structuredAnalysis.scores?.quality,
+        adherenceScore: structuredAnalysis.scores?.adherence,
+        hydrationScore: structuredAnalysis.scores?.hydration,
+        // Store explanations for user guidance
+        nutritionalBalanceExplanation: structuredAnalysis.scores?.overall_explanation,
+        calorieAdherenceExplanation: structuredAnalysis.scores?.adherence_explanation,
+        macroDistributionExplanation: structuredAnalysis.scores?.macro_balance_explanation,
+        hydrationStatusExplanation: structuredAnalysis.scores?.hydration_explanation,
+        timingOptimizationExplanation: structuredAnalysis.scores?.quality_explanation
       });
       
       logger.log("Analysis saved to database");
@@ -285,12 +280,7 @@ export const analyzeNutritionTask = task({
     } catch (error) {
       logger.error("Error generating nutrition analysis", { error });
       
-      await prisma.nutrition.update({
-        where: { id: nutritionId },
-        data: {
-          aiAnalysisStatus: 'FAILED'
-        }
-      });
+      await nutritionRepository.updateStatus(nutritionId, 'FAILED');
       
       throw error;
     }

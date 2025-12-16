@@ -1,6 +1,8 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 import { userReportsQueue } from "./queues";
 
 // Goal review schema for structured JSON output
@@ -255,13 +257,11 @@ export const reviewGoalsTask = task({
             aiContext: true
           }
         }),
-        prisma.workout.findMany({
-          where: {
-            userId,
-            date: { gte: thirtyDaysAgo, lte: now }
-          },
+        workoutRepository.getForUser(userId, {
+          startDate: thirtyDaysAgo,
+          endDate: now,
+          limit: 20,
           orderBy: { date: 'desc' },
-          take: 20,
           select: {
             date: true,
             type: true,
@@ -271,13 +271,11 @@ export const reviewGoalsTask = task({
             averageSpeed: true
           }
         }),
-        prisma.wellness.findMany({
-          where: {
-            userId,
-            date: { gte: thirtyDaysAgo, lte: now }
-          },
+        wellnessRepository.getForUser(userId, {
+          startDate: thirtyDaysAgo,
+          endDate: now,
+          limit: 30,
           orderBy: { date: 'desc' },
-          take: 30,
           select: {
             date: true,
             recoveryScore: true,

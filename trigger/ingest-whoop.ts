@@ -1,6 +1,8 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { fetchWhoopRecovery, fetchWhoopSleep, fetchWhoopWorkouts, normalizeWhoopRecovery, normalizeWhoopWorkout } from "../server/utils/whoop";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 
 export const ingestWhoopTask = task({
   id: "ingest-whoop",
@@ -78,16 +80,12 @@ export const ingestWhoopTask = task({
           continue;
         }
         
-        await prisma.wellness.upsert({
-          where: {
-            userId_date: {
-              userId,
-              date: wellness.date
-            }
-          },
-          update: wellness,
-          create: wellness
-        });
+        await wellnessRepository.upsert(
+          userId,
+          wellness.date,
+          wellness,
+          wellness
+        );
         upsertedCount++;
       }
       
@@ -126,17 +124,13 @@ export const ingestWhoopTask = task({
           // usually runs separately or we can rely on manual merging later.
           // But to avoid obvious clutter, let's check for exact duplicates from Whoop source.
           
-          await prisma.workout.upsert({
-            where: {
-              userId_source_externalId: {
-                userId,
-                source: 'whoop',
-                externalId: normalizedWorkout.externalId
-              }
-            },
-            update: normalizedWorkout,
-            create: normalizedWorkout
-          });
+          await workoutRepository.upsert(
+            userId,
+            'whoop',
+            normalizedWorkout.externalId,
+            normalizedWorkout,
+            normalizedWorkout
+          );
           workoutUpsertCount++;
         }
         

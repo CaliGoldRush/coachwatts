@@ -1,5 +1,6 @@
 import { logger, task } from "@trigger.dev/sdk/v3"
 import { prisma } from "../server/utils/db"
+import { nutritionRepository } from "../server/utils/repositories/nutritionRepository"
 import {
   fetchYazioDailySummary,
   fetchYazioConsumedItems,
@@ -112,14 +113,7 @@ export const ingestYazioTask = task({
           
           if (!isRecentDate) {
             // For older dates, check if we already have complete data
-            const existing = await prisma.nutrition.findUnique({
-              where: {
-                userId_date: {
-                  userId,
-                  date: dateObj
-                }
-              }
-            })
+            const existing = await nutritionRepository.getByDate(userId, dateObj)
             
             // Skip if record exists and already has product names (check first meal item)
             if (existing && existing.breakfast) {
@@ -241,14 +235,11 @@ export const ingestYazioTask = task({
           
           // Upsert to database
           // When updating, clear AI analysis since the underlying data has changed
-          const result = await prisma.nutrition.upsert({
-            where: {
-              userId_date: {
-                userId,
-                date: nutrition.date
-              }
-            },
-            update: {
+          const result = await nutritionRepository.upsert(
+            userId,
+            nutrition.date,
+            nutrition,
+            {
               ...nutrition,
               // Clear AI analysis fields since nutrition data has changed
               aiAnalysis: null,
@@ -267,9 +258,8 @@ export const ingestYazioTask = task({
               macroDistributionExplanation: null,
               hydrationStatusExplanation: null,
               timingOptimizationExplanation: null
-            },
-            create: nutrition
-          })
+            }
+          )
           
           upsertedCount++
           logger.log(`[${date}] ✅ Synced successfully (ID: ${result.id})`)

@@ -1,5 +1,7 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { prisma } from "../server/utils/db";
+import { workoutRepository } from "../server/utils/repositories/workoutRepository";
+import { nutritionRepository } from "../server/utils/repositories/nutritionRepository";
 import { generateStructuredAnalysis } from "../server/utils/gemini";
 
 interface TrendAnalysis {
@@ -53,11 +55,10 @@ async function generateNutritionExplanation(
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - period);
   
-  const nutrition = await prisma.nutrition.findMany({
-    where: {
-      userId,
-      date: { gte: startDate }
-    },
+  const nutrition = await nutritionRepository.getForUser(userId, {
+    startDate,
+    limit: 10,
+    orderBy: { date: 'desc' },
     select: {
       date: true,
       calories: true,
@@ -65,9 +66,7 @@ async function generateNutritionExplanation(
       carbs: true,
       fat: true,
       waterMl: true
-    },
-    orderBy: { date: 'desc' },
-    take: 10
+    }
   });
 
   const prompt = `Analyze these nutrition trends for an endurance athlete:
@@ -158,11 +157,10 @@ async function generateWorkoutExplanation(
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - period);
   
-  const workouts = await prisma.workout.findMany({
-    where: {
-      userId,
-      date: { gte: startDate }
-    },
+  const workouts = await workoutRepository.getForUser(userId, {
+    startDate,
+    limit: 10,
+    orderBy: { date: 'desc' },
     select: {
       date: true,
       title: true,
@@ -173,9 +171,7 @@ async function generateWorkoutExplanation(
       averageHr: true,
       rpe: true,
       feel: true
-    },
-    orderBy: { date: 'desc' },
-    take: 10
+    }
   });
 
   const prompt = `Analyze these workout trends for an endurance athlete:
@@ -246,12 +242,12 @@ async function calculateNutritionSummary(userId: string, period: number) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - period);
   
-  const nutrition = await prisma.nutrition.findMany({
-    where: {
-      userId,
-      date: { gte: startDate },
-      overallScore: { not: null }
-    },
+  // Note: getForUser does not support complex filtering like 'overallScore: { not: null }' directly yet.
+  // Using getForUser and filtering in memory or extending repository is preferred.
+  // Given we are calculating summaries, we can fetch recent data and filter.
+  // Or we can accept fetching all recent and filtering for valid scores.
+  const allNutrition = await nutritionRepository.getForUser(userId, {
+    startDate,
     select: {
       overallScore: true,
       macroBalanceScore: true,
@@ -260,6 +256,8 @@ async function calculateNutritionSummary(userId: string, period: number) {
       hydrationScore: true
     }
   });
+  
+  const nutrition = allNutrition.filter((n: any) => n.overallScore != null);
 
   if (nutrition.length === 0) return null;
 
@@ -277,12 +275,9 @@ async function calculateWorkoutSummary(userId: string, period: number) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - period);
   
-  const workouts = await prisma.workout.findMany({
-    where: {
-      userId,
-      date: { gte: startDate },
-      overallScore: { not: null }
-    },
+  // Similar logic for workouts
+  const allWorkouts = await workoutRepository.getForUser(userId, {
+    startDate,
     select: {
       overallScore: true,
       technicalScore: true,
@@ -291,6 +286,8 @@ async function calculateWorkoutSummary(userId: string, period: number) {
       executionScore: true
     }
   });
+  
+  const workouts = allWorkouts.filter((w: any) => w.overallScore != null);
 
   if (workouts.length === 0) return null;
 

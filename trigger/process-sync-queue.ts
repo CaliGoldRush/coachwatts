@@ -20,6 +20,8 @@ export const processSyncQueueTask = schedules.task({
     
     try {
       // Fetch all pending sync operations
+      // SyncQueue is a system utility table, not a core domain model like Workout/Nutrition.
+      // Direct prisma access here is acceptable as it's not subject to business logic like duplicates.
       const pendingItems = await prisma.syncQueue.findMany({
         where: {
           status: "PENDING",
