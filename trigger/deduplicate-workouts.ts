@@ -4,22 +4,7 @@ import { workoutRepository } from "../server/utils/repositories/workoutRepositor
 import { userBackgroundQueue } from "./queues";
 
 interface DuplicateGroup {
-  workouts: Array<{
-    id: string
-    source: string
-    title: string
-    type: string
-    durationSec: number
-    date: Date
-    completenessScore: number
-    hasHeartRate: boolean
-    hasPower: boolean
-    hasStreams: boolean
-    averageWatts: number | null
-    averageHr: number | null
-    tss: number | null
-    plannedWorkoutId: string | null
-  }>
+  workouts: Array<any> // Full workout objects
   bestWorkoutId: string
   toDelete: string[]
 }
@@ -60,9 +45,15 @@ export const deduplicateWorkoutsTask = task({
       
       // Here we explicitly want ALL workouts, including potential duplicates, to analyze them.
       // So we use includeDuplicates: true
+      // Include stream ID to check for existence
       const workouts = await workoutRepository.getForUser(actualUserId, {
         includeDuplicates: true,
-        orderBy: { date: 'desc' }
+        orderBy: { date: 'desc' },
+        include: {
+           streams: {
+             select: { id: true }
+           }
+        }
       });
       
       logger.log(`Found ${workouts.length} workouts to analyze`, {
@@ -116,21 +107,84 @@ export const deduplicateWorkoutsTask = task({
           // Get the best workout
           const bestWorkout = group.workouts.find(w => w.id === group.bestWorkoutId);
           
-          if (bestWorkout && !bestWorkout.plannedWorkoutId && plannedWorkoutIds.length > 0) {
+          if (!bestWorkout) continue;
+
+          // MERGE LOGIC: Copy missing data from duplicates to best workout
+          const updates: any = {};
+          
+          // List of fields to check for merging
+          const mergeFields = [
+            'tss', 'trainingLoad', 'intensity', 'kilojoules', 'trimp',
+            'averageWatts', 'maxWatts', 'normalizedPower', 'weightedAvgWatts',
+            'averageHr', 'maxHr',
+            'averageCadence', 'maxCadence',
+            'averageSpeed', 'maxSpeed',
+            'distanceMeters', 'elevationGain',
+            'calories',
+            'rpe', 'feel',
+            'description', // If best has no description, take it from duplicate
+            'deviceName'
+          ];
+
+          const duplicatesList = group.workouts.filter(w => w.id !== group.bestWorkoutId);
+
+          for (const field of mergeFields) {
+            // If best workout is missing this field (null, undefined, or 0 for numbers)
+            if (bestWorkout[field] === null || bestWorkout[field] === undefined || bestWorkout[field] === 0 || bestWorkout[field] === '') {
+              // Find a duplicate that has this field
+              const donor = duplicatesList.find(w => w[field] !== null && w[field] !== undefined && w[field] !== 0 && w[field] !== '');
+              if (donor) {
+                updates[field] = donor[field];
+                logger.log(`Merging field ${field} from duplicate ${donor.id} to ${bestWorkout.id}`, {
+                   value: donor[field]
+                });
+              }
+            }
+          }
+
+          // Special handling for plannedWorkoutId
+          if (!bestWorkout.plannedWorkoutId && plannedWorkoutIds.length > 0) {
              logger.log(`Transferring planned workout link from duplicate to best workout`, {
               bestWorkoutId: group.bestWorkoutId,
               plannedWorkoutId: plannedWorkoutIds[0]
             });
-            
-            await workoutRepository.update(group.bestWorkoutId, {
-                plannedWorkoutId: plannedWorkoutIds[0]
-            });
+            updates.plannedWorkoutId = plannedWorkoutIds[0];
             
             // Mark the planned workout as completed
             await prisma.plannedWorkout.update({
               where: { id: plannedWorkoutIds[0] as string },
               data: { completed: true }
             });
+          }
+
+          // Stream Transfer Logic
+          if (!bestWorkout.streams) {
+            const donorWithStreams = duplicatesList.find(w => w.streams);
+            if (donorWithStreams) {
+               logger.log(`Transferring streams from duplicate ${donorWithStreams.id} to best workout ${bestWorkout.id}`);
+               
+               // We need to move the stream record to the new workout ID
+               // First check if bestWorkout somehow has a stream record (collision protection)
+               const existingStream = await prisma.workoutStream.findUnique({
+                 where: { workoutId: bestWorkout.id }
+               });
+               
+               if (!existingStream) {
+                 await prisma.workoutStream.update({
+                   where: { workoutId: donorWithStreams.id },
+                   data: { workoutId: bestWorkout.id }
+                 });
+                 // Update local state
+                 bestWorkout.streams = donorWithStreams.streams;
+               }
+            }
+          }
+          
+          // Apply updates if any
+          if (Object.keys(updates).length > 0) {
+            await workoutRepository.update(group.bestWorkoutId, updates);
+            // Update local object for consistency in logs/further checks
+            Object.assign(bestWorkout, updates);
           }
 
           // Mark duplicates
@@ -195,22 +249,14 @@ function findDuplicateGroups(workouts: any[]): DuplicateGroup[] {
     }
     
     if (duplicates.length > 1) {
-      const scoredWorkouts = duplicates.map(w => ({
-        id: w.id,
-        source: w.source,
-        title: w.title,
-        type: w.type,
-        durationSec: w.durationSec,
-        date: w.date,
-        completenessScore: calculateCompletenessScore(w),
-        hasHeartRate: !!w.averageHr,
-        hasPower: !!w.averageWatts,
-        hasStreams: !!w.streams,
-        averageWatts: w.averageWatts,
-        averageHr: w.averageHr,
-        tss: w.tss,
-        plannedWorkoutId: w.plannedWorkoutId
-      }));
+      // Calculate scores for all duplicates
+      const scoredWorkouts = duplicates.map(w => {
+        // Create a copy with the calculated score
+        return {
+          ...w,
+          completenessScore: calculateCompletenessScore(w)
+        };
+      });
       
       scoredWorkouts.sort((a, b) => b.completenessScore - a.completenessScore);
       
