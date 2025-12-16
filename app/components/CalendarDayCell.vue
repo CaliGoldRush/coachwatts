@@ -53,14 +53,29 @@
         v-for="activity in activities"
         :key="activity.id"
         @click="$emit('activity-click', activity)"
-        class="w-full text-left px-2 py-1 rounded text-xs hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group relative cursor-pointer"
+        @dragover.prevent="onDragOver"
+        @dragleave="onDragLeave"
+        @drop.stop="(e) => onDrop(e, activity)"
+        class="w-full text-left px-2 py-1 rounded text-xs hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group relative cursor-pointer overflow-hidden"
         :class="{
           'bg-green-50 dark:bg-green-900/20': activity.source === 'completed' && !activity.plannedWorkoutId,
           'bg-blue-50 dark:bg-blue-900/20': activity.source === 'completed' && activity.plannedWorkoutId,
           'bg-amber-50 dark:bg-amber-900/20': activity.source === 'planned' && activity.status === 'planned',
-          'bg-red-50 dark:bg-red-900/20': activity.status === 'missed'
+          'bg-red-50 dark:bg-red-900/20': activity.status === 'missed',
+          'ring-2 ring-primary-500 ring-offset-1': isDragOver === activity.id
         }"
       >
+        <!-- Drag Handle -->
+        <div
+          v-if="activity.source === 'completed'"
+          class="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing z-10 hover:bg-black/5 rounded-bl"
+          :draggable="true"
+          @dragstart.stop="(e) => onDragStart(e, activity)"
+          @click.stop
+        >
+          <UIcon name="i-heroicons-bars-2" class="w-3 h-3 text-gray-400" />
+        </div>
+
         <!-- Status Dot -->
         <div class="flex items-start gap-1.5">
           <div
@@ -196,12 +211,53 @@ const props = defineProps<{
   isOtherMonth: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'activity-click': [activity: CalendarActivity]
   'wellness-click': [date: Date]
+  'merge-activity': [data: { source: CalendarActivity, target: CalendarActivity }]
 }>()
 
 const dayNumber = computed(() => format(props.date, 'd'))
+const isDragOver = ref<string | null>(null)
+
+function onDragStart(event: DragEvent, activity: CalendarActivity) {
+  if (event.dataTransfer) {
+    event.dataTransfer.setData('application/json', JSON.stringify({
+      id: activity.id,
+      title: activity.title,
+      source: activity.source
+    }))
+    event.dataTransfer.effectAllowed = 'link'
+  }
+}
+
+function onDragOver(event: DragEvent) {
+  // Logic could be improved to check if valid target, but for now allow visual feedback
+}
+
+function onDragLeave(event: DragEvent) {
+  // Reset specific drag over state if implemented per-card
+}
+
+function onDrop(event: DragEvent, targetActivity: CalendarActivity) {
+  if (event.dataTransfer) {
+    const data = event.dataTransfer.getData('application/json')
+    if (data) {
+      try {
+        const sourceActivity = JSON.parse(data)
+        
+        if (sourceActivity.id === targetActivity.id) return
+        
+        emit('merge-activity', {
+          source: sourceActivity,
+          target: targetActivity
+        })
+      } catch (e) {
+        console.error('Error parsing drop data', e)
+      }
+    }
+  }
+}
 const isToday = computed(() => isTodayFn(props.date))
 
 // Get nutrition data from any activity on this day (they all have same nutrition data)
