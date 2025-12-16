@@ -209,6 +209,7 @@
             :is-other-month="day.isOtherMonth"
             @activity-click="openActivity"
             @wellness-click="openWellnessModal"
+            @merge-activity="onMergeActivity"
           />
         </template>
         </div>
@@ -447,6 +448,30 @@
       v-model="showWeekZoneModal"
       :week-data="selectedWeekData"
     />
+    
+    <!-- Merge Confirmation Modal -->
+    <UModal
+      v-model:open="showMergeModal"
+      title="Merge Workouts?"
+      description="This action cannot be undone."
+      :prevent-close="isMerging"
+    >
+      <template #body>
+        <p class="text-gray-700 dark:text-gray-300">
+          Do you want to merge <strong>{{ mergeSource?.title }}</strong> into <strong>{{ mergeTarget?.title }}</strong>?
+        </p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          The dragged workout will be marked as a duplicate, and the target workout will be kept as the primary version.
+        </p>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-3 w-full">
+          <UButton color="neutral" variant="ghost" @click="showMergeModal = false" :disabled="isMerging">Cancel</UButton>
+          <UButton color="primary" @click="confirmMerge" :loading="isMerging">Merge</UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -464,6 +489,10 @@ const showWellnessModal = ref(false)
 const selectedWellnessDate = ref<Date | null>(null)
 const showWeekZoneModal = ref(false)
 const selectedWeekData = ref<any>(null)
+const showMergeModal = ref(false)
+const mergeSource = ref<CalendarActivity | null>(null)
+const mergeTarget = ref<CalendarActivity | null>(null)
+const isMerging = ref(false)
 
 const currentDate = ref(new Date())
 const viewMode = ref<'calendar' | 'list'>('calendar')
@@ -648,6 +677,56 @@ function handlePlannedWorkoutDeleted() {
 function openWellnessModal(date: Date) {
   selectedWellnessDate.value = date
   showWellnessModal.value = true
+}
+
+function onMergeActivity({ source, target }: { source: CalendarActivity, target: CalendarActivity }) {
+  // Only allow merging completed workouts for now
+  if (source.source !== 'completed' || target.source !== 'completed') {
+    return // Or show a toast saying can only merge completed workouts
+  }
+  
+  mergeSource.value = source
+  mergeTarget.value = target
+  showMergeModal.value = true
+}
+
+async function confirmMerge() {
+  if (!mergeSource.value || !mergeTarget.value) return
+  
+  isMerging.value = true
+  try {
+    await $fetch('/api/workouts/merge', {
+      method: 'POST',
+      body: {
+        primaryWorkoutId: mergeTarget.value.id,
+        secondaryWorkoutId: mergeSource.value.id
+      }
+    })
+    
+    // Refresh activities
+    await refresh()
+    
+    showMergeModal.value = false
+    mergeSource.value = null
+    mergeTarget.value = null
+    
+    const toast = useToast()
+    toast.add({
+      title: 'Workouts merged',
+      description: 'The workouts have been successfully merged.',
+      color: 'success'
+    })
+  } catch (error: any) {
+    console.error('Merge failed:', error)
+    const toast = useToast()
+    toast.add({
+      title: 'Merge failed',
+      description: error.data?.message || 'Could not merge workouts.',
+      color: 'error'
+    })
+  } finally {
+    isMerging.value = false
+  }
 }
 
 // List View Helpers
