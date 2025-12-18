@@ -15,54 +15,61 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-3 flex-wrap">
             <UButton
               @click="showConfigModal = true"
               :loading="reportStore.generating"
-              size="sm"
+              icon="i-heroicons-adjustments-horizontal"
               color="primary"
               variant="solid"
+              size="sm"
+              class="font-bold"
             >
-              <UIcon name="i-heroicons-adjustments-horizontal" class="w-4 h-4 mr-2" />
-              Custom Report
+              Custom
             </UButton>
             <USeparator orientation="vertical" class="h-6" />
             <UButton
               @click="generateReport('LAST_3_WORKOUTS')"
               :loading="reportStore.generating"
-              size="sm"
+              icon="i-heroicons-chart-bar"
+              color="neutral"
               variant="outline"
+              size="sm"
+              class="font-bold"
             >
-              <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 mr-2" />
               Last 3 Workouts
             </UButton>
             <UButton
               @click="generateReport('WEEKLY_ANALYSIS')"
               :loading="reportStore.generating"
-              size="sm"
+              icon="i-heroicons-calendar"
+              color="neutral"
               variant="outline"
+              size="sm"
+              class="font-bold"
             >
-              <UIcon name="i-heroicons-calendar" class="w-4 h-4 mr-2" />
-              Weekly Analysis
+              Weekly
             </UButton>
             <UButton
               @click="generateReport('LAST_3_NUTRITION')"
               :loading="reportStore.generating"
-              size="sm"
-              color="success"
+              icon="i-heroicons-cake"
+              color="neutral"
               variant="outline"
+              size="sm"
+              class="font-bold"
             >
-              <UIcon name="i-heroicons-cake" class="w-4 h-4 mr-2" />
-              Last 3 Days Nutrition
+              Last 3 Days
             </UButton>
             <UButton
               @click="generateReport('LAST_7_NUTRITION')"
               :loading="reportStore.generating"
-              size="sm"
-              color="success"
+              icon="i-heroicons-cake"
+              color="neutral"
               variant="outline"
+              size="sm"
+              class="font-bold"
             >
-              <UIcon name="i-heroicons-cake" class="w-4 h-4 mr-2" />
               Weekly Nutrition
             </UButton>
           </div>

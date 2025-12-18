@@ -269,8 +269,11 @@ function formatTimestamp(timestamp: string | undefined) {
             icon="i-heroicons-plus"
             aria-label="New Chat"
             size="sm"
+            class="font-bold"
             @click="createNewChat"
-          />
+          >
+            New Chat
+          </UButton>
           <UButton
             to="/settings/ai"
             color="neutral"
@@ -286,9 +289,9 @@ function formatTimestamp(timestamp: string | undefined) {
     <template #body>
       <div class="flex h-full">
         <!-- Room List Sidebar -->
-        <div class="w-64 border-r border-gray-200 dark:border-gray-800 flex flex-col">
+        <div class="w-64 border-r border-gray-200 dark:border-gray-800 flex flex-col bg-gray-50 dark:bg-gray-900/40">
           <div class="p-4 border-b border-gray-200 dark:border-gray-800">
-            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Chat History</h2>
+            <h2 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Chat History</h2>
           </div>
           
           <div class="flex-1 overflow-y-auto py-2 px-2">

@@ -271,8 +271,10 @@ async function acceptSuggestion(suggestion: any) {
           <UButton
             v-if="!showWizard"
             color="primary"
-            size="sm"
+            variant="solid"
             icon="i-heroicons-plus"
+            size="sm"
+            class="font-bold"
             @click="showWizard = true"
           >
             Add Goal
@@ -299,20 +301,24 @@ async function acceptSuggestion(suggestion: any) {
               color="primary"
               variant="outline"
               icon="i-heroicons-sparkles"
+              size="sm"
+              class="font-bold"
               :loading="suggestionsLoading"
               @click="generateSuggestions"
             >
-              AI Suggest Goals
+              AI Suggest
             </UButton>
             <UButton
               v-if="activeGoals.length > 0"
               color="primary"
               variant="outline"
               icon="i-heroicons-check-badge"
+              size="sm"
+              class="font-bold"
               :loading="reviewLoading"
               @click="reviewGoals"
             >
-              Review Goals
+              Review
             </UButton>
           </div>
           

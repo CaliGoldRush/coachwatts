@@ -6,35 +6,36 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <button
+          <UButton
             @click="generateExplanations"
-            :disabled="generatingExplanations"
-            class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center gap-2"
+            :loading="generatingExplanations"
+            color="primary"
+            variant="solid"
+            icon="i-heroicons-sparkles"
+            size="sm"
+            class="font-bold"
           >
-            <UIcon v-if="generatingExplanations" name="i-heroicons-arrow-path" class="animate-spin" />
-            <UIcon v-else name="i-heroicons-sparkles" />
-            <span v-if="generatingExplanations">Generating...</span>
-            <span v-else>Generate Insights</span>
-          </button>
+            Insights
+          </UButton>
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <div class="p-6 space-y-6">
+      <div class="p-6 space-y-10">
         <!-- Page Header -->
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Performance Scores</h1>
-          <p class="text-sm text-muted mt-1">
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Performance Scores</h1>
+          <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
             Track your fitness metrics and performance trends across all training dimensions
           </p>
         </div>
 
         <!-- Athlete Profile Scores -->
-        <div class="space-y-6">
-          <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Athlete Profile</h2>
-            <UBadge v-if="profileData?.scores?.lastUpdated" color="neutral" variant="subtle">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between px-1">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">Athlete Profile</h2>
+            <UBadge v-if="profileData?.scores?.lastUpdated" color="neutral" variant="subtle" size="sm" class="font-bold">
               Updated {{ formatDate(profileData.scores.lastUpdated) }}
             </UBadge>
           </div>
@@ -182,14 +183,14 @@
             <!-- Trend Chart and Radar Chart Side by Side -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <!-- Score Trends (2/3 width) -->
-              <div class="lg:col-span-2">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Score Trends</h3>
+              <div class="lg:col-span-2 space-y-4">
+                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1">Score Trends</h3>
                 <TrendChart :data="workoutData.workouts" type="workout" />
               </div>
-
+      
               <!-- Current Balance (1/3 width) -->
-              <div class="lg:col-span-1">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Current Balance</h3>
+              <div class="lg:col-span-1 space-y-4">
+                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1">Current Balance</h3>
                 <RadarChart
                   :scores="{
                     overall: workoutData.summary?.avgOverall,
@@ -206,11 +207,13 @@
         </div>
 
         <!-- Nutrition Scores -->
-        <div class="space-y-6">
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Nutrition Quality</h2>
+        <div class="space-y-4">
+          <div class="px-1">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">Nutrition Quality</h2>
+          </div>
           
           <div v-if="nutritionLoading" class="flex justify-center py-12">
-            <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
+            <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary-500" />
           </div>
           
           <div v-else-if="nutritionData" class="space-y-6">
@@ -266,14 +269,14 @@
             <!-- Trend Chart and Radar Chart Side by Side -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <!-- Score Trends (2/3 width) -->
-              <div class="lg:col-span-2">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Score Trends</h3>
+              <div class="lg:col-span-2 space-y-4">
+                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1">Score Trends</h3>
                 <TrendChart :data="nutritionData.nutrition" type="nutrition" />
               </div>
 
               <!-- Current Balance (1/3 width) -->
-              <div class="lg:col-span-1">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Current Balance</h3>
+              <div class="lg:col-span-1 space-y-4">
+                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1">Current Balance</h3>
                 <RadarChart
                   :scores="{
                     overall: nutritionData.summary?.avgOverall,

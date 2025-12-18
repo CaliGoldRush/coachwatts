@@ -11,10 +11,13 @@
             @click="integrationStore.syncAllData"
             :loading="integrationStore.syncingData"
             :disabled="integrationStore.syncingData"
+            color="neutral"
+            variant="outline"
+            icon="i-heroicons-arrow-path"
             size="sm"
+            class="font-bold"
           >
-            <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-2" />
-            {{ integrationStore.syncingData ? 'Syncing...' : 'Sync Data' }}
+            Sync Data
           </UButton>
         </template>
       </UDashboardNavbar>
@@ -22,21 +25,21 @@
 
     <template #body>
       <ClientOnly>
-        <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div class="p-6 space-y-8">
           <div>
-            <h2 class="text-2xl font-bold">Welcome to Coach Watts!</h2>
-            <p class="mt-2 text-muted">Your AI-powered endurance coach is ready to help you optimize your training.</p>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Welcome to Coach Watts</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">Your AI-powered endurance coach is ready to help you optimize your training.</p>
           </div>
         
           <!-- Row 1: Athlete Profile / Today's Training / Performance Overview -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
             <!-- Athlete Profile Card - shown when connected -->
-            <UCard v-if="integrationStore?.intervalsConnected" class="flex flex-col">
+            <UCard v-if="integrationStore?.intervalsConnected" class="flex flex-col overflow-hidden">
               <template #header>
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <UIcon name="i-heroicons-user-circle" class="w-5 h-5" />
-                    <h3 class="font-semibold">Athlete Profile</h3>
+                    <UIcon name="i-heroicons-user-circle" class="w-5 h-5 text-primary-500" />
+                    <h3 class="font-bold text-sm tracking-tight uppercase">Athlete Profile</h3>
                   </div>
                   <UButton
                     to="/profile/settings"
@@ -44,12 +47,13 @@
                     color="neutral"
                     variant="ghost"
                     size="xs"
+                    class="rounded-full"
                   />
                 </div>
               </template>
               
               <!-- Loading skeleton -->
-              <div v-if="userStore?.loading && !userStore?.profile" class="space-y-3 text-sm animate-pulse flex-grow">
+              <div v-if="userStore?.loading && !userStore?.profile" class="space-y-4 animate-pulse flex-grow">
                 <div>
                   <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2"></div>
                   <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
@@ -70,109 +74,120 @@
                 </div>
               </div>
               
-              <!-- Actual profile data -->
-              <div v-else-if="userStore?.profile" class="space-y-3 text-sm flex-grow">
-                <div class="flex items-center gap-2">
-                  <p class="font-medium text-base">{{ userStore.profile.name || 'Athlete' }}</p>
-                  <p v-if="userStore.profile.age" class="text-muted text-xs">
-                    {{ userStore.profile.age }} years old
-                  </p>
+                <!-- Actual profile data -->
+                <div v-else-if="userStore?.profile" class="space-y-4 flex-grow">
+                  <div class="flex items-center gap-2 px-1">
+                    <p class="font-bold text-lg text-gray-900 dark:text-white">{{ userStore.profile.name || 'Athlete' }}</p>
+                    <p v-if="userStore.profile.age" class="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest">
+                      {{ userStore.profile.age }} yrs
+                    </p>
+                  </div>
+                  
+                  <!-- Performance Section - Clickable -->
+                  <NuxtLink
+                    to="/performance"
+                    class="group block w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 ring-1 ring-inset ring-gray-200 dark:ring-gray-700 hover:ring-primary-500/50 transition-all duration-200"
+                  >
+                    <div class="flex items-center justify-between mb-3">
+                      <p class="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Core Performance</p>
+                      <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-gray-400 group-hover:text-primary-500 transition-colors" />
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-1 text-[10px] font-bold text-gray-500 uppercase">
+                          <UIcon name="i-heroicons-bolt-solid" class="w-3 h-3" />
+                          FTP
+                        </div>
+                        <div class="text-sm font-bold text-gray-900 dark:text-white">{{ userStore.profile.ftp ? `${userStore.profile.ftp}W` : 'N/A' }}</div>
+                      </div>
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-1 text-[10px] font-bold text-gray-500 uppercase">
+                          <UIcon name="i-heroicons-scale" class="w-3 h-3" />
+                          Weight
+                        </div>
+                        <div class="text-sm font-bold text-gray-900 dark:text-white">{{ userStore.profile.weight ? `${userStore.profile.weight}kg` : 'N/A' }}</div>
+                      </div>
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-1 text-[10px] font-bold text-gray-500 uppercase">
+                          <UIcon name="i-heroicons-chart-bar-square" class="w-3 h-3" />
+                          W/kg
+                        </div>
+                        <div class="text-sm font-bold text-gray-900 dark:text-white">{{ userStore.profile.ftp && userStore.profile.weight ? (userStore.profile.ftp / userStore.profile.weight).toFixed(2) : 'N/A' }}</div>
+                      </div>
+                    </div>
+                  </NuxtLink>
+                  
+                  <!-- Wellness Section - Clickable -->
+                  <button
+                    v-if="userStore.profile.recentHRV || userStore.profile.restingHR || userStore.profile.recentSleep || userStore.profile.recentRecoveryScore"
+                    @click="openWellnessModal"
+                    class="group w-full text-left p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 ring-1 ring-inset ring-gray-200 dark:ring-gray-700 hover:ring-primary-500/50 transition-all duration-200"
+                  >
+                    <div class="flex items-center justify-between mb-3">
+                      <p class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Latest Wellness</p>
+                      <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-gray-400 group-hover:text-primary-500 transition-colors" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div v-if="userStore.profile.recentSleep" class="flex items-center gap-3">
+                        <div class="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+                          <UIcon name="i-heroicons-moon" class="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div>
+                          <div class="text-[10px] font-bold text-gray-500 uppercase">Sleep</div>
+                          <div class="text-sm font-bold text-gray-900 dark:text-white">{{ userStore.profile.recentSleep.toFixed(1) }}h</div>
+                        </div>
+                      </div>
+                      <div v-if="userStore.profile.recentHRV" class="flex items-center gap-3">
+                        <div class="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+                          <UIcon name="i-heroicons-heart-20-solid" class="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div>
+                          <div class="text-[10px] font-bold text-gray-500 uppercase">HRV</div>
+                          <div class="text-sm font-bold text-gray-900 dark:text-white">{{ Math.round(userStore.profile.recentHRV) }}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                      <span v-if="userStore.profile.latestWellnessDate" class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                        Updated {{ formatWellnessDate(userStore.profile.latestWellnessDate) }}
+                      </span>
+                      <span v-if="userStore.profile.recentRecoveryScore" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20">
+                        {{ userStore.profile.recentRecoveryScore }}% Recovery
+                      </span>
+                    </div>
+                  </button>
                 </div>
-                
-                <!-- Performance Section - Clickable -->
-                <NuxtLink
-                  to="/performance"
-                  class="block w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors"
-                >
-                  <div class="flex items-center justify-between mb-2">
-                    <p class="text-xs font-medium text-yellow-600 dark:text-yellow-400">Performance</p>
-                    <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-gray-400" />
-                  </div>
-                  <div class="grid grid-cols-3 gap-2 text-xs">
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-heroicons-bolt-solid" class="w-3 h-3 text-yellow-500" />
-                      <span class="text-muted">FTP:</span>
-                      <span class="font-medium">{{ userStore.profile.ftp ? `${userStore.profile.ftp}W` : 'N/A' }}</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-heroicons-scale" class="w-3 h-3 text-yellow-500" />
-                      <span class="text-muted">Weight:</span>
-                      <span class="font-medium">{{ userStore.profile.weight ? `${userStore.profile.weight}kg` : 'N/A' }}</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-heroicons-chart-bar-square" class="w-3 h-3 text-yellow-500" />
-                      <span class="text-muted">W/kg:</span>
-                      <span class="font-medium">{{ userStore.profile.ftp && userStore.profile.weight ? (userStore.profile.ftp / userStore.profile.weight).toFixed(2) : 'N/A' }}</span>
-                    </div>
-                  </div>
-                </NuxtLink>
-                
-                <!-- Wellness Section - Clickable -->
-                <button
-                  v-if="userStore.profile.recentHRV || userStore.profile.restingHR || userStore.profile.recentSleep || userStore.profile.recentRecoveryScore"
-                  @click="openWellnessModal"
-                  class="w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors"
-                >
-                  <div class="flex items-center justify-between mb-2">
-                    <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400">Latest Wellness</p>
-                    <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-gray-400" />
-                  </div>
-                  <div class="grid grid-cols-3 gap-2 text-xs">
-                    <div v-if="userStore.profile.recentSleep" class="flex items-center gap-1">
-                      <UIcon name="i-heroicons-moon" class="w-3 h-3 text-indigo-500" />
-                      <span class="text-muted">Sleep:</span>
-                      <span class="font-medium">{{ userStore.profile.recentSleep.toFixed(1) }}h</span>
-                    </div>
-                    <div v-if="userStore.profile.recentHRV" class="flex items-center gap-1">
-                      <UIcon name="i-heroicons-chart-bar" class="w-3 h-3 text-indigo-500" />
-                      <span class="text-muted">HRV:</span>
-                      <span class="font-medium">{{ Math.round(userStore.profile.recentHRV) }}</span>
-                      <span v-if="userStore.profile.avgRecentHRV" class="text-[10px] text-muted">(7d: {{ Math.round(userStore.profile.avgRecentHRV) }})</span>
-                    </div>
-                    <div v-if="userStore.profile.restingHR" class="flex items-center gap-1">
-                      <UIcon name="i-heroicons-heart" class="w-3 h-3 text-indigo-500" />
-                      <span class="text-muted">RHR:</span>
-                      <span class="font-medium">{{ userStore.profile.restingHR }}</span>
-                    </div>
-                    <div v-if="userStore.profile.recentRecoveryScore" class="flex items-center gap-1 col-span-2">
-                      <UIcon name="i-heroicons-bolt" class="w-3 h-3 text-indigo-500" />
-                      <span class="text-muted">Recovery:</span>
-                      <span class="font-medium">{{ userStore.profile.recentRecoveryScore }}/100</span>
-                    </div>
-                  </div>
-                  <p v-if="userStore.profile.latestWellnessDate" class="text-[10px] text-muted mt-1">
-                    Updated {{ formatWellnessDate(userStore.profile.latestWellnessDate) }}
-                  </p>
-                </button>
-              </div>
               
               <template #footer>
-                <div class="flex gap-2">
-                  <UButton to="/profile/athlete" block variant="outline">
-                    View Details
+                <div class="grid grid-cols-2 gap-3">
+                  <UButton to="/profile/athlete" color="neutral" variant="outline" size="sm" class="font-bold">
+                    Profile
                   </UButton>
                   <UButton
-                    variant="outline"
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    class="font-bold"
                     @click="userStore?.generateProfile"
                     :loading="userStore?.generating"
                     :disabled="userStore?.generating"
                     icon="i-heroicons-arrow-path"
                   >
-                    Regenerate
+                    Refresh
                   </UButton>
                 </div>
               </template>
             </UCard>
             
             <!-- Today's Recommendation Card -->
-            <UCard v-if="integrationStore.intervalsConnected" class="flex flex-col">
+            <UCard v-if="integrationStore.intervalsConnected" class="flex flex-col overflow-hidden">
               <template #header>
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <UIcon name="i-heroicons-light-bulb" class="w-5 h-5" />
-                    <h3 class="font-semibold">Today's Training</h3>
+                    <UIcon name="i-heroicons-light-bulb" class="w-5 h-5 text-primary-500" />
+                    <h3 class="font-bold text-sm tracking-tight uppercase">Today's Training</h3>
                   </div>
-                  <UBadge v-if="recommendationStore.todayRecommendation" :color="getRecommendationColor(recommendationStore.todayRecommendation.recommendation)">
+                  <UBadge v-if="recommendationStore.todayRecommendation" :color="getRecommendationColor(recommendationStore.todayRecommendation.recommendation)" variant="subtle" size="sm" class="font-bold">
                     {{ getRecommendationLabel(recommendationStore.todayRecommendation.recommendation) }}
                   </UBadge>
                 </div>
@@ -200,88 +215,79 @@
               </div>
               
               <template #footer>
-                <div class="flex gap-2">
+                <div class="grid grid-cols-2 gap-3">
                   <UButton
                     v-if="recommendationStore.todayRecommendation && !recommendationStore.generating"
+                    color="neutral"
                     variant="outline"
+                    size="sm"
+                    class="font-bold"
                     @click="openRecommendationModal"
-                    block
                   >
-                    View Details
+                    Details
                   </UButton>
                   <UButton
-                    variant="outline"
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    class="font-bold"
+                    :class="{ 'col-span-2': !recommendationStore.todayRecommendation || recommendationStore.generating }"
                     @click="recommendationStore.generateTodayRecommendation"
                     :loading="recommendationStore.generating"
                     :disabled="recommendationStore.generating"
-                    :block="!recommendationStore.todayRecommendation || recommendationStore.generating"
                     icon="i-heroicons-arrow-path"
                   >
-                    {{ recommendationStore.generating ? 'Running...' : (recommendationStore.todayRecommendation ? 'Refresh' : 'Get Recommendation') }}
+                    {{ recommendationStore.generating ? 'Thinking...' : (recommendationStore.todayRecommendation ? 'Refresh' : 'Get Insight') }}
                   </UButton>
                 </div>
               </template>
             </UCard>
             
             <!-- Performance Overview Card -->
-            <UCard v-if="integrationStore.intervalsConnected" class="flex flex-col">
+            <UCard v-if="integrationStore.intervalsConnected" class="flex flex-col overflow-hidden">
               <template #header>
                 <div class="flex items-center gap-2">
-                  <UIcon name="i-heroicons-chart-bar" class="w-5 h-5" />
-                  <h3 class="font-semibold">Performance Overview</h3>
+                  <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 text-primary-500" />
+                  <h3 class="font-bold text-sm tracking-tight uppercase">Performance Scores</h3>
                 </div>
               </template>
               
               <!-- Loading skeleton -->
-              <div v-if="loadingScores" class="space-y-3 animate-pulse flex-grow">
-                <div v-for="i in 4" :key="i" class="flex justify-between items-center">
+              <div v-if="loadingScores" class="space-y-4 animate-pulse flex-grow">
+                <div v-for="i in 4" :key="i" class="flex justify-between items-center p-3 rounded-lg bg-gray-50 dark:bg-gray-800/40">
                   <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
                   <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
                 </div>
               </div>
               
               <!-- Actual scores data -->
-              <div v-else-if="profileScores" class="space-y-3 flex-grow">
-                <div
-                  class="flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded px-2 py-1 -mx-2 transition-colors"
-                  @click="openScoreModal('currentFitness')"
+              <div v-else-if="profileScores" class="grid gap-3 flex-grow">
+                <button
+                  v-for="(score, key) in {
+                    currentFitness: { label: 'Current Fitness', color: 'bg-amber-50 dark:bg-amber-900/20 ring-amber-500/10' },
+                    recoveryCapacity: { label: 'Recovery Capacity', color: 'bg-emerald-50 dark:bg-emerald-900/20 ring-emerald-500/10' },
+                    nutritionCompliance: { label: 'Nutrition Quality', color: 'bg-purple-50 dark:bg-purple-900/20 ring-purple-500/10' },
+                    trainingConsistency: { label: 'Consistency', color: 'bg-blue-50 dark:bg-blue-900/20 ring-blue-500/10' }
+                  }"
+                  :key="key"
+                  class="flex justify-between items-center p-3 rounded-xl ring-1 ring-inset hover:ring-primary-500/50 transition-all duration-200"
+                  :class="score.color"
+                  @click="openScoreModal(key as any)"
                 >
-                  <span class="text-sm text-muted">Current Fitness</span>
-                  <UBadge :color="getScoreColor(profileScores.currentFitness)" size="lg">
-                    {{ profileScores.currentFitness || 'N/A' }}
+                  <span class="text-sm font-bold text-gray-700 dark:text-gray-200">{{ score.label }}</span>
+                  <UBadge
+                    :color="getScoreColor((profileScores as any)?.[key])"
+                    variant="subtle"
+                    size="sm"
+                    class="font-bold"
+                  >
+                    {{ (profileScores as any)?.[key]?.toFixed(1) || 'N/A' }}
                   </UBadge>
-                </div>
-                <div
-                  class="flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded px-2 py-1 -mx-2 transition-colors"
-                  @click="openScoreModal('recoveryCapacity')"
-                >
-                  <span class="text-sm text-muted">Recovery Capacity</span>
-                  <UBadge :color="getScoreColor(profileScores.recoveryCapacity)" size="lg">
-                    {{ profileScores.recoveryCapacity || 'N/A' }}
-                  </UBadge>
-                </div>
-                <div
-                  class="flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded px-2 py-1 -mx-2 transition-colors"
-                  @click="openScoreModal('nutritionCompliance')"
-                >
-                  <span class="text-sm text-muted">Nutrition Compliance</span>
-                  <UBadge :color="getScoreColor(profileScores.nutritionCompliance)" size="lg">
-                    {{ profileScores.nutritionCompliance || 'N/A' }}
-                  </UBadge>
-                </div>
-                <div
-                  class="flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded px-2 py-1 -mx-2 transition-colors"
-                  @click="openScoreModal('trainingConsistency')"
-                >
-                  <span class="text-sm text-muted">Training Consistency</span>
-                  <UBadge :color="getScoreColor(profileScores.trainingConsistency)" size="lg">
-                    {{ profileScores.trainingConsistency || 'N/A' }}
-                  </UBadge>
-                </div>
+                </button>
 
-                <div v-if="profileScores.lastUpdated" class="pt-2 border-t">
-                  <p class="text-xs text-muted text-center">
-                    Updated {{ formatScoreDate(profileScores.lastUpdated) }}
+                <div v-if="profileScores.lastUpdated" class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tight text-center italic">
+                    Analysis current as of {{ formatScoreDate(profileScores.lastUpdated) }}
                   </p>
                 </div>
               </div>
@@ -294,8 +300,8 @@
               </div>
               
               <template #footer>
-                <UButton to="/performance" block variant="outline">
-                  View Details
+                <UButton to="/performance" color="neutral" variant="outline" size="sm" block class="font-bold">
+                  Full Analytics
                 </UButton>
               </template>
             </UCard>
@@ -319,12 +325,15 @@
           <!-- Row 2: Recent Activity / Next Steps / Connection Status -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Recent Activity Card -->
-            <UCard class="lg:col-span-2">
+            <UCard class="lg:col-span-2 overflow-hidden">
               <template #header>
                 <div class="flex items-center justify-between">
-                  <h3 class="font-semibold">Recent Activity</h3>
-                  <UBadge v-if="activityStore.recentActivity && activityStore.recentActivity.items.length > 0" color="neutral" variant="subtle">
-                    Past 5 days
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-heroicons-clock" class="w-5 h-5 text-primary-500" />
+                    <h3 class="font-bold text-sm tracking-tight uppercase">Recent Activity</h3>
+                  </div>
+                  <UBadge v-if="activityStore.recentActivity && activityStore.recentActivity.items.length > 0" color="neutral" variant="subtle" size="xs" class="font-bold uppercase tracking-widest">
+                    Active Period
                   </UBadge>
                 </div>
               </template>
@@ -355,24 +364,24 @@
               </div>
               
               <!-- Timeline -->
-              <UTimeline v-else :items="activityStore.recentActivity.items" class="max-h-96 overflow-y-auto">
+              <UTimeline v-else :items="(activityStore.recentActivity.items as any)" class="max-h-96 overflow-y-auto">
                 <template #default="{ item }">
-                  <div class="flex items-start justify-between gap-3">
+                  <div class="flex items-start justify-between gap-3 group">
                     <div class="flex-1 min-w-0">
                       <NuxtLink
                         v-if="item.link"
                         :to="item.link"
-                        class="font-medium text-sm hover:text-primary transition-colors"
+                        class="font-bold text-sm text-gray-900 dark:text-white hover:text-primary-500 transition-colors"
                       >
                         {{ item.title }}
                       </NuxtLink>
-                      <p v-else class="font-medium text-sm">{{ item.title }}</p>
+                      <p v-else class="font-bold text-sm text-gray-900 dark:text-white">{{ item.title }}</p>
                       
-                      <p v-if="item.description" class="text-xs text-muted mt-0.5">
+                      <p v-if="item.description" class="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
                         {{ item.description }}
                       </p>
                     </div>
-                    <time class="text-xs text-muted whitespace-nowrap">
+                    <time class="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap mt-1">
                       {{ formatActivityDate(item.date) }}
                     </time>
                   </div>
@@ -381,32 +390,35 @@
             </UCard>
             
             <!-- Next Steps Card - hidden when reports exist -->
-            <UCard v-if="!hasReports">
+            <UCard v-if="!hasReports" class="bg-primary-50 dark:bg-primary-900/10 ring-primary-500/20">
               <template #header>
-                <h3 class="font-semibold">Next Steps</h3>
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-list-bullet" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                  <h3 class="font-bold text-sm tracking-tight uppercase">Getting Started</h3>
+                </div>
               </template>
-              <ul class="space-y-2 text-sm text-muted">
-                <li class="flex items-center gap-2">
-                  <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-success" />
-                  Account created successfully
+              <ul class="space-y-4">
+                <li class="flex items-start gap-3">
+                  <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-primary-500 mt-0.5 flex-shrink-0" />
+                  <span class="text-sm font-bold text-gray-700 dark:text-gray-200">Account Ready</span>
                 </li>
-                <li class="flex items-center gap-2">
+                <li class="flex items-start gap-3">
                   <UIcon
                     :name="integrationStore.intervalsConnected ? 'i-heroicons-check-circle' : 'i-heroicons-arrow-path'"
-                    :class="integrationStore.intervalsConnected ? 'w-5 h-5 text-success' : 'w-5 h-5'"
+                    :class="integrationStore.intervalsConnected ? 'text-primary-500 w-5 h-5 mt-0.5 flex-shrink-0' : 'w-5 h-5 mt-0.5 flex-shrink-0 animate-spin text-gray-400'"
                   />
-                  Connect Intervals.icu
+                  <span class="text-sm font-bold" :class="integrationStore.intervalsConnected ? 'text-gray-700 dark:text-gray-200' : 'text-gray-500'">Intervals.icu Sync</span>
                 </li>
-                <li class="flex items-center gap-2">
+                <li class="flex items-start gap-3">
                   <UIcon
                     :name="integrationStore.intervalsConnected ? 'i-heroicons-check-circle' : 'i-heroicons-arrow-path'"
-                    :class="integrationStore.intervalsConnected ? 'w-5 h-5 text-success' : 'w-5 h-5'"
+                    :class="integrationStore.intervalsConnected ? 'text-primary-500 w-5 h-5 mt-0.5 flex-shrink-0' : 'w-5 h-5 mt-0.5 flex-shrink-0 text-gray-400'"
                   />
-                  Sync your training data
+                  <span class="text-sm font-bold" :class="integrationStore.intervalsConnected ? 'text-gray-700 dark:text-gray-200' : 'text-gray-500'">Analyzing History</span>
                 </li>
-                <li class="flex items-center gap-2">
-                  <UIcon name="i-heroicons-arrow-path" class="w-5 h-5" />
-                  Get your first AI coaching report
+                <li class="flex items-start gap-3">
+                  <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <span class="text-sm font-bold text-gray-500">First AI Report</span>
                 </li>
               </ul>
             </UCard>

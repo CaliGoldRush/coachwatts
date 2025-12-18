@@ -8,10 +8,14 @@
         <template #right>
           <UButton
             color="primary"
+            variant="solid"
             icon="i-heroicons-user-plus"
-            label="Add Athlete"
+            size="sm"
+            class="font-bold"
             @click="isConnectModalOpen = true"
-          />
+          >
+            Add Athlete
+          </UButton>
         </template>
       </UDashboardNavbar>
     </template>

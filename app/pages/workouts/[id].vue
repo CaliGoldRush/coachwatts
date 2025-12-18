@@ -323,21 +323,25 @@
                 v-if="!workout.aiAnalysis"
                 icon="i-heroicons-sparkles"
                 color="primary"
+                variant="solid"
+                size="sm"
+                class="font-bold"
                 :loading="analyzingWorkout"
                 :disabled="analyzingWorkout"
                 @click="analyzeWorkout"
               >
-                {{ analyzingWorkout ? 'Analyzing...' : 'Analyze Workout' }}
+                Analyze
               </UButton>
               <UButton
                 v-else
                 icon="i-heroicons-arrow-path"
                 color="neutral"
                 variant="ghost"
+                size="sm"
+                class="font-bold"
                 :loading="analyzingWorkout"
                 :disabled="analyzingWorkout"
                 @click="analyzeWorkout"
-                size="sm"
               >
                 Re-analyze
               </UButton>

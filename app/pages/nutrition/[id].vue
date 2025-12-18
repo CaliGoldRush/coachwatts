@@ -207,21 +207,25 @@
                 v-if="!nutrition.aiAnalysis"
                 icon="i-heroicons-sparkles"
                 color="primary"
+                variant="solid"
+                size="sm"
+                class="font-bold"
                 :loading="analyzingNutrition"
                 :disabled="analyzingNutrition"
                 @click="analyzeNutrition"
               >
-                {{ analyzingNutrition ? 'Analyzing...' : 'Analyze Nutrition' }}
+                Analyze
               </UButton>
               <UButton
                 v-else
                 icon="i-heroicons-arrow-path"
                 color="neutral"
                 variant="ghost"
+                size="sm"
+                class="font-bold"
                 :loading="analyzingNutrition"
                 :disabled="analyzingNutrition"
                 @click="analyzeNutrition"
-                size="sm"
               >
                 Re-analyze
               </UButton>

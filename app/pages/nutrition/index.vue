@@ -6,23 +6,29 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <div class="flex gap-2">
-            <button
+          <div class="flex gap-3">
+            <UButton
               @click="generateExplanations"
-              :disabled="generatingExplanations"
-              class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+              :loading="generatingExplanations"
+              color="primary"
+              variant="solid"
+              icon="i-heroicons-sparkles"
+              size="sm"
+              class="font-bold"
             >
-              <span v-if="generatingExplanations">Generating...</span>
-              <span v-else>Generate Insights</span>
-            </button>
-            <button
+              Insights
+            </UButton>
+            <UButton
               @click="analyzeAllNutrition"
-              :disabled="analyzingNutrition"
-              class="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+              :loading="analyzingNutrition"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-heroicons-cpu-chip"
+              class="font-bold"
             >
-              <span v-if="analyzingNutrition">Analyzing...</span>
-              <span v-else>Analyze All</span>
-            </button>
+              Analyze
+            </UButton>
           </div>
         </template>
       </UDashboardNavbar>
