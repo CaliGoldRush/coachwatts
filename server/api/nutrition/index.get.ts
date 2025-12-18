@@ -1,20 +1,13 @@
-import { getServerSession } from '#auth'
+import { getEffectiveUserId } from '../../utils/coaching'
 
 export default defineEventHandler(async (event) => {
-  const session = await getServerSession(event)
-  
-  if (!session?.user) {
-    throw createError({ 
-      statusCode: 401,
-      message: 'Unauthorized' 
-    })
-  }
+  const userId = await getEffectiveUserId(event)
   
   const query = getQuery(event)
   const limit = query.limit ? parseInt(query.limit as string) : 30
   
   try {
-    const nutrition = await nutritionRepository.getForUser((session.user as any).id, {
+    const nutrition = await nutritionRepository.getForUser(userId, {
       limit,
       orderBy: { date: 'desc' }
     })

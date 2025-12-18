@@ -1,14 +1,7 @@
-import { getServerSession } from '#auth'
+import { getEffectiveUserId } from '../../utils/coaching'
 
 export default defineEventHandler(async (event) => {
-  const session = await getServerSession(event)
-  
-  if (!session?.user) {
-    throw createError({ 
-      statusCode: 401,
-      message: 'Unauthorized' 
-    })
-  }
+  const userId = await getEffectiveUserId(event)
   
   const query = getQuery(event)
   const limit = query.limit ? parseInt(query.limit as string) : undefined
@@ -16,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const endDate = query.endDate ? new Date(query.endDate as string) : undefined
   const includeDuplicates = query.includeDuplicates === 'true'
 
-  const workouts = await workoutRepository.getForUser((session.user as any).id, {
+  const workouts = await workoutRepository.getForUser(userId, {
     startDate,
     endDate,
     limit,
