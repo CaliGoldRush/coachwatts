@@ -639,6 +639,42 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const analyzingWorkout = ref(false)
 
+// Set page title and description
+useHead(() => {
+  if (!workout.value) {
+    return {
+      title: 'Workout Details',
+      meta: [
+        { name: 'description', content: 'View detailed workout analysis and metrics' }
+      ]
+    }
+  }
+
+  const workoutType = workout.value.type ? ` - ${workout.value.type}` : ''
+  const workoutDate = new Date(workout.value.date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+  
+  const title = `${workout.value.title} | Coach Wattz`
+  
+  const descriptionParts = [
+    `${workout.value.title}${workoutType}`,
+    `${workoutDate}`,
+    workout.value.durationSec ? `Duration: ${formatDuration(workout.value.durationSec)}` : null,
+    workout.value.trainingLoad ? `Training Load: ${Math.round(workout.value.trainingLoad)}` : null,
+    workout.value.overallScore ? `Score: ${workout.value.overallScore}/10` : null
+  ].filter(Boolean).join(' • ')
+  
+  return {
+    title,
+    meta: [
+      { name: 'description', content: descriptionParts }
+    ]
+  }
+})
+
 // Rendered markdown analysis
 const renderedAnalysis = computed(() => {
   if (!workout.value?.aiAnalysis) return ''
