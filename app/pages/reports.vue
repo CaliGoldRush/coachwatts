@@ -18,7 +18,7 @@
           <div class="flex gap-2 flex-wrap">
             <UButton
               @click="showConfigModal = true"
-              :loading="generating"
+              :loading="reportStore.generating"
               size="sm"
               color="primary"
               variant="solid"
@@ -29,7 +29,7 @@
             <USeparator orientation="vertical" class="h-6" />
             <UButton
               @click="generateReport('LAST_3_WORKOUTS')"
-              :loading="generating"
+              :loading="reportStore.generating"
               size="sm"
               variant="outline"
             >
@@ -38,7 +38,7 @@
             </UButton>
             <UButton
               @click="generateReport('WEEKLY_ANALYSIS')"
-              :loading="generating"
+              :loading="reportStore.generating"
               size="sm"
               variant="outline"
             >
@@ -47,7 +47,7 @@
             </UButton>
             <UButton
               @click="generateReport('LAST_3_NUTRITION')"
-              :loading="generating"
+              :loading="reportStore.generating"
               size="sm"
               color="success"
               variant="outline"
@@ -57,7 +57,7 @@
             </UButton>
             <UButton
               @click="generateReport('LAST_7_NUTRITION')"
-              :loading="generating"
+              :loading="reportStore.generating"
               size="sm"
               color="success"
               variant="outline"
@@ -82,24 +82,24 @@
         
         <!-- Reports Table -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div v-if="status === 'pending'" class="p-8 text-center text-gray-600 dark:text-gray-400">
+          <div v-if="reportStore.status === 'pending'" class="p-8 text-center text-gray-600 dark:text-gray-400">
             <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
             <p>Loading reports...</p>
           </div>
           
-          <div v-else-if="status === 'error'" class="p-8 text-center text-red-600 dark:text-red-400">
+          <div v-else-if="reportStore.status === 'error'" class="p-8 text-center text-red-600 dark:text-red-400">
             <UIcon name="i-heroicons-exclamation-circle" class="w-8 h-8 mx-auto mb-2" />
             <p>Error loading reports</p>
-            <UButton size="sm" color="neutral" variant="solid" class="mt-2" @click="() => refresh()">Retry</UButton>
+            <UButton size="sm" color="neutral" variant="solid" class="mt-2" @click="() => reportStore.fetchReports()">Retry</UButton>
           </div>
 
-          <div v-else-if="!reports?.length" class="p-8 text-center text-gray-600 dark:text-gray-400">
+          <div v-else-if="!reportStore.reports.length" class="p-8 text-center text-gray-600 dark:text-gray-400">
             <UIcon name="i-heroicons-document-text" class="w-16 h-16 text-muted mx-auto mb-4" />
             <p class="mb-4">No reports yet</p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center flex-wrap">
               <UButton
                 @click="showConfigModal = true"
-                :loading="generating"
+                :loading="reportStore.generating"
                 size="lg"
               >
                 <UIcon name="i-heroicons-adjustments-horizontal" class="w-5 h-5 mr-2" />
@@ -108,7 +108,7 @@
               
               <UButton
                 @click="generateReport('LAST_3_WORKOUTS')"
-                :loading="generating"
+                :loading="reportStore.generating"
                 variant="outline"
               >
                 <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 mr-2" />
@@ -116,7 +116,7 @@
               </UButton>
               <UButton
                 @click="generateReport('WEEKLY_ANALYSIS')"
-                :loading="generating"
+                :loading="reportStore.generating"
                 variant="outline"
               >
                 <UIcon name="i-heroicons-calendar" class="w-4 h-4 mr-2" />
@@ -148,7 +148,7 @@
               </thead>
               <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 <tr
-                  v-for="report in reports"
+                  v-for="report in reportStore.reports"
                   :key="report.id"
                   class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
@@ -191,36 +191,21 @@
 </template>
 
 <script setup lang="ts">
-// Type definitions
-interface ReportType {
-  value: string
-  label: string
-  description: string
-  icon: string
-}
-
-interface Report {
-  id: string
-  type: string
-  status: string
-  createdAt: string
-  updatedAt: string
-  dateRangeStart: string
-  dateRangeEnd: string
-  modelVersion?: string
-}
-
 // State
-const generating = ref(false)
 const showConfigModal = ref(false)
 const toast = useToast()
+const { formatDateTime } = useFormat()
+
+const reportStore = useReportStore()
 
 definePageMeta({
   middleware: 'auth'
 })
 
-// Fetch reports data
-const { data: reports, status, refresh } = await useFetch<Report[]>('/api/reports')
+// Fetch reports data on mount
+onMounted(() => {
+    reportStore.fetchReports()
+})
 
 // Centralized report type configuration
 const REPORT_TYPE_CONFIG = {
@@ -262,67 +247,22 @@ const REPORT_TYPE_CONFIG = {
 } as const
 
 const generateReport = async (reportType: string) => {
-  generating.value = true
   try {
-    const result = await $fetch<{ reportId: string }>('/api/reports/generate', {
-      method: 'POST',
-      body: { type: reportType }
-    })
-    
-    toast.add({
-      title: 'Report Generation Started',
-      description: 'Your report is being generated. This may take a minute.',
-      color: 'success',
-      icon: 'i-heroicons-check-circle'
-    })
-    
-    await refresh()
-    navigateTo(`/report/${result.reportId}`)
+    const reportId = await reportStore.generateReport(reportType)
+    navigateTo(`/report/${reportId}`)
   } catch (error) {
-    console.error('Failed to generate report:', error)
-    toast.add({
-      title: 'Generation Failed',
-      description: error instanceof Error ? error.message : 'Failed to start report generation',
-      color: 'error',
-      icon: 'i-heroicons-exclamation-circle'
-    })
-  } finally {
-    generating.value = false
+    // Error handling is done in store
   }
 }
 
 const handleCustomReport = async (config: any) => {
-  generating.value = true
   showConfigModal.value = false
   
   try {
-    const result = await $fetch<{ reportId: string }>('/api/reports/generate', {
-      method: 'POST',
-      body: {
-        type: 'CUSTOM',
-        config
-      }
-    })
-    
-    toast.add({
-      title: 'Custom Report Generation Started',
-      description: 'Your custom report is being generated. This may take a minute.',
-      color: 'success',
-      icon: 'i-heroicons-check-circle'
-    })
-    
-    await refresh()
-    navigateTo(`/report/${result.reportId}`)
+    const reportId = await reportStore.generateReport('CUSTOM', config)
+    navigateTo(`/report/${reportId}`)
   } catch (error) {
-    console.error('Failed to generate custom report:', error)
-    toast.add({
-      title: 'Generation Failed',
-      description: error instanceof Error ? error.message : 'Failed to start custom report generation',
-      color: 'error',
-      icon: 'i-heroicons-exclamation-circle'
-    })
-  } finally {
-    generating.value = false
+    // Error handling is done in store
   }
 }
 
@@ -358,12 +298,6 @@ const formatDateRange = (start: string, end: string) => {
 }
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  })
+  return formatDateTime(date)
 }
 </script>

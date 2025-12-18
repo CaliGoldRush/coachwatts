@@ -397,11 +397,11 @@
               v-else
               color="primary"
               @click="generateNewProfile"
-              :loading="generating"
-              :disabled="generating"
+              :loading="userStore.generating"
+              :disabled="userStore.generating"
             >
               <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-2" />
-              {{ generating ? 'Generating...' : 'Regenerate Profile' }}
+              {{ userStore.generating ? 'Generating...' : 'Regenerate Profile' }}
             </UButton>
           </div>
         </div>
@@ -416,7 +416,7 @@
             </UButton>
           </div>
           <div v-else class="mt-4">
-            <UButton @click="generateNewProfile" :loading="generating">
+            <UButton @click="generateNewProfile" :loading="userStore.generating">
               Generate Profile
             </UButton>
           </div>
@@ -430,7 +430,11 @@
 import { CalendarDate, getLocalTimeZone, today as getTodayDate } from '@internationalized/date'
 
 const toast = useToast()
-const generating = ref(false)
+const { formatDate, formatShortDate } = useFormat()
+const { getTrendLabel } = useScoreColor()
+const { poll } = usePolling()
+
+const userStore = useUserStore()
 
 definePageMeta({
   middleware: 'auth'
@@ -446,11 +450,7 @@ const selectedDateLabel = computed(() => {
     return 'Latest Profile'
   }
   const date = selectedDate.value.toDate(getLocalTimeZone())
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(date)
+  return formatDate(date)
 })
 
 // Build query parameters based on selected date
@@ -495,14 +495,16 @@ const resetToLatest = () => {
 
 // Poll for updates if profile is processing
 if (profile.value?.status === 'PROCESSING') {
-  const interval = setInterval(async () => {
-    await refresh()
-    if (profile.value?.status !== 'PROCESSING') {
-      clearInterval(interval)
+  poll(
+    async () => {
+        await refresh()
+        return profile.value
+    },
+    (data: any) => data?.status !== 'PROCESSING',
+    {
+        interval: 5000
     }
-  }, 5000)
-  
-  onUnmounted(() => clearInterval(interval))
+  )
 }
 
 const statusColor = computed(() => {
@@ -555,29 +557,8 @@ const getPriorityBackgroundClass = (priority: string) => {
   return classes[priority] || 'bg-gray-50 dark:bg-gray-800'
 }
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  })
-}
-
-const formatShortDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
 const formatTrend = (trend: string) => {
-  const labels: Record<string, string> = {
-    'improving': '↗ Improving',
-    'stable': '→ Stable',
-    'declining': '↘ Declining',
-    'variable': '↕ Variable'
-  }
-  return labels[trend] || trend
+  return getTrendLabel(trend)
 }
 
 const handlePrint = () => {
@@ -585,58 +566,9 @@ const handlePrint = () => {
 }
 
 async function generateNewProfile() {
-  generating.value = true
-  try {
-    const result: any = await $fetch('/api/profile/generate', { method: 'POST' })
-    
-    toast.add({
-      title: 'Profile Generation Started',
-      description: 'Analyzing your training data. This may take a minute...',
-      color: 'success',
-      icon: 'i-heroicons-check-circle'
-    })
-    
-    // Poll for result
-    const pollForResult = async () => {
-      await refresh()
-      
-      if (profile.value && profile.value.status === 'COMPLETED') {
-        toast.add({
-          title: 'Profile Ready',
-          description: 'Your athlete profile has been generated',
-          color: 'success',
-          icon: 'i-heroicons-check-badge'
-        })
-        generating.value = false
-        return
-      }
-      
-      if (profile.value && profile.value.status === 'FAILED') {
-        toast.add({
-          title: 'Generation Failed',
-          description: 'Unable to generate profile. Please try again.',
-          color: 'error',
-          icon: 'i-heroicons-exclamation-circle'
-        })
-        generating.value = false
-        return
-      }
-      
-      // Continue polling
-      setTimeout(pollForResult, 5000)
-    }
-    
-    setTimeout(pollForResult, 5000)
-    
-  } catch (error: any) {
-    toast.add({
-      title: 'Generation Failed',
-      description: error.data?.message || 'Failed to generate profile',
-      color: 'error',
-      icon: 'i-heroicons-exclamation-circle'
-    })
-    generating.value = false
-  }
+  await userStore.generateProfile()
+  // Refresh local data after store action completes/updates
+  await refresh()
 }
 </script>
 

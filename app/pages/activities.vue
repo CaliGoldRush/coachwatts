@@ -518,7 +518,8 @@
 
     <!-- Wellness Modal -->
     <WellnessModal
-      v-model="showWellnessModal"
+      v-if="showWellnessModal"
+      v-model:open="showWellnessModal"
       :date="selectedWellnessDate"
     />
     
