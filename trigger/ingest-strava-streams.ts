@@ -8,6 +8,8 @@ import {
   analyzePacingStrategy,
   detectSurges
 } from '../server/utils/pacing'
+import { normalizeTSS } from '../server/utils/normalize-tss'
+import { calculateWorkoutStress } from '../server/utils/calculate-workout-stress'
 
 interface IngestStreamsPayload {
   userId: string
@@ -142,6 +144,25 @@ export const ingestStravaStreams = task({
     })
     
     logger.log('Stream data stored successfully', { streamId: workoutStream.id })
+    
+    // Normalize TSS (calculate if not already set)
+    try {
+      const tssResult = await normalizeTSS(payload.workoutId, payload.userId)
+      logger.log('TSS normalization complete', {
+        tss: tssResult.tss,
+        source: tssResult.source,
+        confidence: tssResult.confidence
+      })
+      
+      // Update CTL/ATL if TSS was set
+      if (tssResult.tss !== null) {
+        await calculateWorkoutStress(payload.workoutId, payload.userId)
+        logger.log('CTL/ATL updated for workout')
+      }
+    } catch (error) {
+      logger.error('Failed to normalize TSS', { error })
+      // Don't fail the entire ingestion if TSS normalization fails
+    }
     
     return {
       success: true,

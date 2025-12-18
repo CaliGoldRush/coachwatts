@@ -11,6 +11,8 @@ import {
 import { prisma } from "../server/utils/db";
 import { workoutRepository } from "../server/utils/repositories/workoutRepository";
 import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
+import { normalizeTSS } from "../server/utils/normalize-tss";
+import { calculateWorkoutStress } from "../server/utils/calculate-workout-stress";
 
 export const ingestIntervalsTask = task({
   id: "ingest-intervals",
@@ -121,6 +123,27 @@ export const ingestIntervalsTask = task({
           workout
         );
         workoutsUpserted++;
+        
+        // Normalize TSS (Intervals.icu usually provides TSS, but this ensures consistency)
+        try {
+          const tssResult = await normalizeTSS(upsertedWorkout.id, userId);
+          logger.log('TSS normalization complete', {
+            workoutId: upsertedWorkout.id,
+            tss: tssResult.tss,
+            source: tssResult.source
+          });
+          
+          // Update CTL/ATL if TSS was set
+          if (tssResult.tss !== null) {
+            await calculateWorkoutStress(upsertedWorkout.id, userId);
+          }
+        } catch (error) {
+          logger.error('Failed to normalize TSS for workout', {
+            workoutId: upsertedWorkout.id,
+            error
+          });
+          // Don't fail ingestion if TSS normalization fails
+        }
         
         // Trigger stream ingestion for activities with pacing data
         if (pacingActivityTypes.includes(upsertedWorkout.type)) {

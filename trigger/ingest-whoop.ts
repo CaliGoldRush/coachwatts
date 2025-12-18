@@ -3,6 +3,8 @@ import { fetchWhoopRecovery, fetchWhoopSleep, fetchWhoopWorkouts, normalizeWhoop
 import { prisma } from "../server/utils/db";
 import { workoutRepository } from "../server/utils/repositories/workoutRepository";
 import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
+import { normalizeTSS } from "../server/utils/normalize-tss";
+import { calculateWorkoutStress } from "../server/utils/calculate-workout-stress";
 
 export const ingestWhoopTask = task({
   id: "ingest-whoop",
@@ -124,7 +126,7 @@ export const ingestWhoopTask = task({
           // usually runs separately or we can rely on manual merging later.
           // But to avoid obvious clutter, let's check for exact duplicates from Whoop source.
           
-          await workoutRepository.upsert(
+          const upsertedWorkout = await workoutRepository.upsert(
             userId,
             'whoop',
             normalizedWorkout.externalId,
@@ -132,6 +134,27 @@ export const ingestWhoopTask = task({
             normalizedWorkout
           );
           workoutUpsertCount++;
+          
+          // Normalize TSS for the workout
+          try {
+            const tssResult = await normalizeTSS(upsertedWorkout.id, userId);
+            logger.log('[Whoop Ingest] TSS normalization complete', {
+              workoutId: upsertedWorkout.id,
+              tss: tssResult.tss,
+              source: tssResult.source
+            });
+            
+            // Update CTL/ATL if TSS was set
+            if (tssResult.tss !== null) {
+              await calculateWorkoutStress(upsertedWorkout.id, userId);
+            }
+          } catch (error) {
+            logger.error('[Whoop Ingest] Failed to normalize TSS', {
+              workoutId: upsertedWorkout.id,
+              error
+            });
+            // Don't fail ingestion if TSS normalization fails
+          }
         }
         
         logger.log(`[Whoop Ingest] Workouts Complete - Upserted: ${workoutUpsertCount}`);
