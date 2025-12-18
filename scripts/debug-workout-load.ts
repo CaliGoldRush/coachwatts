@@ -1,16 +1,17 @@
 import 'dotenv/config'
 import { prisma } from '../server/utils/db'
 
-const WORKOUT_ID = '413f4bd3-3e1f-4bea-84cc-ad1d5305d8eb'
+const WORKOUT_ID = process.argv[2] || '413f4bd3-3e1f-4bea-84cc-ad1d5305d8eb'
 
 async function main() {
   console.log(`\n${'='.repeat(80)}`)
   console.log('INVESTIGATING WORKOUT:', WORKOUT_ID)
   console.log('='.repeat(80))
   
-  // Get the workout from database
+  // Get the workout from database with streams
   const workout = await prisma.workout.findUnique({
-    where: { id: WORKOUT_ID }
+    where: { id: WORKOUT_ID },
+    include: { streams: true }
   })
   
   if (!workout) {
@@ -59,12 +60,137 @@ async function main() {
   console.log(`CTL (Fitness): ${workout.ctl ?? 'NULL'}`)
   console.log(`ATL (Fatigue): ${workout.atl ?? 'NULL'}`)
   
+  // Check for stream data
+  console.log('\n📈 STREAM DATA AVAILABILITY:')
+  console.log('-'.repeat(80))
+  if (workout.streams) {
+    const stream = workout.streams as any
+    console.log(`✅ Stream data found`)
+    
+    // Helper to parse stream data safely
+    const parseStream = (data: any) => {
+      if (!data) return null
+      if (Array.isArray(data)) return data
+      try {
+        return JSON.parse(data as string)
+      } catch {
+        return null
+      }
+    }
+    
+    const timeData = parseStream(stream.time)
+    const hrData = parseStream(stream.heartrate)
+    const wattsData = parseStream(stream.watts)
+    const cadenceData = parseStream(stream.cadence)
+    const altitudeData = parseStream(stream.altitude)
+    const distanceData = parseStream(stream.distance)
+    const paceData = parseStream(stream.pace)
+    
+    console.log(`   - Time points: ${timeData ? timeData.length : 'N/A'}`)
+    console.log(`   - Heart rate: ${hrData ? `✅ (${hrData.length} points)` : '❌'}`)
+    console.log(`   - Power (watts): ${wattsData ? `✅ (${wattsData.length} points)` : '❌'}`)
+    console.log(`   - Cadence: ${cadenceData ? `✅ (${cadenceData.length} points)` : '❌'}`)
+    console.log(`   - Altitude: ${altitudeData ? `✅ (${altitudeData.length} points)` : '❌'}`)
+    console.log(`   - Distance: ${distanceData ? `✅ (${distanceData.length} points)` : '❌'}`)
+    console.log(`   - Pace: ${paceData ? `✅ (${paceData.length} points)` : '❌'}`)
+  } else {
+    console.log('❌ No stream data found')
+  }
+  
+  // Get user profile to check for TSS calculation requirements
+  const user = await prisma.user.findUnique({
+    where: { id: workout.userId },
+    select: {
+      ftp: true,
+      maxHr: true,
+      restingHr: true
+    }
+  })
+  
+  console.log('\n👤 USER PROFILE FOR TSS CALCULATION:')
+  console.log('-'.repeat(80))
+  if (user) {
+    console.log(`FTP: ${user.ftp ?? 'NULL'} ${user.ftp ? '✅' : '❌ (needed for power-based TSS)'}`)
+    console.log(`Max HR: ${user.maxHr ?? 'NULL'} ${user.maxHr ? '✅' : '❌ (needed for HRSS)'}`)
+    console.log(`Resting HR: ${user.restingHr ?? 'NULL'} ${user.restingHr ? '✅' : '❌ (needed for HRSS)'}`)
+    console.log(`⚠️  LTHR: Field not yet in schema (would be needed for precise HRSS calculation)`)
+  }
+  
+  // TSS Calculation Possibilities
+  console.log('\n🧮 TSS CALCULATION POSSIBILITIES:')
+  console.log('-'.repeat(80))
+  
+  // Helper to parse stream data safely (reused from above)
+  const parseStreamSafe = (data: any) => {
+    if (!data) return null
+    if (Array.isArray(data)) return data
+    try {
+      return JSON.parse(data as string)
+    } catch {
+      return null
+    }
+  }
+  
+  const hasWatts = workout.streams ? parseStreamSafe((workout.streams as any).watts) !== null : false
+  const hasHR = workout.streams ? parseStreamSafe((workout.streams as any).heartrate) !== null : false
+  
+  const canCalculateTSS = hasWatts && user?.ftp
+  const canCalculateHRSS = hasHR && user?.maxHr && user?.restingHr
+  const hasTRIMP = workout.trimp !== null
+  
+  if (canCalculateTSS) {
+    console.log('✅ CAN calculate TSS from power stream (preferred method)')
+    console.log('   Requirements met: Power data ✅, FTP ✅')
+  } else {
+    console.log('❌ CANNOT calculate TSS from power')
+    if (!workout.streams?.watts) console.log('   Missing: Power stream data')
+    if (!user?.ftp) console.log('   Missing: User FTP')
+  }
+  
+  if (canCalculateHRSS) {
+    console.log('✅ CAN calculate HRSS from heart rate stream (estimated)')
+    console.log('   Requirements met: HR data ✅, Max HR ✅, Resting HR ✅')
+    console.log('   Note: LTHR not in schema yet, will use estimated threshold')
+  } else {
+    console.log('❌ CANNOT calculate HRSS from heart rate')
+    if (!hasHR) console.log('   Missing: Heart rate stream data')
+    if (!user?.maxHr) console.log('   Missing: User Max HR')
+    if (!user?.restingHr) console.log('   Missing: User Resting HR')
+  }
+  
+  if (hasTRIMP) {
+    console.log(`✅ TRIMP available: ${workout.trimp} (basic HR-based score)`)
+  }
+  
+  // Check for Strava suffer score
+  if (workout.rawJson) {
+    const raw = workout.rawJson as any
+    if (raw.suffer_score) {
+      console.log(`\n💡 STRAVA SUFFER SCORE: ${raw.suffer_score}`)
+      console.log('   Note: Strava\'s suffer score could be used as TSS estimate')
+      console.log('   Suffer Score is Strava\'s proprietary training load metric')
+    }
+  }
+  
   // Check if there's raw JSON stored
   if (workout.rawJson) {
-    console.log('\n📦 RAW JSON DATA:')
+    console.log('\n📦 RAW JSON DATA (key fields):')
     console.log('-'.repeat(80))
     const raw = workout.rawJson as any
-    console.log(JSON.stringify(raw, null, 2))
+    const keyFields = {
+      id: raw.id,
+      name: raw.name,
+      type: raw.type,
+      sport_type: raw.sport_type,
+      suffer_score: raw.suffer_score,
+      calories: raw.calories,
+      has_heartrate: raw.has_heartrate,
+      average_heartrate: raw.average_heartrate,
+      max_heartrate: raw.max_heartrate,
+      device_watts: raw.device_watts || raw.laps?.[0]?.device_watts,
+      trainer: raw.trainer
+    }
+    console.log(JSON.stringify(keyFields, null, 2))
   }
   
   // If this is from intervals.icu, fetch the live data
