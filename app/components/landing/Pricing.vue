@@ -33,16 +33,15 @@
           <div
             class="rounded-2xl bg-gray-50 dark:bg-gray-800 py-10 text-center ring-1 ring-inset ring-gray-900/5 dark:ring-white/10 lg:flex lg:flex-col lg:justify-center lg:py-16">
             <div class="mx-auto max-w-xs px-8">
-              <p class="text-base font-semibold text-gray-600 dark:text-gray-400">Pay monthly</p>
+              <p class="text-base font-semibold text-gray-600 dark:text-gray-400">Early Access</p>
               <p class="mt-6 flex items-baseline justify-center gap-x-2">
-                <span class="text-5xl font-bold tracking-tight text-gray-900 dark:text-white">$12</span>
-                <span class="text-sm font-semibold leading-6 tracking-wide text-gray-600 dark:text-gray-400">USD</span>
+                <span class="text-5xl font-bold tracking-tight text-gray-900 dark:text-white">FREE</span>
               </p>
               <UButton to="/login" block size="xl" color="primary" class="mt-10">
                 Get access
               </UButton>
               <p class="mt-6 text-xs leading-5 text-gray-600 dark:text-gray-400">
-                Invoices and receipts available for easy company reimbursement
+                Free for our first users as an honorary thank you for being early adopters.
               </p>
             </div>
           </div>

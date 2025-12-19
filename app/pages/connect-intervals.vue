@@ -142,6 +142,14 @@ const connect = async () => {
       }
     })
 
+    // Trigger initial sync immediately
+    await $fetch('/api/integrations/sync', {
+      method: 'POST',
+      body: {
+        provider: 'intervals'
+      }
+    })
+
     toast.add({
       title: 'Connected!',
       description: `Successfully connected to Intervals.icu as ${result.athlete.name}`,

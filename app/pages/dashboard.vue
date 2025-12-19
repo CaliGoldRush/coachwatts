@@ -509,6 +509,19 @@
               </template>
             </UCard>
           </div>
+          
+          <!-- App Info Footer -->
+          <div class="flex justify-center pt-8 pb-4">
+             <UButton
+              to="/settings/changelog"
+              variant="ghost"
+              color="neutral"
+              size="xs"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              v{{ config.public.version }}
+            </UButton>
+          </div>
         </div>
       </ClientOnly>
     </template>
@@ -614,6 +627,7 @@ useHead({
   ]
 })
 
+const config = useRuntimeConfig()
 const { formatRelativeTime } = useFormat()
 const { getScoreColor: getScoreBadgeColor } = useScoreColor()
 
