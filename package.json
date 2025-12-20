@@ -20,6 +20,7 @@
     "@trigger.dev/sdk": "4.3.0",
     "@vueuse/core": "^11.3.0",
     "chart.js": "^4.5.1",
+    "chartjs-plugin-annotation": "^3.1.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "marked": "^17.0.1",
