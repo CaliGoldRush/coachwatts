@@ -316,3 +316,193 @@ export function calculateHeartRateRecovery(
   
   return null
 }
+
+/**
+ * Calculate Aerobic Decoupling (Pw:HR)
+ * Measures aerobic endurance by comparing Efficiency Factor (Power/HR)
+ * in the first half vs second half of the data.
+ */
+export function calculateAerobicDecoupling(
+  times: number[],
+  powerValues: number[],
+  hrValues: number[]
+): number | null {
+  if (!powerValues || !hrValues || powerValues.length !== hrValues.length || powerValues.length < 600) {
+    // Need at least 10 minutes of data
+    return null
+  }
+
+  // Filter out zeros and non-moving time (simplification: just zeros in power/hr)
+  const validData: { p: number; h: number }[] = []
+  for (let i = 0; i < powerValues.length; i++) {
+    if (powerValues[i] > 10 && hrValues[i] > 40) {
+      validData.push({ p: powerValues[i], h: hrValues[i] })
+    }
+  }
+
+  if (validData.length < 300) return null
+
+  // Split into two halves
+  const midPoint = Math.floor(validData.length / 2)
+  const firstHalf = validData.slice(0, midPoint)
+  const secondHalf = validData.slice(midPoint)
+
+  // Calculate Efficiency Factor (EF) = AvgPower / AvgHR
+  const getEF = (data: { p: number; h: number }[]) => {
+    const avgP = data.reduce((sum, d) => sum + d.p, 0) / data.length
+    const avgH = data.reduce((sum, d) => sum + d.h, 0) / data.length
+    return avgH > 0 ? avgP / avgH : 0
+  }
+
+  const ef1 = getEF(firstHalf)
+  const ef2 = getEF(secondHalf)
+
+  if (ef1 === 0) return null
+
+  // Decoupling = (EF1 - EF2) / EF1
+  // Positive value means EF dropped (HR rose for same power, or Power dropped for same HR)
+  return (ef1 - ef2) / ef1
+}
+
+/**
+ * Calculate Coasting Statistics
+ * Measures time spent not pedaling while moving.
+ */
+export function calculateCoastingStats(
+  times: number[],
+  powerValues: number[],
+  cadenceValues: number[],
+  velocityValues?: number[]
+): { totalTime: number; percentTime: number; eventCount: number } {
+  if (!powerValues || powerValues.length === 0) {
+    return { totalTime: 0, percentTime: 0, eventCount: 0 }
+  }
+
+  let coastingTime = 0
+  let coastingEvents = 0
+  let inCoasting = false
+  
+  // Thresholds
+  const minPower = 10
+  const minCadence = 20
+  const minVelocity = 2.0 // m/s (~7.2 km/h) - ensuring we are moving, not stopped
+
+  for (let i = 0; i < powerValues.length; i++) {
+    const p = powerValues[i]
+    const c = cadenceValues ? cadenceValues[i] : 0
+    const v = velocityValues ? velocityValues[i] : 5 // Assume moving if no velocity stream
+    
+    // Check if moving but not pedaling
+    // If cadence data exists, rely on it primarily. If not, use power < 10W.
+    const isPedaling = cadenceValues ? c > minCadence : p > minPower
+    const isMoving = v > minVelocity
+
+    if (isMoving && !isPedaling) {
+      coastingTime++ // Assuming 1s intervals roughly
+      
+      if (!inCoasting) {
+        inCoasting = true
+        coastingEvents++
+      }
+    } else {
+      inCoasting = false
+    }
+  }
+
+  const totalDuration = times[times.length - 1] - times[0]
+  
+  return {
+    totalTime: coastingTime,
+    percentTime: totalDuration > 0 ? (coastingTime / totalDuration) * 100 : 0,
+    eventCount: coastingEvents
+  }
+}
+
+export interface Surge {
+  start_time: number
+  duration: number
+  avg_power: number
+  max_power: number
+  cost_avg_power: number // Avg power in the 60s AFTER the surge
+}
+
+/**
+ * Detect "Matches" (Surges) and their cost
+ * Identifies efforts > threshold (e.g. 120% FTP) and analyzes subsequent fade.
+ */
+export function detectSurgesAndFades(
+  times: number[],
+  powerValues: number[],
+  ftp: number
+): Surge[] {
+  if (!powerValues || !ftp || ftp === 0) return []
+
+  const surgeThreshold = ftp * 1.2 // 120% FTP
+  const minSurgeDuration = 10 // seconds
+  const recoveryWindow = 60 // seconds to analyze after surge
+
+  const surges: Surge[] = []
+  let inSurge = false
+  let startIndex = 0
+
+  // 1. Detect candidate segments
+  const candidates: { start: number; end: number }[] = []
+
+  for (let i = 0; i < powerValues.length; i++) {
+    if (powerValues[i] >= surgeThreshold) {
+      if (!inSurge) {
+        inSurge = true
+        startIndex = i
+      }
+    } else {
+      if (inSurge) {
+        inSurge = false
+        // Check duration (assuming 1s intervals for simplicity, or use times)
+        const duration = times[i] - times[startIndex]
+        if (duration >= minSurgeDuration) {
+          candidates.push({ start: startIndex, end: i })
+        }
+      }
+    }
+  }
+
+  // Handle surge at end of workout
+  if (inSurge) {
+     const duration = times[times.length - 1] - times[startIndex]
+     if (duration >= minSurgeDuration) {
+       candidates.push({ start: startIndex, end: times.length - 1 })
+     }
+  }
+
+  // 2. Process Surges
+  // Merge close surges? For now, keep distinct to see repeated attacks.
+
+  candidates.forEach(cand => {
+    const segment = powerValues.slice(cand.start, cand.end + 1)
+    const avg = segment.reduce((a, b) => a + b, 0) / segment.length
+    const max = Math.max(...segment)
+
+    // Calculate "Cost" - power in the recovery window
+    // Look ahead 60s
+    let costSum = 0
+    let costCount = 0
+    const recoveryEndIndex = Math.min(powerValues.length - 1, cand.end + recoveryWindow)
+    
+    for (let k = cand.end + 1; k <= recoveryEndIndex; k++) {
+      costSum += powerValues[k]
+      costCount++
+    }
+    
+    const costAvg = costCount > 0 ? costSum / costCount : 0
+
+    surges.push({
+      start_time: times[cand.start],
+      duration: times[cand.end] - times[cand.start],
+      avg_power: Math.round(avg),
+      max_power: Math.round(max),
+      cost_avg_power: Math.round(costAvg)
+    })
+  })
+
+  return surges
+}
