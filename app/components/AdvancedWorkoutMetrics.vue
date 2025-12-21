@@ -19,7 +19,7 @@
             <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aerobic Decoupling</h3>
             <UPopover mode="hover">
               <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-gray-400 cursor-help" />
-              <template #panel>
+              <template #content>
                 <div class="p-3 text-xs max-w-xs">
                   Measures the drift between Power and Heart Rate. < 5% is good aerobic fitness. > 5% indicates fatigue.
                 </div>
@@ -55,7 +55,7 @@
             </div>
             <UPopover mode="hover">
               <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-gray-400 cursor-help" />
-              <template #panel>
+              <template #content>
                 <div class="p-3 text-xs max-w-xs">
                   Your "matchbook". Shows how much anaerobic energy you have left. Drains above FTP, recharges below.
                 </div>
@@ -90,7 +90,7 @@
             </div>
             <UPopover mode="hover">
               <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-gray-400 cursor-help" />
-              <template #panel>
+              <template #content>
                 <div class="p-3 text-xs max-w-xs">
                   Distribution of pedaling style based on Power and Cadence.
                 </div>
@@ -147,7 +147,7 @@
             <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Micro-Rests</h3>
             <UPopover mode="hover">
               <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-gray-400 cursor-help" />
-              <template #panel>
+              <template #content>
                 <div class="p-3 text-xs max-w-xs">
                   Time spent moving but not pedaling (0 watts or 0 cadence). Helps analyze efficiency and recovery.
                 </div>
@@ -182,7 +182,7 @@
         </div>
 
         <!-- 5. Matches Burnt -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-red-500 md:col-span-2 xl:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-red-500">
           <div class="flex items-center justify-between mb-2">
             <div class="flex flex-col">
               <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Matches Burnt</h3>
@@ -190,7 +190,7 @@
             </div>
              <UPopover mode="hover">
               <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-gray-400 cursor-help" />
-              <template #panel>
+              <template #content>
                 <div class="p-3 text-xs max-w-xs">
                   Surges above 120% FTP that require significant recovery. "Burning a match" depletes your anaerobic battery.
                 </div>
@@ -217,6 +217,102 @@
           </div>
         </div>
 
+        <!-- 6. Fatigue Sensitivity (Late Fade) -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4" :class="getFadeColor(data.advanced.fatigueSensitivity?.decay)">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Endurance Fade</h3>
+            <UPopover mode="hover">
+              <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-gray-400 cursor-help" />
+              <template #content>
+                <div class="p-3 text-xs max-w-xs">
+                  Efficiency loss (Power/HR) comparing the first 20% vs the last 20% of the workout. Higher decay indicates faster fatigue.
+                </div>
+              </template>
+            </UPopover>
+          </div>
+
+          <div v-if="data.advanced.fatigueSensitivity">
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">
+              {{ data.advanced.fatigueSensitivity.decay.toFixed(1) }}%
+            </div>
+            <div class="text-xs text-gray-500 mt-2">
+              <span v-if="data.advanced.fatigueSensitivity.decay < 5" class="text-green-600 dark:text-green-400 font-medium">Strong Finish</span>
+              <span v-else-if="data.advanced.fatigueSensitivity.decay < 10" class="text-amber-600 dark:text-amber-400 font-medium">Moderate Fatigue</span>
+              <span v-else class="text-red-600 dark:text-red-400 font-medium">High Efficiency Loss</span>
+            </div>
+          </div>
+          <div v-else class="text-gray-400 text-sm italic">
+            Requires Power and HR data for full duration.
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 7. Stability Metrics -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-emerald-500">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Effort Stability</h3>
+            <UPopover mode="hover">
+              <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-gray-400 cursor-help" />
+              <template #content>
+                <div class="p-3 text-xs max-w-xs">
+                  Variation in effort (Power/Pace). Lower percentage means more stable and disciplined delivery.
+                </div>
+              </template>
+            </UPopover>
+          </div>
+
+          <div v-if="data.advanced.powerStability || data.advanced.paceStability">
+            <div class="flex items-baseline gap-4">
+              <div v-if="data.advanced.powerStability">
+                <div class="text-3xl font-bold text-gray-900 dark:text-white">
+                  {{ data.advanced.powerStability.overallCoV.toFixed(1) }}%
+                </div>
+                <div class="text-[10px] text-gray-500 uppercase">Power Variation</div>
+              </div>
+              <div v-if="data.advanced.paceStability">
+                <div class="text-3xl font-bold text-gray-900 dark:text-white">
+                  {{ data.advanced.paceStability.overallCoV.toFixed(1) }}%
+                </div>
+                <div class="text-[10px] text-gray-500 uppercase">Pace Variation</div>
+              </div>
+            </div>
+            
+            <div class="mt-4 flex gap-1">
+              <div 
+                v-for="i in (data.advanced.powerStability || data.advanced.paceStability).intervalStability.slice(0, 8)" 
+                :key="i.index"
+                class="flex-1 h-8 rounded-sm"
+                :class="i.cov < 5 ? 'bg-green-500' : i.cov < 10 ? 'bg-amber-500' : 'bg-red-500'"
+                :title="`${i.label}: ${i.cov.toFixed(1)}% variation`"
+              ></div>
+            </div>
+            <div class="text-[10px] text-gray-400 mt-1">Stability per interval (Work segments)</div>
+          </div>
+          <div v-else class="text-gray-400 text-sm italic">
+            Not enough steady data to calculate.
+          </div>
+        </div>
+
+        <!-- 8. Recovery Rate Trend -->
+        <div v-if="data.advanced.recoveryTrend && data.advanced.recoveryTrend.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border-l-4 border-green-400">
+           <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">HR Recovery Trend</h3>
+            <UPopover mode="hover">
+              <UIcon name="i-heroicons-information-circle" class="w-4 h-4 text-gray-400 cursor-help" />
+              <template #content>
+                <div class="p-3 text-xs max-w-xs">
+                  How much your heart rate drops in the first 60 seconds after each work interval. Consistent or improving drops indicate good fitness.
+                </div>
+              </template>
+            </UPopover>
+          </div>
+
+          <div class="h-40">
+            <Line :data="getRecoveryTrendChartData()" :options="getRecoveryChartOptions()" />
+          </div>
+        </div>
       </div>
 
       <!-- Detailed Match Analysis Table -->
@@ -315,6 +411,13 @@ function getDriftColor(val: number | null) {
   return 'border-red-500' // High
 }
 
+function getFadeColor(val: number | null | undefined) {
+  if (val === undefined || val === null) return 'border-gray-200 dark:border-gray-700'
+  if (val < 5) return 'border-green-500' // Excellent
+  if (val < 10) return 'border-amber-500' // Warning
+  return 'border-red-500' // Heavy Fade
+}
+
 function formatDuration(seconds: number) {
   const mins = Math.floor(seconds / 60)
   const secs = Math.round(seconds % 60)
@@ -340,7 +443,7 @@ function getSparklineOptions(label: string) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        mode: 'index',
+        mode: 'index' as const,
         intersect: false,
         callbacks: {
            label: (ctx: any) => `${label}: ${Math.round(ctx.parsed.y)}`
@@ -399,6 +502,61 @@ function getEfChartData() {
       fill: false,
       tension: 0.4
     }]
+  }
+}
+
+function getRecoveryTrendChartData() {
+  if (!data.value?.advanced?.recoveryTrend) return { labels: [], datasets: [] }
+  
+  const trends = data.value.advanced.recoveryTrend
+  const labels = trends.map((t: any) => `Interval ${t.intervalIndex + 1}`)
+  const drops = trends.map((t: any) => t.drop60s)
+
+  return {
+    labels,
+    datasets: [{
+      label: 'HR Drop (60s)',
+      data: drops,
+      borderColor: 'rgb(34, 197, 94)',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 4,
+      pointHoverRadius: 6
+    }]
+  }
+}
+
+function getRecoveryChartOptions() {
+  const isDark = document.documentElement.classList.contains('dark')
+  
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx: any) => `Recovery: -${ctx.parsed.y} bpm`
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: isDark ? '#9CA3AF' : '#4B5563' },
+        grid: { display: false }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: isDark ? '#9CA3AF' : '#4B5563' },
+        grid: { color: isDark ? 'rgba(75, 85, 99, 0.2)' : 'rgba(209, 213, 219, 0.4)' },
+        title: {
+          display: true,
+          text: 'BPM Drop',
+          color: isDark ? '#9CA3AF' : '#4B5563'
+        }
+      }
+    }
   }
 }
 
