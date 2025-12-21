@@ -78,6 +78,7 @@ model User {
   sessions      Session[]
   integrations    Integration[] // External App Connections (Whoop, Intervals)
   workouts        Workout[]
+  fitFiles        FitFile[]
   plannedWorkouts PlannedWorkout[]
   dailyMetrics    DailyMetric[]
   wellness        Wellness[]
@@ -364,6 +365,9 @@ model Workout {
   streams         WorkoutStream? // Time-series pacing data
   plannedWorkout  PlannedWorkout? @relation(fields: [plannedWorkoutId], references: [id], onDelete: SetNull)
   
+  // Link to raw FIT file
+  fitFile         FitFile?
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -403,6 +407,24 @@ model WorkoutStream {
   updatedAt       DateTime @updatedAt
   
   @@index([workoutId])
+}
+
+// Raw FIT file storage
+model FitFile {
+  id          String   @id @default(uuid())
+  userId      String
+  filename    String
+  fileData    Bytes    // The raw .fit file content
+  hash        String   // For deduplication (MD5/SHA256 of content)
+  
+  workoutId   String?  @unique
+  workout     Workout? @relation(fields: [workoutId], references: [id], onDelete: SetNull)
+  
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([hash])
 }
 
 // Planned workouts from Intervals.icu
