@@ -130,6 +130,9 @@ const availableMetrics = computed<Metric[]>(() => {
   if (streamData.value.cadence && streamData.value.cadence.length > 0) {
     metrics.push({ key: 'cadence', label: 'Cadence', color: 'rgb(245, 158, 11)', unit: 'rpm' })
   }
+  if (streamData.value.grade && streamData.value.grade.length > 0) {
+    metrics.push({ key: 'grade', label: 'Grade', color: 'rgb(107, 114, 128)', unit: '%' })
+  }
   
   return metrics
 })
