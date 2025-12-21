@@ -484,14 +484,25 @@
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Workouts</h2>
-            <button
-              @click="analyzeAllWorkouts"
-              :disabled="analyzingWorkouts"
-              class="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-3 rounded transition-colors text-sm"
-            >
-              <span v-if="analyzingWorkouts">Analyzing...</span>
-              <span v-else>Analyze All</span>
-            </button>
+            <div class="flex gap-2">
+              <UButton
+                to="/workouts/upload"
+                icon="i-heroicons-cloud-arrow-up"
+                size="sm"
+                color="primary"
+                variant="solid"
+              >
+                Upload FIT
+              </UButton>
+              <button
+                @click="analyzeAllWorkouts"
+                :disabled="analyzingWorkouts"
+                class="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white font-medium py-2 px-3 rounded transition-colors text-sm"
+              >
+                <span v-if="analyzingWorkouts">Analyzing...</span>
+                <span v-else>Analyze All</span>
+              </button>
+            </div>
           </div>
       
           <div v-if="loading" class="p-8 text-center text-gray-600 dark:text-gray-400">
