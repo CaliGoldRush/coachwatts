@@ -346,6 +346,9 @@ model Workout {
   notes           String?  @db.Text // User's custom notes in markdown format
   notesUpdatedAt  DateTime? // When notes were last updated
   
+  // Sharing
+  shareToken      String?   @unique
+
   // Duplicate Detection & Management
   isDuplicate     Boolean  @default(false) // True if this workout is a duplicate
   duplicateOf     String?  // ID of the canonical workout this is a duplicate of
@@ -437,9 +440,11 @@ model PlannedWorkout {
   recommendations ActivityRecommendation[]
   completedWorkouts Workout[] // Workouts that completed this planned workout
   
+  shareToken      String?  @unique
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   @@index([userId, date])
   @@index([userId, syncStatus])
   @@unique([userId, externalId]) // Prevent duplicates
