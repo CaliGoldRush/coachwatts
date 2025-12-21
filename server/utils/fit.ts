@@ -61,6 +61,15 @@ export function normalizeFitSession(session: any, userId: string, filename: stri
     variabilityIndex = Math.round((session.normalized_power / avgWatts) * 100) / 100
   }
 
+  // Calculate efficiency factor if possible (NP / Avg HR)
+  let efficiencyFactor = null
+  if (session.normalized_power && avgHr) {
+    efficiencyFactor = Math.round((session.normalized_power / avgHr) * 100) / 100
+  }
+
+  // Calculate decoupling if possible (needs streams usually, but check if session has it)
+  // FIT file usually doesn't have decoupling pre-calculated in session
+
   // Determine title from date and type if not provided
   const date = new Date(session.start_time)
   const title = `${type} - ${date.toLocaleDateString()}`
@@ -86,6 +95,7 @@ export function normalizeFitSession(session: any, userId: string, filename: stri
     normalizedPower: session.normalized_power ? Math.round(session.normalized_power) : null,
     weightedAvgWatts: session.normalized_power ? Math.round(session.normalized_power) : null,
     variabilityIndex,
+    efficiencyFactor,
     
     // Heart Rate
     averageHr: avgHr,
@@ -106,7 +116,10 @@ export function normalizeFitSession(session: any, userId: string, filename: stri
     avgTemp: session.avg_temperature || null,
     
     // Metadata
-    isDuplicate: false
+    isDuplicate: false,
+    
+    // Store raw data
+    rawJson: session
   }
 }
 

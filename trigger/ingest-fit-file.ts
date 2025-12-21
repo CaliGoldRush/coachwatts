@@ -37,7 +37,19 @@ export const ingestFitFile = task({
       // Normalize to workout
       logger.log('Normalizing session data...');
       const workoutData = normalizeFitSession(session, userId, fitFile.filename);
+
+      // Extract streams
+      logger.log('Extracting and saving streams...');
+      const streams = extractFitStreams(fitData.records);
       
+      // Calculate derived metrics from streams if not present in session
+      // For Zwift workouts, TSS and normalized power might be missing
+      if (!workoutData.normalizedPower && streams.watts && streams.watts.length > 0) {
+        // Simple calculation of NP (would require more complex logic for proper NP)
+        // For now, let's rely on calculateWorkoutStress to do the heavy lifting later
+        logger.log('Normalized power missing from session, will be calculated from streams');
+      }
+
       // Upsert workout
       const workout = await workoutRepository.upsert(
         userId,
@@ -55,9 +67,6 @@ export const ingestFitFile = task({
         data: { workoutId: workout.id }
       });
       
-      // Extract streams
-      logger.log('Extracting and saving streams...');
-      const streams = extractFitStreams(fitData.records);
       
       // Save streams
       await prisma.workoutStream.upsert({
