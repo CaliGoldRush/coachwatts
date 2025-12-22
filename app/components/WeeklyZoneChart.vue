@@ -16,7 +16,7 @@
             v-for="type in (['power', 'hr'] as const)"
             :key="type"
             size="xs"
-            :color="selectedType === type ? 'primary' : 'gray'"
+            :color="selectedType === type ? 'primary' : 'neutral'"
             :variant="selectedType === type ? 'solid' : 'ghost'"
             class="font-bold uppercase text-[10px]"
             @click="selectedType = type"
@@ -87,6 +87,7 @@ const activeLabels = computed(() => {
   const labels = selectedType.value === 'power' ? data.value.zoneLabels.power : data.value.zoneLabels.hr
   
   // Filter labels to only include those that have a corresponding color
+  // AND ensure we don't try to show more zones than we have colors for
   return labels.slice(0, zoneColors.length)
 })
 
@@ -107,8 +108,9 @@ const chartData = computed(() => {
       return zones[z] || 0
     })
 
-    // Include Z1-Z5 always, Z6-Z7 only if they have data
+    // Include Z1-Z5 always if they exist in labels, Z6-Z7 only if they have data
     const hasData = zoneData.some(v => v > 0)
+    // Always show at least the first 5 zones if they are defined in labels
     if (hasData || z < 5) {
       datasets.push({
         label: activeLabels.value[z],
@@ -131,7 +133,7 @@ const chartOptions = computed(() => {
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
-      mode: 'index',
+      mode: 'index' as const,
       intersect: false,
     },
     plugins: {

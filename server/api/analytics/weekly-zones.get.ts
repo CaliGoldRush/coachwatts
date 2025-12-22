@@ -119,11 +119,15 @@ export default defineEventHandler(async (event) => {
       totalDuration: Math.round((w.totalDuration / 3600) * 10) / 10
     }))
 
+  // Use the same HR zone calculation logic for labels as used in aggregation
+  // Get LTHR for today to generate current zone labels
+  const currentLthr = await userRepository.getLthrForDate(userId, new Date())
+  
   return {
     weeks: result,
     zoneLabels: {
       power: calculatePowerZones(user.ftp || 200).map(z => z.name),
-      hr: calculateHrZones(null, user.maxHr || 190).map(z => z.name)
+      hr: calculateHrZones(currentLthr, user.maxHr || 190).map(z => z.name)
     }
   }
 })
