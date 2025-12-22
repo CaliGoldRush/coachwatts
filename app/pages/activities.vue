@@ -526,6 +526,7 @@
     <WorkoutQuickViewModal
       v-model="showWorkoutModal"
       :workout="selectedWorkout"
+      @deleted="handleWorkoutDeleted"
     />
 
     <!-- Wellness Modal -->
@@ -830,6 +831,12 @@ function handlePlannedWorkoutCompleted() {
 function handlePlannedWorkoutDeleted() {
   showPlannedWorkoutModal.value = false
   selectedPlannedWorkout.value = null
+  refresh() // Refresh the activities list
+}
+
+function handleWorkoutDeleted() {
+  showWorkoutModal.value = false
+  selectedWorkout.value = null
   refresh() // Refresh the activities list
 }
 

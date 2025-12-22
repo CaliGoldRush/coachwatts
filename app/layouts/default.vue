@@ -95,6 +95,7 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
   label: 'Settings',
   icon: 'i-lucide-settings',
   to: '/settings',
+  defaultOpen: route.path.includes('settings'),
   onSelect: () => {
     open.value = false
   },

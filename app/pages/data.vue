@@ -216,6 +216,40 @@
               <span v-else>Sync Now</span>
             </button>
           </div>
+          <!-- Withings Card -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Withings</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Weight & Sleep Tracking</p>
+              </div>
+              <div v-if="withingsStatus" :class="getStatusClass(withingsStatus.syncStatus)">
+                {{ withingsStatus.syncStatus || 'Not Connected' }}
+              </div>
+            </div>
+            
+            <div v-if="withingsStatus" class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Last Sync:</span>
+                <span class="text-gray-900 dark:text-white">
+                  {{ withingsStatus.lastSyncAt ? formatDate(withingsStatus.lastSyncAt) : 'Never' }}
+                </span>
+              </div>
+              <div v-if="withingsStatus.errorMessage" class="text-red-600 text-xs mt-2">
+                {{ withingsStatus.errorMessage }}
+              </div>
+            </div>
+
+            <button
+              @click="syncIntegration('withings')"
+              :disabled="syncing === 'withings'"
+              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              <span v-if="syncing === 'withings'">Syncing...</span>
+              <span v-else>Sync Now</span>
+            </button>
+          </div>
+
         </div>
 
         <!-- Data Summary -->
@@ -820,6 +854,7 @@ const analyzingNutrition = ref(false)
 const intervalsStatus = ref<any>(null)
 const whoopStatus = ref<any>(null)
 const yazioStatus = ref<any>(null)
+const withingsStatus = ref<any>(null)
 const stravaStatus = ref<any>(null)
 const dataSummary = ref({
   workouts: 0,
@@ -858,6 +893,7 @@ async function fetchStatus() {
     
     intervalsStatus.value = integrations.find((i: any) => i.provider === 'intervals')
     whoopStatus.value = integrations.find((i: any) => i.provider === 'whoop')
+    withingsStatus.value = integrations.find((i: any) => i.provider === 'withings')
     yazioStatus.value = integrations.find((i: any) => i.provider === 'yazio')
     stravaStatus.value = integrations.find((i: any) => i.provider === 'strava')
   } catch (error) {
@@ -996,6 +1032,13 @@ async function syncIntegration(provider: string) {
           icon: 'i-heroicons-check-badge'
         })
       } else if (provider === 'whoop' && whoopStatus.value?.syncStatus === 'SUCCESS') {
+        toast.add({
+          title: 'Sync Completed',
+          description: `${provider.charAt(0).toUpperCase() + provider.slice(1)} data has been successfully synced`,
+          color: 'success',
+          icon: 'i-heroicons-check-badge'
+        })
+      } else if (provider === 'withings' && withingsStatus.value?.syncStatus === 'SUCCESS') {
         toast.add({
           title: 'Sync Completed',
           description: `${provider.charAt(0).toUpperCase() + provider.slice(1)} data has been successfully synced`,

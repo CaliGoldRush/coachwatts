@@ -2,7 +2,33 @@
   <UModal 
     v-model:open="isOpen" 
     title="Workout Overview"
+    description="View detailed statistics for this workout"
   >
+    <!-- Custom Header with Delete Button -->
+    <template #header>
+      <div class="flex items-center justify-between w-full">
+        <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
+          Workout Overview
+        </h3>
+        <div class="flex items-center gap-2">
+          <UButton
+            color="error"
+            variant="ghost"
+            icon="i-heroicons-trash"
+            size="sm"
+            @click="showDeleteConfirm = true"
+          />
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-x-mark"
+            size="sm"
+            @click="closeModal"
+          />
+        </div>
+      </div>
+    </template>
+
     <!-- Hidden trigger - modal is controlled programmatically -->
     <span class="hidden"></span>
 
@@ -100,6 +126,32 @@
       </div>
     </template>
   </UModal>
+
+  <!-- Delete Confirmation Modal -->
+  <UModal
+    v-model:open="showDeleteConfirm"
+    title="Delete Workout"
+    description="Are you sure you want to delete this workout? This action cannot be undone."
+  >
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="showDeleteConfirm = false"
+        >
+          Cancel
+        </UButton>
+        <UButton
+          color="error"
+          :loading="isDeleting"
+          @click="deleteWorkout"
+        >
+          Delete
+        </UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -112,6 +164,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
+  'deleted': [workoutId: string]
 }>()
 
 const isOpen = computed({
@@ -119,8 +172,41 @@ const isOpen = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
+const isDeleting = ref(false)
+const showDeleteConfirm = ref(false)
+const toast = useToast()
+
 function closeModal() {
   isOpen.value = false
+}
+
+async function deleteWorkout() {
+  if (!props.workout?.id) return
+
+  isDeleting.value = true
+  try {
+    await $fetch(`/api/workouts/${props.workout.id}`, {
+      method: 'DELETE'
+    })
+    
+    toast.add({
+      title: 'Workout deleted',
+      color: 'success'
+    })
+    
+    showDeleteConfirm.value = false
+    emit('deleted', props.workout.id)
+    closeModal()
+  } catch (error) {
+    console.error('Failed to delete workout:', error)
+    toast.add({
+      title: 'Error',
+      description: 'Failed to delete workout',
+      color: 'error'
+    })
+  } finally {
+    isDeleting.value = false
+  }
 }
 
 function viewFullWorkout() {
