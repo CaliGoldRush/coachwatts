@@ -12,6 +12,27 @@ Welcome to the Coach Watts documentation. This comprehensive guide covers the sy
 
 ## 📚 Documentation Overview
 
+### [Development Rules & Guidelines](./RULES.md)
+**CRITICAL: Rules for AI Agents & Developers**
+
+**IMPORTANT:** All AI agents and developers must strictly adhere to the project's development rules.
+-   **Read [RULES.md](./RULES.md)** for a consolidated summary of all rules.
+-   **Reference [.roo/rules-code/](./.roo/rules-code/)** for the source of truth for specific guidelines:
+    -   [Database Guidelines](./.roo/rules-code/database-guidelines.md)
+    -   [Deployment Guidelines](./.roo/rules-code/deployment-guidelines.md)
+    -   [Design Guidelines](./.roo/rules-code/design-guidelines.md)
+    -   [Frontend Patterns](./.roo/rules-code/frontend-patterns.md)
+    -   [Nuxt Server Patterns](./.roo/rules-code/nuxt-server-patterns.md)
+    -   [Repository Pattern](./.roo/rules-code/repository-pattern.md)
+    -   [Server Management](./.roo/rules-code/server-management.md)
+
+**Key Mandates:**
+1.  **NEVER** reset the dev database.
+2.  **ALWAYS** scaffold migrations via CLI.
+3.  **NEVER** run the dev server (HMR handles updates).
+4.  **USE** the Repository Pattern for data access.
+5.  **FOLLOW** the specific UI/UX guidelines for Nuxt UI.
+
 ### [Architecture](./architecture.md)
 **System design and technical decisions**
 

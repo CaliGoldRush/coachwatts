@@ -34,3 +34,22 @@ When making changes to the database schema (`prisma/schema.prisma`):
 -   Ensures the migration history tracks with the schema.
 -   Prevents syntax errors and type mismatches.
 -   Maintains consistency between the Prisma Client and the database.
+
+## 3. Production Consistency & Verification
+
+### Rule: Verify Migrations Before Deployment
+Before deployment or merging changes, ensure that:
+1.  **All schema changes are reflected in migrations**: Run `pnpm prisma migrate status` to check for unapplied migrations or schema drift.
+2.  **Migrations are committed**: The `prisma/migrations` directory must contain the generated SQL files.
+3.  **Schema and Client match**: Ensure `pnpm prisma generate` has been run if the schema changed.
+
+### Rule: Check for Drift
+If the database schema has drifted (changes made manually or outside of migrations):
+1.  **Do NOT use** `migrate resolve` unless you are certain of the resolution.
+2.  Use `pnpm prisma migrate diff` to analyze differences between the schema and the database.
+
+### Rule: Ensure Schema Consistency
+To prevent schema drift between environment, always ensure that:
+1.  **All schema changes** (e.g., new tables, columns, indexes) in `prisma/schema.prisma` have a corresponding migration file in `prisma/migrations`.
+2.  **Never rely solely on `prisma db push`** in development if you intend to have reproducible migrations for production. `prisma db push` updates the database schema but does not create migration files.
+3.  **Before deploying**, verify that the production database schema matches the local schema. Use schema comparison tools or scripts (like `scripts/compare-schema.ts`) to detect discrepancies.
