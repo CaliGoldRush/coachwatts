@@ -1,5 +1,46 @@
 import { getServerSession } from '#auth'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Activity'],
+    summary: 'Get recent activity',
+    description: 'Returns a combined timeline of recent workouts, nutrition, and wellness data.',
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                count: { type: 'integer' },
+                items: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      type: { type: 'string', enum: ['workout', 'nutrition', 'wellness'] },
+                      date: { type: 'string', format: 'date-time' },
+                      icon: { type: 'string' },
+                      color: { type: 'string' },
+                      title: { type: 'string' },
+                      description: { type: 'string' },
+                      link: { type: 'string', nullable: true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   

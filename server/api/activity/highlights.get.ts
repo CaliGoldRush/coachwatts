@@ -3,6 +3,55 @@ import { workoutRepository } from '../../utils/repositories/workoutRepository'
 import { subDays } from 'date-fns'
 import { getServerSession } from '#auth'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Activity'],
+    summary: 'Get activity highlights',
+    description: 'Returns aggregated activity statistics and workload ratios (ACWR).',
+    parameters: [
+      {
+        name: 'days',
+        in: 'query',
+        schema: { type: 'integer', default: 30 }
+      }
+    ],
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                period: {
+                  type: 'object',
+                  properties: {
+                    days: { type: 'integer' },
+                    totalDuration: { type: 'integer' },
+                    totalDistance: { type: 'number' },
+                    totalTSS: { type: 'number' },
+                    workoutCount: { type: 'integer' },
+                    avgTSS: { type: 'number' }
+                  }
+                },
+                load: {
+                  type: 'object',
+                  properties: {
+                    acuteLoad: { type: 'number' },
+                    chronicLoad: { type: 'number' },
+                    workloadRatio: { type: 'number' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   const user = session?.user as any
