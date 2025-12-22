@@ -93,11 +93,35 @@ model User {
   llmUsage LlmUsage[]
   syncQueue SyncQueue[]
   goals         Goal[]
+  apiKeys       ApiKey[]
 
   // Coaching Relations
   coaches    CoachingRelationship[] @relation("AthleteRelation")
   athletes   CoachingRelationship[] @relation("CoachRelation")
   invites    CoachingInvite[]
+}
+
+// --------------------------------------
+// API Key Management
+// --------------------------------------
+
+model ApiKey {
+  id            String    @id @default(uuid())
+  userId        String
+  name          String
+  key           String    @unique // Hashed key
+  prefix        String    // First few characters for identification (e.g., "cw_...")
+  
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([key])
 }
 
 // --------------------------------------
