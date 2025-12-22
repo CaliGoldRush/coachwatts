@@ -27,6 +27,28 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
 
+  nitro: {
+    experimental: {
+      openAPI: true
+    },
+    openAPI: {
+      meta: {
+        title: 'Coach Watts API',
+        description: 'AI-powered endurance coaching platform API',
+        version: pkg.version
+      },
+      ui: {
+        scalar: {
+          route: '/_docs/scalar',
+          theme: 'purple'
+        },
+        swagger: {
+          route: '/_docs/swagger'
+        }
+      }
+    }
+  },
+
   css: ['~/assets/css/main.css'],
 
   auth: {

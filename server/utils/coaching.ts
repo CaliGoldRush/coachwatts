@@ -8,12 +8,24 @@ import { coachingRepository } from './repositories/coachingRepository'
  * after verifying the coaching relationship.
  */
 export async function getEffectiveUserId(event: H3Event): Promise<string> {
+  // 1. Try session (NuxtAuth)
   const session = await getServerSession(event)
-  if (!session?.user) {
+  let userId: string | null = null
+
+  if (session?.user) {
+    userId = (session.user as any).id
+  } else {
+    // 2. Try API key
+    const user = await validateApiKey(event)
+    if (user) {
+      userId = user.id
+    }
+  }
+
+  if (!userId) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  const userId = (session.user as any).id
   const actAsUserId = getHeader(event, 'x-act-as-user')
 
   if (!actAsUserId || actAsUserId === userId) {

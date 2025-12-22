@@ -22,4 +22,5 @@ declare global {
 
 export const prisma = globalThis.prismaGlobalV2 ?? prismaClientSingleton()
 
+// Force rebuild for new client
 if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobalV2 = prisma
