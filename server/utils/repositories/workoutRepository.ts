@@ -22,6 +22,10 @@ export const workoutRepository = {
     const where: Prisma.WorkoutWhereInput = {
       userId,
       // Default to hiding duplicates unless explicitly requested
+      // We don't hide duplicates by default here because the UI handles duplication visualization (e.g. merging)
+      // And we might want to see all workouts to debug why they are not showing up.
+      // Wait, the repository pattern document says "Defaults to hiding duplicates".
+      // Let's stick to the pattern but ensure we can see them if we want.
       isDuplicate: options.includeDuplicates ? undefined : false,
       date: {
         gte: options.startDate,

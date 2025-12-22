@@ -14,10 +14,10 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { provider } = body
   
-  if (!provider || !['intervals', 'whoop', 'yazio', 'strava', 'all'].includes(provider)) {
+  if (!provider || !['intervals', 'whoop', 'withings', 'yazio', 'strava', 'all'].includes(provider)) {
     throw createError({
       statusCode: 400,
-      message: 'Invalid provider. Must be "intervals", "whoop", "yazio", "strava", or "all"'
+      message: 'Invalid provider. Must be "intervals", "whoop", "withings", "yazio", "strava", or "all"'
     })
   }
   
@@ -54,6 +54,7 @@ export default defineEventHandler(async (event) => {
     // Individual provider sync windows
     // For Intervals: last 90 days + next 30 days (to capture future planned workouts)
     // For Whoop: last 90 days
+    // For Withings: last 90 days
     // For Yazio: last 5 days (to avoid rate limiting - older data is kept as-is)
     // For Strava: last 7 days (to respect API rate limits - 200 req/15min, 2000/day)
     let daysBack = provider === 'yazio' ? 5 : provider === 'strava' ? 7 : 90
@@ -98,6 +99,8 @@ export default defineEventHandler(async (event) => {
     ? 'ingest-intervals'
     : provider === 'whoop'
     ? 'ingest-whoop'
+    : provider === 'withings'
+    ? 'ingest-withings'
     : provider === 'yazio'
     ? 'ingest-yazio'
     : 'ingest-strava'

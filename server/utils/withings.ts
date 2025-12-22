@@ -484,6 +484,47 @@ export async function fetchWithingsWorkouts(
   return data.body.series || []
 }
 
+/**
+ * Fetches intraday heart rate data for a specific time range
+ */
+export async function fetchWithingsIntraday(
+  integration: Integration,
+  startDate: Date,
+  endDate: Date
+): Promise<Record<string, any>> {
+  const validIntegration = await ensureValidToken(integration)
+  
+  const url = new URL('https://wbsapi.withings.net/v2/measure')
+  url.searchParams.set('action', 'getintradayactivity')
+  url.searchParams.set('access_token', validIntegration.accessToken)
+  // Intraday API uses startdate/enddate (unix)
+  url.searchParams.set('startdate', Math.floor(startDate.getTime() / 1000).toString())
+  url.searchParams.set('enddate', Math.floor(endDate.getTime() / 1000).toString())
+  
+  // Request heart rate and other available high-frequency data
+  // Steps, elevation, calories, distance, stroke, pool_lap, duration, heart_rate, spo2_auto, rmssd, sdnn1, hrv_quality
+  url.searchParams.set('data_fields', 'heart_rate,steps,elevation,calories,distance,duration,spo2_auto,rmssd,sdnn1,hrv_quality')
+  
+  const response = await fetch(url.toString())
+  const data: any = await response.json()
+  
+  if (data.status !== 0) {
+      if (data.status === 401) {
+          const refreshedIntegration = await refreshWithingsToken(validIntegration)
+          url.searchParams.set('access_token', refreshedIntegration.accessToken)
+          const retryResponse = await fetch(url.toString())
+          const retryData: any = await retryResponse.json()
+          if (retryData.status !== 0) throw new Error(`Withings API error after refresh: Status ${retryData.status}`)
+          // Return raw series object (keys are timestamps)
+          return retryData.body.series || {}
+      }
+      throw new Error(`Withings API error: Status ${data.status}`)
+  }
+  
+  // Return raw series object (keys are timestamps)
+  return data.body.series || {}
+}
+
 export function normalizeWithingsWorkout(workout: WithingsWorkout, userId: string) {
     // Map Withings categories to our types
     // https://developer.withings.com/developer-guide/v3/integration-guide/public-health-data-api/data-api/all-categories-and-classification/
@@ -519,6 +560,14 @@ export function normalizeWithingsWorkout(workout: WithingsWorkout, userId: strin
     const type = categoryMap[workout.category] || 'Other'
     
     const startDate = new Date(workout.startdate * 1000)
+    // Adjust for timezone if provided
+    // Withings API documentation states 'startdate' is the number of seconds since epoch.
+    // However, for some users/devices, this might be offset incorrectly or devices might report local time as UTC.
+    // If we detect a timezone offset in 'timezone', we might need to trust it, or trust the timestamp.
+    // Given the issues seen (5 hour shift matching NY timezone), it suggests Withings might be adjusting time based on timezone setting.
+    // But we should store what Withings gives us as the "start time" unless we have a reliable way to know it's wrong.
+    // For now, we proceed with the timestamp provided.
+
     const endDate = new Date(workout.enddate * 1000)
     let durationSec = Math.round((endDate.getTime() - startDate.getTime()) / 1000)
     
