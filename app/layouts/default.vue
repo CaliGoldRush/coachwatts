@@ -123,6 +123,14 @@ const links = computed<NavigationMenuItem[][]>(() => [[{
       open.value = false
     }
   }, {
+    label: 'Developer',
+    icon: 'i-lucide-code-2',
+    to: '/settings/developer',
+    active: route.path === '/settings/developer',
+    onSelect: () => {
+      open.value = false
+    }
+  }, {
     label: 'Danger Zone',
     icon: 'i-lucide-alert-triangle',
     to: '/settings/danger',

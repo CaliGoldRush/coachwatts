@@ -71,6 +71,38 @@
       
       <div class="flex items-center justify-between p-4 border rounded-lg">
         <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+            <UIcon name="i-heroicons-scale" class="w-6 h-6 text-cyan-600" />
+          </div>
+          <div>
+            <h3 class="font-semibold">Withings</h3>
+            <p class="text-sm text-muted">Weight, body composition, and health metrics</p>
+          </div>
+        </div>
+        <div v-if="!withingsConnected">
+          <UButton
+            color="neutral"
+            variant="outline"
+            @click="navigateTo('/connect-withings')"
+          >
+            Connect
+          </UButton>
+        </div>
+        <div v-else class="flex items-center gap-2">
+          <UBadge color="success">Connected</UBadge>
+          <UButton
+            color="error"
+            variant="ghost"
+            size="xs"
+            @click="$emit('disconnect', 'withings')"
+          >
+            Disconnect
+          </UButton>
+        </div>
+      </div>
+      
+      <div class="flex items-center justify-between p-4 border rounded-lg">
+        <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
             <UIcon name="i-heroicons-cake" class="w-6 h-6 text-green-600" />
           </div>
@@ -163,6 +195,7 @@
 defineProps<{
   intervalsConnected: boolean
   whoopConnected: boolean
+  withingsConnected: boolean
   yazioConnected: boolean
   stravaConnected: boolean
   syncingYazio: boolean

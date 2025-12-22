@@ -34,6 +34,14 @@
             Coaching
           </UButton>
           <UButton
+            :variant="isActive('/settings/developer') ? 'solid' : 'ghost'"
+            :color="isActive('/settings/developer') ? 'primary' : 'neutral'"
+            @click="navigateTo('/settings/developer')"
+          >
+            <UIcon name="i-heroicons-code-bracket" class="w-4 h-4 mr-2" />
+            Developer
+          </UButton>
+          <UButton
             :variant="isActive('/settings/danger') ? 'solid' : 'ghost'"
             :color="isActive('/settings/danger') ? 'primary' : 'neutral'"
             @click="navigateTo('/settings/danger')"
