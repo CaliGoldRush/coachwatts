@@ -99,9 +99,9 @@
     <!-- Create Key Modal -->
     <UModal v-model:open="isCreateModalOpen" title="Create API Key" description="Give your new API key a name to help you identify it later.">
       <template #body>
-        <UFormGroup label="Key Name" help="e.g. My Website, External Script">
+        <UFormField label="Key Name" help="e.g. My Website, External Script">
           <UInput v-model="newKeyName" placeholder="Enter a name" @keyup.enter="createKey" />
-        </UFormGroup>
+        </UFormField>
 
         <div v-if="generatedKey" class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 rounded-lg">
           <div class="flex items-start gap-3">
