@@ -11,6 +11,49 @@ const MODEL_NAMES = {
   pro: 'gemini-pro-latest'
 } as const
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Chat'],
+    summary: 'Send chat message',
+    description: 'Sends a message to the AI coach and returns the response.',
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['roomId', 'content'],
+            properties: {
+              roomId: { type: 'string' },
+              content: { type: 'string' },
+              files: { type: 'array', items: { type: 'string' } },
+              replyMessage: { type: 'object' }
+            }
+          }
+        }
+      }
+    },
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                role: { type: 'string' },
+                parts: { type: 'array' },
+                metadata: { type: 'object' }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   if (!session?.user) {

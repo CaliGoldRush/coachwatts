@@ -1,5 +1,32 @@
 import { getServerSession } from '#auth'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Chat'],
+    summary: 'Create chat room',
+    description: 'Creates a new chat room for the authenticated user.',
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                roomId: { type: 'string' },
+                roomName: { type: 'string' },
+                avatar: { type: 'string' },
+                users: { type: 'array' }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   if (!session?.user) {

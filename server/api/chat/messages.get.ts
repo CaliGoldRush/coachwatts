@@ -1,5 +1,43 @@
 import { getServerSession } from '#auth'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Chat'],
+    summary: 'List chat messages',
+    description: 'Returns the message history for a specific chat room.',
+    parameters: [
+      {
+        name: 'roomId',
+        in: 'query',
+        required: true,
+        schema: { type: 'string' }
+      }
+    ],
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  role: { type: 'string' },
+                  parts: { type: 'array' },
+                  metadata: { type: 'object' }
+                }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   if (!session?.user) {

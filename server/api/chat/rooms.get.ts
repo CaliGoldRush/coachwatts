@@ -1,5 +1,36 @@
 import { getServerSession } from '#auth'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Chat'],
+    summary: 'List chat rooms',
+    description: 'Returns the list of chat rooms for the authenticated user.',
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  roomId: { type: 'string' },
+                  roomName: { type: 'string' },
+                  avatar: { type: 'string' },
+                  unreadCount: { type: 'integer' },
+                  lastMessage: { type: 'object', nullable: true }
+                }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   if (!session?.user) {
