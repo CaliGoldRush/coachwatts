@@ -983,7 +983,7 @@ function getScoreCircleClass(score: number) {
 function shouldShowPowerCurve(workout: any) {
   if (!workout) return false
   // Show power curve if workout has power data (watts stream)
-  const supportedSources = ['strava', 'intervals']
+  const supportedSources = ['strava', 'intervals', 'fit_file']
   return supportedSources.includes(workout.source) && workout.streams && (workout.averageWatts || workout.maxWatts)
 }
 
@@ -991,7 +991,7 @@ function shouldShowPacing(workout: any) {
   if (!workout) return false
   // Show timeline if workout has stream data (time-series HR, power, velocity, etc.)
   // This includes any activity type with streams, not just runs/rides
-  const supportedSources = ['strava', 'intervals']
+  const supportedSources = ['strava', 'intervals', 'fit_file']
   return supportedSources.includes(workout.source) && workout.streams
 }
 

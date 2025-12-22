@@ -4,10 +4,10 @@
     <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
-          <div class="flex items-center gap-2">
+          <NuxtLink to="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <UIcon name="i-lucide-zap" class="w-6 h-6 text-primary-500" />
             <span class="font-bold text-lg text-gray-900 dark:text-white">Coach Wattz</span>
-          </div>
+          </NuxtLink>
           <div class="flex items-center gap-4">
             <UButton
               to="/"
@@ -332,10 +332,9 @@
 </template>
 
 <script setup lang="ts">
-// Use guest middleware to allow access without auth
+// Public share page - accessible to everyone (authenticated or not)
 definePageMeta({
-  layout: false,
-  middleware: 'guest'
+  layout: false
 })
 
 const route = useRoute()
@@ -384,14 +383,14 @@ function getStatusBadgeClass(status: string) {
 
 function shouldShowPowerCurve(w: any) {
   if (!w) return false
-  const supportedSources = ['strava', 'intervals']
-  return supportedSources.includes(w.source) && w.streams && (w.averageWatts || w.maxWatts)
+  // Show power curve if workout has stream data and power metrics
+  return w.streams && (w.averageWatts || w.maxWatts)
 }
 
 function shouldShowPacing(w: any) {
   if (!w) return false
-  const supportedSources = ['strava', 'intervals']
-  return supportedSources.includes(w.source) && w.streams
+  // Show timeline and pacing if workout has stream data
+  return w.streams
 }
 
 function hasEfficiencyMetrics(w: any) {
