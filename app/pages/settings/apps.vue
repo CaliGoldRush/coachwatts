@@ -2,6 +2,7 @@
   <SettingsConnectedApps
     :intervals-connected="intervalsConnected"
     :whoop-connected="whoopConnected"
+    :withings-connected="withingsConnected"
     :yazio-connected="yazioConnected"
     :strava-connected="stravaConnected"
     :syncing-yazio="syncingYazio"
@@ -23,7 +24,7 @@ definePageMeta({
 useHead({
   title: 'Connected Apps',
   meta: [
-    { name: 'description', content: 'Manage your connected apps and integrations (Intervals.icu, WHOOP, Strava, Yazio).' }
+    { name: 'description', content: 'Manage your connected apps and integrations (Intervals.icu, WHOOP, Withings, Strava, Yazio).' }
   ]
 })
 
@@ -39,6 +40,10 @@ const intervalsConnected = computed(() =>
 
 const whoopConnected = computed(() =>
   integrationStatus.value?.integrations?.some((i: any) => i.provider === 'whoop') ?? false
+)
+
+const withingsConnected = computed(() =>
+  integrationStatus.value?.integrations?.some((i: any) => i.provider === 'withings') ?? false
 )
 
 const yazioConnected = computed(() =>
@@ -95,6 +100,8 @@ const disconnectIntegration = async (provider: string) => {
   try {
     const endpoint = provider === 'whoop'
       ? '/api/integrations/whoop/disconnect'
+      : provider === 'withings'
+      ? '/api/integrations/withings/disconnect'
       : `/api/integrations/${provider}/disconnect`
     
     await $fetch(endpoint, {
@@ -105,6 +112,8 @@ const disconnectIntegration = async (provider: string) => {
       ? 'Intervals.icu'
       : provider === 'whoop'
       ? 'WHOOP'
+      : provider === 'withings'
+      ? 'Withings'
       : provider === 'yazio'
       ? 'Yazio'
       : 'Strava'
@@ -127,11 +136,18 @@ const disconnectIntegration = async (provider: string) => {
 
 // Handle OAuth callback messages
 onMounted(() => {
-  if (route.query.whoop_success || route.query.strava_success || route.query.connected === 'yazio') {
+  if (route.query.whoop_success || route.query.withings_success || route.query.strava_success || route.query.connected === 'yazio') {
     if (route.query.whoop_success) {
       toast.add({
         title: 'Connected!',
         description: 'Successfully connected to WHOOP',
+        color: 'success'
+      })
+      refreshIntegrations()
+    } else if (route.query.withings_success) {
+      toast.add({
+        title: 'Connected!',
+        description: 'Successfully connected to Withings',
         color: 'success'
       })
       refreshIntegrations()
@@ -151,9 +167,9 @@ onMounted(() => {
       refreshIntegrations()
     }
     router.replace({ query: {} })
-  } else if (route.query.whoop_error || route.query.strava_error) {
-    const errorMsg = (route.query.whoop_error || route.query.strava_error) as string
-    const provider = route.query.whoop_error ? 'WHOOP' : 'Strava'
+  } else if (route.query.whoop_error || route.query.withings_error || route.query.strava_error) {
+    const errorMsg = (route.query.whoop_error || route.query.withings_error || route.query.strava_error) as string
+    const provider = route.query.whoop_error ? 'WHOOP' : route.query.withings_error ? 'Withings' : 'Strava'
     const description = errorMsg === 'no_code'
       ? 'Authorization was cancelled or no code was received'
       : `Failed to connect to ${provider}: ${errorMsg}`
