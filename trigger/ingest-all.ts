@@ -2,6 +2,7 @@ import { logger, task, batch } from "@trigger.dev/sdk/v3";
 import { prisma } from "../server/utils/db";
 import { ingestStravaTask } from "./ingest-strava";
 import { ingestWhoopTask } from "./ingest-whoop";
+import { ingestWithingsTask } from "./ingest-withings";
 import { ingestIntervalsTask } from "./ingest-intervals";
 import { ingestYazioTask } from "./ingest-yazio";
 
@@ -59,6 +60,12 @@ export const ingestAllTask = task({
         case 'whoop':
           tasksTrigger.push({
             task: ingestWhoopTask,
+            payload: taskPayload
+          });
+          break;
+        case 'withings':
+          tasksTrigger.push({
+            task: ingestWithingsTask,
             payload: taskPayload
           });
           break;
