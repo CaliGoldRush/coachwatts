@@ -1,6 +1,58 @@
 import { getServerSession } from '#auth'
 import { prisma } from '../../utils/db'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Goals'],
+    summary: 'Update goal',
+    description: 'Updates a specific goal by ID.',
+    parameters: [
+      {
+        name: 'id',
+        in: 'path',
+        required: true,
+        schema: { type: 'string' }
+      }
+    ],
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              description: { type: 'string' },
+              currentValue: { type: 'number' },
+              status: { type: 'string', enum: ['ACTIVE', 'COMPLETED', 'ARCHIVED'] },
+              targetDate: { type: 'string', format: 'date-time' },
+              targetValue: { type: 'number' }
+            }
+          }
+        }
+      }
+    },
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                goal: { type: 'object' }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' },
+      403: { description: 'Forbidden' },
+      404: { description: 'Goal not found' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   

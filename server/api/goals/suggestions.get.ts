@@ -1,6 +1,42 @@
 import { getServerSession } from '#auth'
 import { runs } from '@trigger.dev/sdk/v3'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Goals'],
+    summary: 'Get goal suggestions',
+    description: 'Retrieves the status and result of a goal suggestion job.',
+    parameters: [
+      {
+        name: 'jobId',
+        in: 'query',
+        required: true,
+        schema: { type: 'string' }
+      }
+    ],
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                status: { type: 'string' },
+                output: { type: 'object', nullable: true },
+                isCompleted: { type: 'boolean' },
+                isFailed: { type: 'boolean' }
+              }
+            }
+          }
+        }
+      },
+      400: { description: 'Job ID required' },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   

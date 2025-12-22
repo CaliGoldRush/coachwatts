@@ -1,6 +1,64 @@
 import { getServerSession } from '#auth'
 import { z } from 'zod'
 
+import { getServerSession } from '#auth'
+import { z } from 'zod'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['Goals'],
+    summary: 'Create goal',
+    description: 'Creates a new goal for the authenticated user.',
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['type', 'title'],
+            properties: {
+              type: { type: 'string', enum: ['BODY_COMPOSITION', 'EVENT', 'PERFORMANCE', 'CONSISTENCY'] },
+              title: { type: 'string' },
+              description: { type: 'string' },
+              targetDate: { type: 'string', format: 'date-time' },
+              eventDate: { type: 'string', format: 'date-time' },
+              eventType: { type: 'string' },
+              metric: { type: 'string' },
+              targetValue: { type: 'number' },
+              startValue: { type: 'number' },
+              currentValue: { type: 'number' },
+              priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH'], default: 'MEDIUM' }
+            }
+          }
+        }
+      }
+    },
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                goal: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      400: { description: 'Invalid input' },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 const goalSchema = z.object({
   type: z.enum(['BODY_COMPOSITION', 'EVENT', 'PERFORMANCE', 'CONSISTENCY']),
   title: z.string(),

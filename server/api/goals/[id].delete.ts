@@ -1,5 +1,38 @@
 import { getServerSession } from '#auth'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Goals'],
+    summary: 'Delete goal',
+    description: 'Deletes a specific goal by ID.',
+    parameters: [
+      {
+        name: 'id',
+        in: 'path',
+        required: true,
+        schema: { type: 'string' }
+      }
+    ],
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' },
+      404: { description: 'Goal not found' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   

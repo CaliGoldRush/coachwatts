@@ -1,6 +1,32 @@
 import { getServerSession } from '#auth'
 import { tasks } from '@trigger.dev/sdk/v3'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Goals'],
+    summary: 'Suggest goals',
+    description: 'Triggers AI generation of personalized goal suggestions.',
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                jobId: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        }
+      },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   

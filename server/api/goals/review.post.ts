@@ -2,6 +2,33 @@ import { getServerSession } from '#auth'
 import { tasks } from '@trigger.dev/sdk/v3'
 import { prisma } from '../../utils/db'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Goals'],
+    summary: 'Review goals',
+    description: 'Triggers an AI review of all active goals.',
+    responses: {
+      200: {
+        description: 'Success',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                jobId: { type: 'string' },
+                message: { type: 'string' }
+              }
+            }
+          }
+        }
+      },
+      400: { description: 'No active goals' },
+      401: { description: 'Unauthorized' }
+    }
+  }
+})
+
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   
