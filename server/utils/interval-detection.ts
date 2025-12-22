@@ -1,3 +1,5 @@
+import { calculatePowerZones, calculateHrZones, identifyZone } from './zones'
+
 /**
  * Utility for detecting intervals and peak efforts in workout stream data
  */
@@ -121,18 +123,18 @@ export function detectIntervals(
     // Add recovery/warmup segment before this work interval
     if (candidate.start > lastEndIndex) {
       const type = index === 0 ? 'WARMUP' : 'RECOVERY'
-      intervals.push(createIntervalObj(times, values, lastEndIndex, candidate.start, type))
+      intervals.push(createIntervalObj(times, values, lastEndIndex, candidate.start, type, threshold, metricType))
     }
     
     // Add the work interval
-    intervals.push(createIntervalObj(times, values, candidate.start, candidate.end, 'WORK'))
+    intervals.push(createIntervalObj(times, values, candidate.start, candidate.end, 'WORK', threshold, metricType))
     
     lastEndIndex = candidate.end
   })
   
   // Add cooldown if there's data after the last interval
   if (lastEndIndex < times.length - 1) {
-    intervals.push(createIntervalObj(times, values, lastEndIndex, times.length - 1, 'COOLDOWN'))
+    intervals.push(createIntervalObj(times, values, lastEndIndex, times.length - 1, 'COOLDOWN', threshold, metricType))
   }
   
   return intervals
@@ -242,13 +244,37 @@ function createIntervalObj(
   values: number[],
   startIdx: number,
   endIdx: number,
-  type: Interval['type']
+  type: Interval['type'],
+  threshold?: number,
+  metricType?: 'power' | 'heartrate' | 'pace'
 ): Interval {
   const segmentValues = values.slice(startIdx, endIdx + 1)
   const sum = segmentValues.reduce((a, b) => a + b, 0)
   const avg = sum / segmentValues.length
   const max = Math.max(...segmentValues)
   
+  let intensity_zone: number | undefined
+
+  if (threshold && metricType) {
+    if (metricType === 'power') {
+       const zones = calculatePowerZones(threshold)
+       const zone = identifyZone(avg, zones)
+       if (zone) {
+         // Extract zone number from name "Z2 Endurance" -> 2
+         const match = zone.name.match(/^Z(\d+)/)
+         if (match) intensity_zone = parseInt(match[1])
+       }
+    } else if (metricType === 'heartrate') {
+       // Estimate maxHR roughly if threshold is LTHR
+       // Or assume threshold passed IS MaxHR? The function signature says "FTP or Threshold Pace/HR"
+       // Let's assume for HR detection, threshold passed is usually MaxHR or LTHR.
+       // The identifyZone logic expects LTHR for HrZones usually.
+       // This is a bit ambiguous in the original code.
+       // For now, let's skip zone detection for HR here to avoid breakage,
+       // or implement a simple check if we want.
+    }
+  }
+
   return {
     start_index: startIdx,
     end_index: endIdx,
@@ -258,6 +284,7 @@ function createIntervalObj(
     avg_power: avg, // Assumes 'values' is power/metric
     max_power: max,
     type,
+    intensity_zone
     // Add generic average based on what 'values' represents? 
     // In real implementation, we'd pass all streams to calculate all averages
   }

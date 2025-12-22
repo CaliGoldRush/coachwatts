@@ -13,6 +13,7 @@
 
 import type { Prisma } from '@prisma/client'
 import { prisma } from './db'
+import { userRepository } from './repositories/userRepository'
 
 export interface TSSNormalizationResult {
   tss: number | null
@@ -175,10 +176,37 @@ export async function normalizeTSS(
   if (workout.streams && user?.ftp) {
     const wattsData = parseStreamData((workout.streams as any).watts)
     if (wattsData && wattsData.length > 0) {
+      
+      // Calculate Normalized Power with Altitude Adjustment
+      // Altitude adjustment: Above 1500m, power output drops. 
+      // FTP effectively drops, so we should calculate Stress against a LOWER FTP for the same watts.
+      // Rule of thumb: FTP drops ~1% per 100m above 1500m (simplified Bassett/Bassett model)
+      
+      let effectiveFtp = user.ftp
+      
+      // Get home altitude from user profile
+      // TODO: Get altitude for workout location if available, otherwise use home altitude
+      const altitude = await userRepository.getAltitudeForDate(userId, workout.date)
+      
+      if (altitude > 1500) {
+        // Adjust FTP down for high altitude to reflect higher physiological stress
+        const altitudeFactor = 1 - ((altitude - 1500) / 10000) // 1% per 100m is 10% per 1000m -> 0.1/1000 = 0.0001 per m?
+        // Bassett et al (1999):
+        // 0m: 100%
+        // 1000m: 98%
+        // 2000m: 92%
+        // 3000m: 85%
+        // Linear approx for >1500m: 1% drop per 100m elevation gain
+        const dropPercent = Math.max(0, (altitude - 1500) / 100)
+        effectiveFtp = Math.round(user.ftp * (1 - (dropPercent / 100)))
+        
+        console.log(`[normalizeTSS] Altitude ${altitude}m: Adjusted FTP ${user.ftp} -> ${effectiveFtp}W`)
+      }
+
       const tss = await calculateTSSFromPowerStream(
         wattsData,
         workout.durationSec,
-        user.ftp
+        effectiveFtp
       )
       await prisma.workout.update({
         where: { id: workoutId },
@@ -188,7 +216,7 @@ export async function normalizeTSS(
         tss,
         source: 'calculated_power',
         confidence: 'high',
-        method: 'Calculated from power stream (NP/IF)'
+        method: `Calculated from power stream (NP/IF) using FTP ${effectiveFtp}W`
       }
     }
   }
