@@ -276,10 +276,34 @@ function findDuplicateGroups(workouts: any[]): DuplicateGroup[] {
 
 function areDuplicates(w1: any, w2: any): boolean {
   const timeDiff = Math.abs(new Date(w1.date).getTime() - new Date(w2.date).getTime());
-  // With corrected UTC timestamps, workouts should be very close in time.
-  // Allow 30 minutes window for slight variations in start time recording between devices/platforms
-  const maxTimeDiff = 30 * 60 * 1000;
   
+  // With corrected UTC timestamps, workouts should be very close in time.
+  // However, we've observed issues where different providers (Withings vs Strava)
+  // might disagree by large timezone offsets (e.g., 5 hours) if one applies a timezone correction differently.
+  // Standard tolerance: 30 minutes
+  let maxTimeDiff = 30 * 60 * 1000;
+  
+  // Check if the time difference is suspiciously close to a full hour multiple (timezone offset issue)
+  // e.g., 5 hours = 18000000ms. If diff is 18000000 +/- 30mins, it's likely a timezone shift.
+  const diffInHours = timeDiff / (60 * 60 * 1000);
+  const diffHoursRemainder = Math.abs(diffInHours - Math.round(diffInHours));
+  
+  // If the difference is a multiple of an hour (within 5 mins tolerance) and matches common timezone offsets (1-12 hours)
+  // and the workouts are otherwise VERY similar, we might consider them duplicates.
+  const isTimezoneShift = diffInHours >= 1 && diffInHours <= 14 && diffHoursRemainder < (5 / 60); // within 5 mins of an hour mark
+  
+  if (isTimezoneShift) {
+    // Relax the time check if other strong signals exist (same duration, type, etc)
+    // We'll let the rest of the logic run, but we need to pass this check first.
+    // So we temporarily set maxTimeDiff to cover this shift if we are going to rely on other signals.
+    maxTimeDiff = timeDiff + (1000); // Allow it to pass
+    
+    logger.log(`Detected potential timezone shift between workouts (${diffInHours.toFixed(2)}h)`, {
+       w1: { id: w1.id, date: w1.date, source: w1.source },
+       w2: { id: w2.id, date: w2.date, source: w2.source }
+    });
+  }
+
   if (timeDiff > maxTimeDiff) {
     // Only log if they are somewhat close (e.g. within 2 hours) to avoid log spam for unrelated workouts
     if (timeDiff < 2 * 60 * 60 * 1000) {
@@ -330,7 +354,10 @@ function areDuplicates(w1: any, w2: any): boolean {
   const typeSimilar = w1.type && w2.type && (
     w1.type.toLowerCase() === w2.type.toLowerCase() ||
     (w1.type.toLowerCase().includes('ride') && w2.type.toLowerCase().includes('ride')) ||
-    (w1.type.toLowerCase().includes('run') && w2.type.toLowerCase().includes('run'))
+    (w1.type.toLowerCase().includes('run') && w2.type.toLowerCase().includes('run')) ||
+    // Gym / Weight training mapping (Strava "Gym" vs Withings "WeightTraining")
+    (w1.type.toLowerCase() === 'gym' && w2.type.toLowerCase().includes('weight')) ||
+    (w1.type.toLowerCase().includes('weight') && w2.type.toLowerCase() === 'gym')
   );
   
   const isDuplicate = titleSimilar || typeSimilar;
@@ -350,9 +377,13 @@ function areDuplicates(w1: any, w2: any): boolean {
 function calculateCompletenessScore(workout: any): number {
   let score = 0;
   
+  // Prefer manual input or specific sources if reliable
+  // But generally trust device data more for metrics
   if (workout.source === 'intervals') {
-    score += 10;
+    score += 15; // Increased trust for Intervals.icu as it often aggregates well
   } else if (workout.source === 'strava') {
+    score += 10;
+  } else if (workout.source === 'withings') {
     score += 5;
   }
   
@@ -361,10 +392,11 @@ function calculateCompletenessScore(workout: any): number {
   const isGym = workout.type?.toLowerCase().includes('gym') || 
                 workout.type?.toLowerCase().includes('strength') ||
                 workout.type?.toLowerCase().includes('weight');
+  const isSwim = workout.type?.toLowerCase().includes('swim');
   
   if (isCycling) {
     if (workout.averageWatts && workout.averageWatts > 0) {
-      score += 30;
+      score += 40; // Power is king for cycling
       if (workout.source === 'intervals') score += 10;
     }
     if (workout.normalizedPower && workout.normalizedPower > 0) score += 10;
@@ -375,14 +407,20 @@ function calculateCompletenessScore(workout: any): number {
     score += 20;
   }
   
-  if (workout.averageHr && workout.averageHr > 0) score += 15;
+  // HR Data is valuable for all types
+  if (workout.averageHr && workout.averageHr > 0) score += 20;
   if (workout.maxHr && workout.maxHr > 0) score += 5;
   
   if (workout.distance && workout.distance > 0) score += 5;
   
   if (workout.elevationGain && workout.elevationGain > 0) score += 5;
   
-  if (workout.streams) score += 20;
+  // High value for having streams (time-series data)
+  if (workout.streams) {
+      // Check stream quality if possible (length of data points)
+      // We can't easily check length here without casting, but existence is a strong signal
+      score += 50; 
+  }
   
   if (workout.trainingLoad && workout.trainingLoad > 0) score += 10;
   if (workout.intensity && workout.intensity > 0) score += 5;
@@ -392,6 +430,9 @@ function calculateCompletenessScore(workout: any): number {
   if (workout.averageSpeed && workout.averageSpeed > 0) score += 3;
   if (workout.maxSpeed && workout.maxSpeed > 0) score += 2;
   if (workout.averageCadence && workout.averageCadence > 0) score += 5;
+  
+  // Description might contain user notes
+  if (workout.description && workout.description.length > 5) score += 5;
   
   return score;
 }

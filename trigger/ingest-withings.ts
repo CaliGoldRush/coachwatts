@@ -1,5 +1,5 @@
-import { logger, task } from "@trigger.dev/sdk/v3";
-import { fetchWithingsMeasures, normalizeWithingsMeasureGroup, WITHINGS_MEASURE_TYPES, fetchWithingsWorkouts, normalizeWithingsWorkout, fetchWithingsSleep, normalizeWithingsSleep } from "../server/utils/withings";
+import { logger, task, tasks } from "@trigger.dev/sdk/v3";
+import { fetchWithingsMeasures, normalizeWithingsMeasureGroup, WITHINGS_MEASURE_TYPES, fetchWithingsWorkouts, normalizeWithingsWorkout, fetchWithingsSleep, normalizeWithingsSleep, fetchWithingsIntraday } from "../server/utils/withings";
 import { prisma } from "../server/utils/db";
 import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
 import { workoutRepository } from "../server/utils/repositories/workoutRepository";
@@ -211,6 +211,72 @@ export const ingestWithingsTask = task({
           if (!normalizedWorkout) {
             continue;
           }
+
+          // Try to fetch HR stream for this workout
+          try {
+             // Buffer start/end by a few minutes to ensure we capture all data
+             const streamStart = new Date(normalizedWorkout.date.getTime() - 5 * 60000);
+             const streamEnd = new Date(normalizedWorkout.date.getTime() + normalizedWorkout.durationSec * 1000 + 5 * 60000);
+             
+             // Check if duration is within reasonable limits (e.g. < 24h)
+             if (normalizedWorkout.durationSec < 24 * 3600) {
+                 const intradayData = await fetchWithingsIntraday(
+                     updatedIntegration,
+                     streamStart,
+                     streamEnd
+                 );
+                 
+                 // Process intraday data if we have any
+                 const timestamps = Object.keys(intradayData).sort();
+                 if (timestamps.length > 0) {
+                     // Create streams
+                     const hrStream: number[] = [];
+                     const timeStream: number[] = [];
+                     
+                     // We need to map timestamps to seconds from start
+                     // Intraday timestamps are unix seconds
+                     const startTime = normalizedWorkout.date.getTime() / 1000;
+                     
+                     for (const tsStr of timestamps) {
+                         const ts = parseInt(tsStr);
+                         const point = intradayData[tsStr];
+                         
+                         // Only include points within the workout window (with small buffer)
+                         if (ts >= startTime - 60 && ts <= startTime + normalizedWorkout.durationSec + 60) {
+                             const offset = ts - startTime;
+                             
+                             if (point.heart_rate) {
+                                 hrStream.push(point.heart_rate);
+                                 timeStream.push(offset);
+                             }
+                         }
+                     }
+                     
+                     if (hrStream.length > 0) {
+                         // @ts-ignore
+                         normalizedWorkout.streams = {
+                             time: timeStream,
+                             heartrate: hrStream
+                         };
+                         
+                         logger.log(`[Withings Ingest] Added HR stream with ${hrStream.length} points for workout ${wWorkout.id}`);
+                     }
+                 }
+             }
+          } catch (e) {
+              logger.warn(`[Withings Ingest] Failed to fetch intraday data for workout ${wWorkout.id}`, { error: e });
+          }
+
+          // Check if workout already exists to merge rawJson if needed
+          // We can't rely on upsert alone if we want to merge deep JSON properties
+          // But for now, we assume fresh data from API is always better/more complete than what we have.
+          // The upsert will overwrite top-level fields and replace rawJson.
+          // This is desired behavior when re-syncing to get stream data.
+
+          logger.log(`[Withings Ingest] Upserting workout ${normalizedWorkout.externalId}`, {
+              hasStreams: !!(normalizedWorkout as any).streams,
+              streamPoints: (normalizedWorkout as any).streams?.heartrate?.length || 0
+          });
 
           const upsertedWorkout = await workoutRepository.upsert(
             userId,
