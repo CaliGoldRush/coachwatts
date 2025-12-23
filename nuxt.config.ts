@@ -62,9 +62,15 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     authOrigin: process.env.NUXT_AUTH_ORIGIN || 'http://localhost:3099/api/auth',
+    authBypassEnabled: !!process.env.AUTH_BYPASS_USER,
+    authBypassUser: process.env.AUTH_BYPASS_USER || '',
+    authBypassName: process.env.AUTH_BYPASS_NAME || '',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3099',
-      version: pkg.version
+      version: pkg.version,
+      authBypassEnabled: !!process.env.AUTH_BYPASS_USER,
+      authBypassUser: process.env.AUTH_BYPASS_USER || '',
+      authBypassName: process.env.AUTH_BYPASS_NAME || ''
     }
   },
 
