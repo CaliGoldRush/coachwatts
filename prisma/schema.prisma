@@ -95,12 +95,36 @@ model User {
   llmUsage LlmUsage[]
   syncQueue SyncQueue[]
   goals         Goal[]
+  shareTokens   ShareToken[]
   apiKeys       ApiKey[]
 
   // Coaching Relations
   coaches    CoachingRelationship[] @relation("AthleteRelation")
   athletes   CoachingRelationship[] @relation("CoachRelation")
   invites    CoachingInvite[]
+}
+
+// --------------------------------------
+// Shared Links & Resources
+// --------------------------------------
+
+model ShareToken {
+  id           String   @id @default(uuid())
+  userId       String
+  resourceType String   // "WORKOUT", "REPORT", "NUTRITION", etc.
+  resourceId   String   // The ID of the specific resource
+  token        String   @unique @default(dbgenerated("gen_random_uuid()"))
+  
+  expiresAt    DateTime?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([resourceType, resourceId])
 }
 
 // --------------------------------------
