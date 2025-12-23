@@ -3,6 +3,7 @@ import { generateStructuredAnalysis } from "../server/utils/gemini";
 import { prisma } from "../server/utils/db";
 import { workoutRepository } from "../server/utils/repositories/workoutRepository";
 import { wellnessRepository } from "../server/utils/repositories/wellnessRepository";
+import { generateTrainingContext } from "../server/utils/training-metrics";
 import { userBackgroundQueue } from "./queues";
 
 const weeklyPlanSchema = {
@@ -195,6 +196,19 @@ export const generateWeeklyPlanTask = task({
     const avgRecovery = recentWellness.length > 0
       ? recentWellness.reduce((sum, w) => sum + (w.recoveryScore || 50), 0) / recentWellness.length
       : 50;
+    
+    // Generate training context for load management
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const trainingContext = await generateTrainingContext(userId, thirtyDaysAgo, now, {
+      includeZones: false,
+      includeBreakdown: true
+    });
+    
+    // Calculate current and target TSS values
+    const currentWeeklyTSS = trainingContext.loadTrend.weeklyTSSAvg;
+    const targetMinTSS = Math.round(currentWeeklyTSS * 1.05); // 5% increase
+    const targetMaxTSS = Math.round(currentWeeklyTSS * 1.10); // 10% increase
     
     // Build athlete profile context
     let athleteContext = '';

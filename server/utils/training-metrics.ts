@@ -1,15 +1,24 @@
 import { prisma } from './db'
-import { calculateTSB } from './training-stress'
 
 /**
  * Training Metrics Utility
- * 
+ *
  * Provides comprehensive training statistics for LLM prompt contexts:
  * - Zone distribution (HR/Power zones)
  * - Load management (TSB/CTL/ATL trends)
  * - Activity type breakdowns
  * - Training volume and intensity patterns
  */
+
+/**
+ * Calculate TSB (Training Stress Balance) - "Form"
+ * TSB = CTL - ATL
+ * Returns null if either value is null
+ */
+function calculateTSB(ctl: number | null, atl: number | null): number | null {
+  if (ctl === null || atl === null) return null
+  return ctl - atl
+}
 
 // Default zone definitions matching frontend
 const DEFAULT_HR_ZONES = [
