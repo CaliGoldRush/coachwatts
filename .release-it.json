@@ -4,14 +4,13 @@
       "preset": "angular",
       "infile": "CHANGELOG.md"
     },
-    "release-it-pnpm": {}
+    "release-it-pnpm": {
+      "publish": false
+    }
   },
   "git": {
     "commitMessage": "chore: release ${version}",
     "tagName": "v${version}"
-  },
-  "npm": {
-    "publish": false
   },
   "github": {
     "release": true
