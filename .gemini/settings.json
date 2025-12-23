@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(git:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
@@ -26,7 +27,11 @@
       "Bash(yarn:*)",
       "Bash(docker ps:*)",
       "Bash(chmod:*)",
-      "Bash(./scripts/*)"
+      "Bash(./scripts/*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(tsx:*)",
+      "Bash(rm:*)"
     ],
     "deny": [
       "Read(./.env)",
