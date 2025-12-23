@@ -25,9 +25,16 @@ const { data, refresh } = useAuth()
 const toast = useToast()
 const stopping = ref(false)
 
-const isImpersonating = computed(() => (data.value?.user as any)?.isImpersonating)
-const impersonatedUserEmail = computed(() => data.value?.user?.email)
-const originalUserEmail = computed(() => (data.value?.user as any)?.originalUserEmail)
+const impersonationMeta = useCookie<{
+  adminId: string
+  adminEmail: string
+  impersonatedUserId: string
+  impersonatedUserEmail: string
+}>('auth.impersonation_meta')
+
+const isImpersonating = computed(() => !!impersonationMeta.value)
+const impersonatedUserEmail = computed(() => impersonationMeta.value?.impersonatedUserEmail)
+const originalUserEmail = computed(() => impersonationMeta.value?.adminEmail)
 
 async function stopImpersonation() {
   stopping.value = true

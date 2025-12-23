@@ -3,6 +3,16 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { data, signOut } = useAuth()
 const user = computed(() => data.value?.user)
+
+const impersonationMeta = useCookie<{
+  adminId: string
+  adminEmail: string
+  impersonatedUserId: string
+  impersonatedUserEmail: string
+}>('auth.impersonation_meta')
+
+const impersonatedEmail = computed(() => impersonationMeta.value?.impersonatedUserEmail)
+
 const route = useRoute()
 
 const open = ref(false)
@@ -182,12 +192,15 @@ const groups = computed(() => [{
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">
-        <div class="flex items-center gap-2 p-4">
-          <div v-if="!collapsed" class="flex items-center gap-2">
-            <UIcon name="i-lucide-zap" class="size-6" />
-            <span class="font-semibold">Coach Watts</span>
+        <div class="flex flex-col w-full">
+          <ImpersonationBanner />
+          <div class="flex items-center gap-2 p-4">
+            <div v-if="!collapsed" class="flex items-center gap-2">
+              <UIcon name="i-lucide-zap" class="size-6" />
+              <span class="font-semibold">Coach Watts</span>
+            </div>
+            <UIcon v-else name="i-lucide-zap" class="size-6" />
           </div>
-          <UIcon v-else name="i-lucide-zap" class="size-6" />
         </div>
       </template>
 
@@ -210,7 +223,7 @@ const groups = computed(() => [{
             size="md"
           />
           <div v-if="!collapsed" class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate">{{ user?.email }}</p>
+            <p class="text-sm font-medium truncate">{{ impersonatedEmail || user?.email }}</p>
             <UButton
               variant="ghost"
               color="neutral"

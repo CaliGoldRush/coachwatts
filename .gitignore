@@ -25,12 +25,7 @@ logs
 1
 
 /app/generated/prisma
-examples/dashboard
 .trigger
-examples/cycling
-examples/chat
-examples/vue-advanced-chat
-examples/fitly
 examples/
 dump.json
 

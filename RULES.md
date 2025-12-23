@@ -112,3 +112,12 @@ This file aggregates all critical development rules and guidelines for the Coach
 
 -   **Scripts**: Use `dotenv/config` and import the shared `prisma` instance.
 -   **Execution**: Run scripts using `pnpm exec tsx scripts/script-name.ts`.
+
+---
+
+## 9. Documentation
+
+-   **Read First**: Always refer to `docs/INDEX.md` to navigate the documentation.
+-   **Maintenance**: Follow the guidelines in `.roo/rules-code/documentation-guidelines.md` when adding or modifying documentation.
+-   **Structure**: Keep files organized in `01-architecture`, `02-features`, etc.
+-   **Updates**: Ensure documentation is kept in sync with code changes.
