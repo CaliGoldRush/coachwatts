@@ -8,6 +8,9 @@
       "publish": false
     }
   },
+  "npm": {
+    "publish": false
+  },
   "git": {
     "commitMessage": "chore: release ${version}",
     "tagName": "v${version}"
