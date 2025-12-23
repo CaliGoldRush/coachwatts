@@ -57,6 +57,10 @@ export default defineNuxtConfig({
     baseURL: '/api/auth',
     provider: {
       type: 'authjs'
+    },
+    session: {
+      enableRefreshPeriodically: true,
+      enableRefreshOnWindowFocus: true
     }
   },
 
