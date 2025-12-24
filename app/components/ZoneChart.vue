@@ -168,15 +168,15 @@ const zoneColors = [
 
 // Computed properties
 const hasStreamData = computed(() => {
-  return streamData.value && (streamData.value.heartrate || streamData.value.watts)
+  return !!(streamData.value && (streamData.value.heartrate || streamData.value.watts || streamData.value.hrZoneTimes || streamData.value.powerZoneTimes))
 })
 
 const hasHrData = computed(() => {
-  return streamData.value?.heartrate && streamData.value.heartrate.length > 0
+  return !!(streamData.value?.heartrate?.length > 0 || streamData.value?.hrZoneTimes?.length > 0)
 })
 
 const hasPowerData = computed(() => {
-  return streamData.value?.watts && streamData.value.watts.length > 0
+  return !!(streamData.value?.watts?.length > 0 || streamData.value?.powerZoneTimes?.length > 0)
 })
 
 const hasZoneData = computed(() => {
@@ -190,6 +190,19 @@ const currentZones = computed(() => {
 
 const timeInZones = ref<number[]>([])
 const totalTime = ref(0)
+
+// Watch for data changes to update timeInZones if cached data is present
+watch([streamData, selectedZoneType], () => {
+  if (!streamData.value) return
+  
+  if (selectedZoneType.value === 'hr' && streamData.value.hrZoneTimes?.length > 0) {
+    timeInZones.value = streamData.value.hrZoneTimes
+    totalTime.value = timeInZones.value.reduce((a, b) => a + b, 0)
+  } else if (selectedZoneType.value === 'power' && streamData.value.powerZoneTimes?.length > 0) {
+    timeInZones.value = streamData.value.powerZoneTimes
+    totalTime.value = timeInZones.value.reduce((a, b) => a + b, 0)
+  }
+}, { immediate: true })
 
 // Training distribution profile
 interface TrainingProfile {
@@ -279,7 +292,10 @@ const chartData = computed(() => {
 
   const time = streamData.value.time || []
   const values = selectedZoneType.value === 'hr' ? streamData.value.heartrate : streamData.value.watts
-  
+  const cachedZones = selectedZoneType.value === 'hr' ? streamData.value.hrZoneTimes : streamData.value.powerZoneTimes
+
+  // If we have cached zones but no raw values, we still want to show the profile and summary
+  // but the timeline chart (Bar) needs data. If we don't have raw values, we can't show the timeline.
   if (!values || values.length === 0) {
     return { labels: [], datasets: [] }
   }
