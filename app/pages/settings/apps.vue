@@ -2,13 +2,14 @@
   <SettingsConnectedApps
     :intervals-connected="intervalsConnected"
     :whoop-connected="whoopConnected"
+    :whoop-ingest-workouts="whoopIngestWorkouts"
     :withings-connected="withingsConnected"
     :yazio-connected="yazioConnected"
     :strava-connected="stravaConnected"
-    :syncing-yazio="syncingYazio"
-    :syncing-strava="syncingStrava"
+    :syncing-providers="syncingProviders"
     @disconnect="disconnectIntegration"
     @sync="syncIntegration"
+    @update-setting="updateIntegrationSetting"
   />
 </template>
 
@@ -42,6 +43,10 @@ const whoopConnected = computed(() =>
   integrationStatus.value?.integrations?.some((i: any) => i.provider === 'whoop') ?? false
 )
 
+const whoopIngestWorkouts = computed(() =>
+  integrationStatus.value?.integrations?.find((i: any) => i.provider === 'whoop')?.ingestWorkouts ?? false
+)
+
 const withingsConnected = computed(() =>
   integrationStatus.value?.integrations?.some((i: any) => i.provider === 'withings') ?? false
 )
@@ -54,15 +59,10 @@ const stravaConnected = computed(() =>
   integrationStatus.value?.integrations?.some((i: any) => i.provider === 'strava') ?? false
 )
 
-const syncingYazio = ref(false)
-const syncingStrava = ref(false)
+const syncingProviders = ref(new Set<string>())
 
 const syncIntegration = async (provider: string) => {
-  if (provider === 'yazio') {
-    syncingYazio.value = true
-  } else if (provider === 'strava') {
-    syncingStrava.value = true
-  }
+  syncingProviders.value.add(provider)
   
   try {
     await $fetch('/api/integrations/sync', {
@@ -70,7 +70,10 @@ const syncIntegration = async (provider: string) => {
       body: { provider }
     })
     
-    const providerName = provider === 'yazio' ? 'Yazio' : 'Strava'
+    const providerName = provider === 'intervals' ? 'Intervals.icu' : 
+                        provider === 'whoop' ? 'WHOOP' : 
+                        provider === 'withings' ? 'Withings' : 
+                        provider === 'yazio' ? 'Yazio' : 'Strava'
     
     toast.add({
       title: 'Sync Started',
@@ -88,11 +91,7 @@ const syncIntegration = async (provider: string) => {
       color: 'error'
     })
   } finally {
-    if (provider === 'yazio') {
-      syncingYazio.value = false
-    } else if (provider === 'strava') {
-      syncingStrava.value = false
-    }
+    syncingProviders.value.delete(provider)
   }
 }
 
@@ -129,6 +128,32 @@ const disconnectIntegration = async (provider: string) => {
     toast.add({
       title: 'Disconnect Failed',
       description: error.data?.message || `Failed to disconnect from ${provider}`,
+      color: 'error'
+    })
+  }
+}
+
+const updateIntegrationSetting = async (provider: string, setting: string, value: any) => {
+  try {
+    await $fetch('/api/integrations/update', {
+      method: 'POST',
+      body: { 
+        provider,
+        [setting]: value 
+      }
+    })
+    
+    toast.add({
+      title: 'Settings Updated',
+      description: `Successfully updated ${provider} settings`,
+      color: 'success'
+    })
+    
+    refreshIntegrations()
+  } catch (error: any) {
+    toast.add({
+      title: 'Update Failed',
+      description: error.data?.message || `Failed to update ${provider} settings`,
       color: 'error'
     })
   }

@@ -79,9 +79,34 @@ const zoneSegments = computed(() => {
   // Check if we have the required data type
   const hasHrData = 'heartrate' in streamData.value && Array.isArray(streamData.value.heartrate)
   const hasPowerData = 'watts' in streamData.value && Array.isArray(streamData.value.watts)
+  const hasCachedHrZones = 'hrZoneTimes' in streamData.value && Array.isArray(streamData.value.hrZoneTimes) && streamData.value.hrZoneTimes.length > 0
+  const hasCachedPowerZones = 'powerZoneTimes' in streamData.value && Array.isArray(streamData.value.powerZoneTimes) && streamData.value.powerZoneTimes.length > 0
   
-  if (!hasHrData && !hasPowerData) return []
+  if (!hasHrData && !hasPowerData && !hasCachedHrZones && !hasCachedPowerZones) return []
   
+  // Use cached zone times if available
+  if (zoneType.value === 'hr' && hasCachedHrZones) {
+    const cached = streamData.value.hrZoneTimes as number[]
+    const total = cached.reduce((a, b) => a + b, 0)
+    if (total === 0) return []
+    return cached.map((time, index) => ({
+      percentage: (time / total) * 100,
+      color: zoneColors[index],
+      zone: index + 1
+    })).filter(seg => seg.percentage > 0)
+  }
+
+  if (zoneType.value === 'power' && hasCachedPowerZones) {
+    const cached = streamData.value.powerZoneTimes as number[]
+    const total = cached.reduce((a, b) => a + b, 0)
+    if (total === 0) return []
+    return cached.map((time, index) => ({
+      percentage: (time / total) * 100,
+      color: zoneColors[index],
+      zone: index + 1
+    })).filter(seg => seg.percentage > 0)
+  }
+
   const values = zoneType.value === 'hr'
     ? (hasHrData ? streamData.value.heartrate : null)
     : (hasPowerData ? streamData.value.watts : null)
@@ -134,10 +159,12 @@ async function fetchData() {
     
     const hasWatts = props.streamData.watts && Array.isArray(props.streamData.watts) && props.streamData.watts.length > 0
     const hasHr = props.streamData.heartrate && Array.isArray(props.streamData.heartrate) && props.streamData.heartrate.length > 0
+    const hasCachedHr = props.streamData.hrZoneTimes && Array.isArray(props.streamData.hrZoneTimes) && props.streamData.hrZoneTimes.length > 0
+    const hasCachedPower = props.streamData.powerZoneTimes && Array.isArray(props.streamData.powerZoneTimes) && props.streamData.powerZoneTimes.length > 0
     
-    if (hasWatts) {
+    if (hasWatts || hasCachedPower) {
       zoneType.value = 'power'
-    } else if (hasHr) {
+    } else if (hasHr || hasCachedHr) {
       zoneType.value = 'hr'
     }
     return
@@ -175,10 +202,12 @@ async function fetchData() {
     // Auto-select zone type: prefer power if available, otherwise use HR
     const hasWatts = streams && 'watts' in streams && streams.watts && Array.isArray(streams.watts) && streams.watts.length > 0
     const hasHr = streams && 'heartrate' in streams && streams.heartrate && Array.isArray(streams.heartrate) && streams.heartrate.length > 0
+    const hasCachedHr = streams && 'hrZoneTimes' in streams && streams.hrZoneTimes && Array.isArray(streams.hrZoneTimes) && streams.hrZoneTimes.length > 0
+    const hasCachedPower = streams && 'powerZoneTimes' in streams && streams.powerZoneTimes && Array.isArray(streams.powerZoneTimes) && streams.powerZoneTimes.length > 0
     
-    if (hasWatts) {
+    if (hasWatts || hasCachedPower) {
       zoneType.value = 'power'
-    } else if (hasHr) {
+    } else if (hasHr || hasCachedHr) {
       zoneType.value = 'hr'
     }
   } catch (e) {

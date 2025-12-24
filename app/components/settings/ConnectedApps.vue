@@ -5,6 +5,7 @@
     </template>
     
     <div class="space-y-4">
+      <!-- Intervals.icu -->
       <div class="flex items-center justify-between p-4 border rounded-lg">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -24,8 +25,21 @@
             Connect
           </UButton>
         </div>
-        <div v-else class="flex items-center gap-2">
-          <UBadge color="success">Connected</UBadge>
+        <div v-else class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <UBadge color="success">Connected</UBadge>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="xs"
+              class="font-bold"
+              icon="i-heroicons-arrow-path"
+              :loading="syncingProviders.has('intervals')"
+              @click="$emit('sync', 'intervals')"
+            >
+              Sync Now
+            </UButton>
+          </div>
           <UButton
             color="error"
             variant="ghost"
@@ -37,6 +51,7 @@
         </div>
       </div>
       
+      <!-- WHOOP -->
       <div class="flex items-center justify-between p-4 border rounded-lg">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -56,8 +71,31 @@
             Connect
           </UButton>
         </div>
-        <div v-else class="flex items-center gap-2">
-          <UBadge color="success">Connected</UBadge>
+        <div v-else class="flex items-center gap-4">
+          <div class="flex flex-col items-end gap-1">
+            <div class="flex items-center gap-2">
+              <UBadge color="success">Connected</UBadge>
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="xs"
+                class="font-bold"
+                icon="i-heroicons-arrow-path"
+                :loading="syncingProviders.has('whoop')"
+                @click="$emit('sync', 'whoop')"
+              >
+                Sync Now
+              </UButton>
+            </div>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-xs text-muted">Ingest Workouts</span>
+              <USwitch
+                :model-value="whoopIngestWorkouts"
+                @update:model-value="$emit('updateSetting', 'whoop', 'ingestWorkouts', $event)"
+                size="xs"
+              />
+            </div>
+          </div>
           <UButton
             color="error"
             variant="ghost"
@@ -69,6 +107,7 @@
         </div>
       </div>
       
+      <!-- Withings -->
       <div class="flex items-center justify-between p-4 border rounded-lg">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
@@ -88,8 +127,21 @@
             Connect
           </UButton>
         </div>
-        <div v-else class="flex items-center gap-2">
-          <UBadge color="success">Connected</UBadge>
+        <div v-else class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <UBadge color="success">Connected</UBadge>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="xs"
+              class="font-bold"
+              icon="i-heroicons-arrow-path"
+              :loading="syncingProviders.has('withings')"
+              @click="$emit('sync', 'withings')"
+            >
+              Sync Now
+            </UButton>
+          </div>
           <UButton
             color="error"
             variant="ghost"
@@ -101,6 +153,7 @@
         </div>
       </div>
       
+      <!-- Yazio -->
       <div class="flex items-center justify-between p-4 border rounded-lg">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -120,8 +173,21 @@
             Connect
           </UButton>
         </div>
-        <div v-else class="flex items-center gap-2">
-          <UBadge color="success">Connected</UBadge>
+        <div v-else class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <UBadge color="success">Connected</UBadge>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="xs"
+              class="font-bold"
+              icon="i-heroicons-arrow-path"
+              :loading="syncingProviders.has('yazio')"
+              @click="$emit('sync', 'yazio')"
+            >
+              Sync Now
+            </UButton>
+          </div>
           <UButton
             color="error"
             variant="ghost"
@@ -133,6 +199,7 @@
         </div>
       </div>
       
+      <!-- Strava -->
       <div class="flex items-center justify-between p-4 border rounded-lg">
         <div class="flex items-center gap-4">
           <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -152,8 +219,21 @@
             Connect
           </UButton>
         </div>
-        <div v-else class="flex items-center gap-2">
-          <UBadge color="success">Connected</UBadge>
+        <div v-else class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <UBadge color="success">Connected</UBadge>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="xs"
+              class="font-bold"
+              icon="i-heroicons-arrow-path"
+              :loading="syncingProviders.has('strava')"
+              @click="$emit('sync', 'strava')"
+            >
+              Sync Now
+            </UButton>
+          </div>
           <UButton
             color="error"
             variant="ghost"
@@ -164,29 +244,6 @@
           </UButton>
         </div>
       </div>
-      
-      <div v-if="yazioConnected || stravaConnected" class="mt-4 flex items-center gap-4">
-        <UButton
-          v-if="yazioConnected"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          @click="$emit('sync', 'yazio')"
-          :disabled="syncingYazio"
-        >
-          {{ syncingYazio ? 'Syncing Yazio...' : 'Sync Yazio' }}
-        </UButton>
-        <UButton
-          v-if="stravaConnected"
-          color="neutral"
-          variant="outline"
-          size="sm"
-          @click="$emit('sync', 'strava')"
-          :disabled="syncingStrava"
-        >
-          {{ syncingStrava ? 'Syncing Strava...' : 'Sync Strava' }}
-        </UButton>
-      </div>
     </div>
   </UCard>
 </template>
@@ -195,15 +252,16 @@
 defineProps<{
   intervalsConnected: boolean
   whoopConnected: boolean
+  whoopIngestWorkouts: boolean
   withingsConnected: boolean
   yazioConnected: boolean
   stravaConnected: boolean
-  syncingYazio: boolean
-  syncingStrava: boolean
+  syncingProviders: Set<string>
 }>()
 
 defineEmits<{
   disconnect: [provider: string]
   sync: [provider: string]
+  updateSetting: [provider: string, setting: string, value: any]
 }>()
 </script>
