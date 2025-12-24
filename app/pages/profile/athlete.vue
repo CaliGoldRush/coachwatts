@@ -1,19 +1,21 @@
 <template>
   <UDashboardPanel id="athlete-profile">
     <template #header>
-      <UDashboardNavbar title="Athlete Profile">
+      <UDashboardNavbar>
         <template #leading>
+          <UDashboardSidebarCollapse />
           <UButton
             icon="i-heroicons-arrow-left"
             color="neutral"
             variant="ghost"
             to="/dashboard"
-          >
-            Back to Dashboard
-          </UButton>
+            size="sm"
+          />
+          <USeparator orientation="vertical" class="h-4" />
+          <span class="text-sm sm:text-base font-semibold truncate max-w-[100px] sm:max-w-none">Athlete Profile</span>
         </template>
         <template #right>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 sm:gap-2">
             <UButton
               v-if="profile && profile.status === 'COMPLETED'"
               color="neutral"
@@ -23,12 +25,12 @@
               class="font-bold"
               @click="isShareModalOpen = true"
             >
-              Share
+              <span class="hidden sm:inline">Share</span>
             </UButton>
 
             <UPopover>
               <UButton color="neutral" variant="subtle" icon="i-heroicons-calendar" size="sm" class="font-bold">
-                {{ selectedDateLabel }}
+                <span class="hidden sm:inline">{{ selectedDateLabel }}</span>
               </UButton>
 
               <template #content>

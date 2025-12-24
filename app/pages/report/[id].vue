@@ -1,22 +1,24 @@
 <template>
   <UDashboardPanel id="report-detail">
     <template #header>
-      <UDashboardNavbar :title="reportTitle || 'Report'">
+      <UDashboardNavbar>
         <template #leading>
+          <UDashboardSidebarCollapse />
           <UButton
             icon="i-heroicons-arrow-left"
             color="neutral"
             variant="ghost"
             to="/reports"
-          >
-            Back to Reports
-          </UButton>
+            size="sm"
+          />
+          <USeparator orientation="vertical" class="h-4" />
+          <span class="text-sm sm:text-base font-semibold truncate max-w-[120px] sm:max-w-none">{{ reportTitle || 'Report' }}</span>
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <div class="p-6 max-w-4xl mx-auto">
+      <div class="p-4 sm:p-6 max-w-4xl mx-auto">
         <div v-if="pending" class="flex justify-center py-20">
         <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
       </div>
@@ -24,16 +26,18 @@
       <div v-else-if="report">
         <!-- Header -->
         <div class="mb-6">
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div>
-              <h2 class="text-3xl font-bold">{{ reportTitle }}</h2>
-              <p class="text-gray-600 dark:text-gray-400 mt-2">
+              <h2 class="text-xl sm:text-3xl font-bold">{{ reportTitle }}</h2>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 sm:mt-2">
                 {{ formatDateRange(report.dateRangeStart, report.dateRangeEnd) }}
               </p>
             </div>
-            <UBadge :color="statusColor as any" size="lg">
-              {{ report.status }}
-            </UBadge>
+            <div class="flex">
+              <UBadge :color="statusColor as any" size="md" class="sm:size-lg">
+                {{ report.status }}
+              </UBadge>
+            </div>
           </div>
         </div>
         

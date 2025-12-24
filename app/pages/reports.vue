@@ -15,7 +15,7 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <div class="flex gap-3 flex-wrap">
+          <div class="flex gap-2 sm:gap-3 items-center">
             <UButton
               @click="showConfigModal = true"
               :loading="reportStore.generating"
@@ -25,53 +25,76 @@
               size="sm"
               class="font-bold"
             >
-              Custom
+              <span class="hidden sm:inline">Custom Report</span>
+              <span class="sm:hidden">Custom</span>
             </UButton>
-            <USeparator orientation="vertical" class="h-6" />
-            <UButton
-              @click="generateReport('LAST_3_WORKOUTS')"
-              :loading="reportStore.generating"
-              icon="i-heroicons-chart-bar"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              class="font-bold"
+            <USeparator orientation="vertical" class="h-6 hidden sm:block" />
+            <div class="hidden sm:flex gap-3">
+              <UButton
+                @click="generateReport('LAST_3_WORKOUTS')"
+                :loading="reportStore.generating"
+                icon="i-heroicons-chart-bar"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                class="font-bold"
+              >
+                Last 3 Workouts
+              </UButton>
+              <UButton
+                @click="generateReport('WEEKLY_ANALYSIS')"
+                :loading="reportStore.generating"
+                icon="i-heroicons-calendar"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                class="font-bold"
+              >
+                Weekly
+              </UButton>
+              <UButton
+                @click="generateReport('LAST_3_NUTRITION')"
+                :loading="reportStore.generating"
+                icon="i-heroicons-cake"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                class="font-bold"
+              >
+                Last 3 Days
+              </UButton>
+              <UButton
+                @click="generateReport('LAST_7_NUTRITION')"
+                :loading="reportStore.generating"
+                icon="i-heroicons-cake"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                class="font-bold"
+              >
+                Weekly Nutrition
+              </UButton>
+            </div>
+            <UDropdownMenu
+              v-if="!reportStore.generating"
+              class="sm:hidden"
+              :items="[
+                [
+                  { label: 'Last 3 Workouts', icon: 'i-heroicons-chart-bar', onSelect: () => generateReport('LAST_3_WORKOUTS') },
+                  { label: 'Weekly Analysis', icon: 'i-heroicons-calendar', onSelect: () => generateReport('WEEKLY_ANALYSIS') },
+                  { label: 'Last 3 Days (Nutrition)', icon: 'i-heroicons-cake', onSelect: () => generateReport('LAST_3_NUTRITION') },
+                  { label: 'Weekly Nutrition', icon: 'i-heroicons-cake', onSelect: () => generateReport('LAST_7_NUTRITION') }
+                ]
+              ]"
+              :content="{ align: 'end' }"
             >
-              Last 3 Workouts
-            </UButton>
-            <UButton
-              @click="generateReport('WEEKLY_ANALYSIS')"
-              :loading="reportStore.generating"
-              icon="i-heroicons-calendar"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              class="font-bold"
-            >
-              Weekly
-            </UButton>
-            <UButton
-              @click="generateReport('LAST_3_NUTRITION')"
-              :loading="reportStore.generating"
-              icon="i-heroicons-cake"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              class="font-bold"
-            >
-              Last 3 Days
-            </UButton>
-            <UButton
-              @click="generateReport('LAST_7_NUTRITION')"
-              :loading="reportStore.generating"
-              icon="i-heroicons-cake"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              class="font-bold"
-            >
-              Weekly Nutrition
-            </UButton>
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-heroicons-ellipsis-vertical"
+                size="sm"
+              />
+            </UDropdownMenu>
           </div>
         </template>
       </UDashboardNavbar>

@@ -1,579 +1,563 @@
 <template>
-  <div class="h-full flex flex-col">
-    <Head>
-      <Title>Activities</Title>
-      <Meta name="description" content="View your training calendar, analyze completed workouts, and plan future sessions." />
-    </Head>
-
-    <!-- Header / Controls -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 p-4 border-b dark:border-gray-800">
-      <div class="flex items-center gap-4 flex-wrap">
-        <h1 class="text-2xl font-bold">Activities</h1>
-        
-        <!-- View Switcher -->
-        <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-          <UButton
-            icon="i-heroicons-calendar"
-            :color="viewMode === 'calendar' ? 'white' : 'gray'"
-            variant="ghost"
-            size="sm"
-            @click="viewMode = 'calendar'"
-          />
-          <UButton
-            icon="i-heroicons-list-bullet"
-            :color="viewMode === 'list' ? 'white' : 'gray'"
-            variant="ghost"
-            size="sm"
-            @click="viewMode = 'list'"
-          />
-        </div>
-
-        <!-- Month Navigation -->
-        <div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-          <UButton
-            icon="i-heroicons-chevron-left"
-            variant="ghost"
-            size="sm"
-            @click="prevMonth"
-          />
-          <span class="px-2 text-sm font-semibold min-w-[120px] text-center">
-            {{ currentMonthLabel }}
-          </span>
-          <UButton
-            icon="i-heroicons-chevron-right"
-            variant="ghost"
-            size="sm"
-            @click="nextMonth"
-          />
-        </div>
-        
-        <UButton
-          v-if="!isCurrentMonth"
-          label="Today"
-          size="xs"
-          variant="soft"
-          @click="goToToday"
-        />
-      </div>
-      
-      <!-- View Options -->
-      <div class="flex items-center gap-4 justify-between md:justify-end overflow-x-auto">
-        <!-- Legend (Calendar Only) -->
-        <div v-if="viewMode === 'calendar'" class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 shrink-0">
-          <div class="flex items-center gap-1.5">
-            <div class="w-2 h-2 rounded-full bg-green-500"></div>
-            <span>Completed</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-            <span>From Plan</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <div class="w-2 h-2 rounded-full bg-amber-500"></div>
-            <span>Planned</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <div class="w-2 h-2 rounded-full bg-red-500"></div>
-            <span>Missed</span>
-          </div>
-          <div class="flex items-center gap-1.5 border-l border-gray-300 dark:border-gray-700 pl-3">
-            <div class="w-4 h-1 bg-green-500 rounded-sm"></div>
-            <span>TSS</span>
-          </div>
-        </div>
-
-        <UInput
-          v-if="viewMode === 'list'"
-          v-model="tableSearch"
-          icon="i-heroicons-magnifying-glass"
-          placeholder="Filter..."
-          size="sm"
-          class="w-48"
-        />
-
-        <UDropdownMenu
-          v-if="viewMode === 'list'"
-          :items="columnMenuItems"
-          :content="{ align: 'end' }"
-          :disabled="columnMenuItems.length === 0"
-        >
-          <UButton
-            label="Columns"
-            color="neutral"
-            variant="outline"
-            trailing-icon="i-heroicons-chevron-down"
-            size="sm"
-            aria-label="Toggle columns"
-            :disabled="columnMenuItems.length === 0"
-          />
-        </UDropdownMenu>
-
-        <UButton
-          to="/workouts/upload"
-          icon="i-heroicons-cloud-arrow-up"
-          variant="ghost"
-          aria-label="Upload workout"
-        />
-
-        <UButton
-          icon="i-heroicons-arrow-path"
-          variant="ghost"
-          :loading="status === 'pending'"
-          @click="() => { refresh() }"
-        />
-      </div>
-    </div>
-
-    <!-- Content Area -->
-    <div class="flex-1 overflow-hidden px-4 pb-4">
-      <div v-if="status === 'error'" class="p-4 text-red-500 bg-red-50 rounded-lg">
-        Failed to load activities. Please try again.
-      </div>
-
-      <!-- Calendar View -->
-      <div v-if="viewMode === 'calendar'" class="overflow-x-auto overflow-y-auto h-full">
-        <!-- Desktop Grid View (hidden on mobile) -->
-        <div class="hidden lg:grid grid-cols-[80px_repeat(7,minmax(130px,1fr))] gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden min-w-[1000px]">
-        
-          <!-- Header Row -->
-          <div class="p-2 text-xs font-semibold text-center text-gray-500 bg-gray-50 dark:bg-gray-800">
-            Summary
-          </div>
-          <div
-            v-for="day in weekDays"
-            :key="day"
-            class="p-2 text-xs font-semibold text-center text-gray-500 bg-gray-50 dark:bg-gray-800"
-          >
-            {{ day }}
-          </div>
-
-          <!-- Weeks -->
-          <template v-for="(week, wIndex) in calendarWeeks" :key="wIndex">
-            <!-- Weekly Summary Column -->
-            <div class="bg-gray-50 dark:bg-gray-800/50 p-2 flex flex-col justify-center gap-1 text-xs min-h-[120px]">
-              <div class="font-bold text-gray-900 dark:text-gray-100">
-                  Week {{ week[0] ? getWeekNumber(week[0].date) : '' }}
-              </div>
-              
-              <div class="mt-2 space-y-1 text-gray-500">
-                <UTooltip text="Total training duration for the week">
-                  <div class="flex justify-between">
-                    <span>Dur</span>
-                    <span class="font-medium text-gray-700 dark:text-gray-300">
-                      {{ formatDuration(getWeekSummary(week).duration) }}
-                    </span>
-                  </div>
-                </UTooltip>
-                <UTooltip text="Total distance covered this week">
-                  <div class="flex justify-between">
-                    <span>Dist</span>
-                    <span class="font-medium text-gray-700 dark:text-gray-300">
-                      {{ formatDistance(getWeekSummary(week).distance) }}
-                    </span>
-                  </div>
-                </UTooltip>
-                <UTooltip text="Training Stress Score - Weekly total training load">
-                  <div class="flex justify-between">
-                    <span>TSS</span>
-                    <span class="font-medium text-gray-700 dark:text-gray-300">
-                      {{ Math.round(getWeekSummary(week).tss) }}
-                    </span>
-                  </div>
-                </UTooltip>
-                <UTooltip text="Chronic Training Load - Your 42-day fitness level">
-                  <div v-if="getWeekSummary(week).ctl !== null" class="flex justify-between">
-                    <span>CTL</span>
-                    <span class="font-medium text-gray-700 dark:text-gray-300">
-                      {{ getWeekSummary(week).ctl?.toFixed(1) }}
-                    </span>
-                  </div>
-                </UTooltip>
-                <UTooltip text="Training Stress Balance - Your current form (CTL - ATL)">
-                  <div v-if="getWeekSummary(week).tsb !== null" class="flex justify-between">
-                    <span>TSB</span>
-                    <span class="font-semibold" :class="getTSBColor(getWeekSummary(week).tsb)">
-                      {{ getWeekSummary(week).tsb > 0 ? '+' : '' }}{{ getWeekSummary(week).tsb?.toFixed(0) }}
-                    </span>
-                  </div>
-                </UTooltip>
-                <UTooltip :text="getFormStatusTooltip(getWeekSummary(week).tsb)">
-                  <div v-if="getWeekSummary(week).tsb !== null" class="mt-1 pt-1 border-t border-gray-200 dark:border-gray-700">
-                    <div class="text-[10px] font-medium" :class="getTSBColor(getWeekSummary(week).tsb)">
-                      {{ getFormStatusText(getWeekSummary(week).tsb) }}
-                    </div>
-                  </div>
-                </UTooltip>
-              </div>
-              
-              <!-- Weekly Zone Summary -->
-              <WeeklyZoneSummary
-                :workout-ids="getWeekWorkoutIds(week)"
-                :auto-load="true"
-                :user-zones="userZones"
-                :streams="getWeekStreams(week)"
-                @click="openWeekZoneDetail(week)"
-              />
-            </div>
-
-            <!-- Day Cells -->
-            <CalendarDayCell
-              v-for="(day, dIndex) in week"
-              :key="dIndex"
-              :date="day.date"
-              :activities="day.activities"
-              :is-other-month="day.isOtherMonth"
-              :streams="streamsMap"
-              :user-zones="userZones"
-              @activity-click="openActivity"
-              @wellness-click="openWellnessModal"
-              @merge-activity="onMergeActivity"
-            />
-          </template>
-        </div>
-
-        <!-- Mobile List-like Calendar View (visible on mobile only) -->
-        <div class="lg:hidden space-y-6">
-          <div v-for="(week, wIndex) in calendarWeeks" :key="`mobile-week-${wIndex}`" class="space-y-4">
-            <!-- Weekly Summary Header -->
-            <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl flex items-center justify-between">
-              <div>
-                <div class="text-sm font-bold">Week {{ week[0] ? getWeekNumber(week[0].date) : '' }} Summary</div>
-                <div class="flex gap-4 mt-1">
-                  <span class="text-xs text-muted">TSS: {{ Math.round(getWeekSummary(week).tss) }}</span>
-                  <span class="text-xs text-muted">Dur: {{ formatDuration(getWeekSummary(week).duration) }}</span>
-                  <span v-if="getWeekSummary(week).ctl" class="text-xs text-muted">CTL: {{ getWeekSummary(week).ctl?.toFixed(0) }}</span>
-                </div>
-              </div>
+  <UDashboardPanel id="activities">
+    <template #header>
+      <UDashboardNavbar title="Activities">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+        <template #right>
+          <div class="flex items-center gap-2">
+            <!-- View Switcher -->
+            <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               <UButton
+                icon="i-heroicons-calendar"
+                :color="viewMode === 'calendar' ? 'primary' : 'neutral'"
                 variant="ghost"
-                size="xs"
-                icon="i-heroicons-chart-pie"
-                @click="openWeekZoneDetail(week)"
+                size="sm"
+                @click="viewMode = 'calendar'"
+              />
+              <UButton
+                icon="i-heroicons-list-bullet"
+                :color="viewMode === 'list' ? 'primary' : 'neutral'"
+                variant="ghost"
+                size="sm"
+                @click="viewMode = 'list'"
               />
             </div>
 
-            <!-- Day Rows -->
-            <div v-for="(day, dIndex) in week.filter(d => !d.isOtherMonth || d.activities.length > 0)" :key="`mobile-day-${dIndex}`"
-                 class="border-b dark:border-gray-800 last:border-0 pb-2">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-bold" :class="{'text-primary': isTodayDate(day.date)}">
-                    {{ format(day.date, 'EEEE, MMM d') }}
-                  </span>
-                  <UButton
-                    v-if="day.activities.some(a => a.wellness)"
-                    icon="i-heroicons-heart"
-                    variant="ghost"
-                    color="neutral"
-                    size="xs"
-                    @click="openWellnessModal(day.date)"
-                  />
-                </div>
-              </div>
+            <!-- Month Navigation -->
+            <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              <UButton
+                icon="i-heroicons-chevron-left"
+                variant="ghost"
+                size="sm"
+                @click="prevMonth"
+              />
+              <span class="px-2 text-xs sm:text-sm font-semibold min-w-[80px] sm:min-w-[120px] text-center">
+                {{ currentMonthLabel }}
+              </span>
+              <UButton
+                icon="i-heroicons-chevron-right"
+                variant="ghost"
+                size="sm"
+                @click="nextMonth"
+              />
+            </div>
 
-              <div v-if="day.activities.length === 0" class="text-xs text-muted italic ml-2">
-                No activities
+            <UButton
+              v-if="!isCurrentMonth"
+              label="Today"
+              size="sm"
+              variant="outline"
+              color="neutral"
+              class="font-bold hidden sm:flex"
+              @click="goToToday"
+            />
+          </div>
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div class="h-full flex flex-col">
+        <Head>
+          <Title>Activities</Title>
+          <Meta name="description" content="View your training calendar, analyze completed workouts, and plan future sessions." />
+        </Head>
+
+        <!-- Secondary Controls -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border-b dark:border-gray-800">
+          <div class="flex items-center gap-4 flex-wrap">
+            <!-- Legend (Calendar Only) -->
+            <div v-if="viewMode === 'calendar'" class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>Completed</span>
               </div>
-              <div v-else class="space-y-2 ml-2">
-                <button
-                  v-for="activity in day.activities"
-                  :key="activity.id"
-                  class="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-left"
-                  @click="openActivity(activity)"
-                >
-                  <div
-                    class="w-2 h-10 rounded-full shrink-0"
-                    :class="{
-                      'bg-green-500': activity.source === 'completed' && !activity.plannedWorkoutId,
-                      'bg-blue-500': activity.source === 'completed' && activity.plannedWorkoutId,
-                      'bg-amber-500': activity.source === 'planned' && activity.status === 'planned',
-                      'bg-red-500': activity.status === 'missed'
-                    }"
-                  />
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm font-semibold truncate">{{ activity.title }}</div>
-                    <div class="flex gap-3 mt-0.5 text-[11px] text-muted">
-                      <span v-if="activity.duration || activity.plannedDuration">{{ formatDurationCompact(activity.duration || activity.plannedDuration || 0) }}</span>
-                      <span v-if="activity.distance || activity.plannedDistance">{{ formatDistance(activity.distance || activity.plannedDistance || 0) }}</span>
-                      <span v-if="activity.tss || activity.plannedTss">TSS: {{ Math.round(activity.tss || activity.plannedTss || 0) }}</span>
-                    </div>
-                  </div>
-                  <UIcon name="i-heroicons-chevron-right" class="w-4 h-4 text-muted" />
-                </button>
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                <span>From Plan</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                <span>Planned</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                <span>Missed</span>
+              </div>
+              <div class="flex items-center gap-1.5 border-l border-gray-300 dark:border-gray-700 pl-3">
+                <div class="w-4 h-1 bg-green-500 rounded-sm"></div>
+                <span>TSS</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- List View -->
-      <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-x-auto h-full flex flex-col">
-        <UTable
-          ref="table"
-          :data="sortedActivities"
-          :columns="availableColumns"
-          v-model:column-visibility="columnVisibility"
-          :loading="status === 'pending'"
-          class="flex-1 w-full"
-          empty="No activities found for this month"
-          @select="openActivity"
-          :ui="{
-            root: 'w-full',
-            base: 'w-full table-auto',
-            th: 'text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-gray-900 z-10 px-4 py-3',
-            td: 'text-sm text-gray-900 dark:text-gray-100 cursor-pointer px-4 py-3',
-            tbody: 'divide-y divide-gray-200 dark:divide-gray-800'
-          }"
-        >
-          <template #type-cell="{ row }">
-            <div class="flex items-center gap-2">
-              <UIcon :name="getActivityIcon(row.original.type)" class="w-4 h-4 flex-shrink-0" />
-              <span class="hidden sm:inline">{{ row.original.type }}</span>
-            </div>
-          </template>
-          
-          <template #date-cell="{ row }">
-            <div class="whitespace-nowrap">
-              {{ formatDateForList(row.original.date) }}
-            </div>
-          </template>
-
-          <template #title-cell="{ row }">
-            <div class="max-w-xs truncate" :title="row.original.title">
-              {{ row.original.title }}
-            </div>
-          </template>
-
-          <template #duration-cell="{ row }">
-            <span v-if="row.original.duration || row.original.plannedDuration">
-              {{ formatDurationCompact(row.original.duration || row.original.plannedDuration || 0) }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #distance-cell="{ row }">
-            <span v-if="row.original.distance || row.original.plannedDistance" class="whitespace-nowrap">
-              {{ ((row.original.distance || row.original.plannedDistance) / 1000).toFixed(1) }} km
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #averageHr-cell="{ row }">
-            <span v-if="row.original.averageHr" class="flex items-center gap-1 text-red-500 dark:text-red-400">
-              <UIcon name="i-heroicons-heart" class="w-3.5 h-3.5" />
-              <span class="font-medium">{{ Math.round(row.original.averageHr) }}</span>
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #intensity-cell="{ row }">
-            <span v-if="row.original.intensity != null">
-              {{ (row.original.intensity * 100).toFixed(0) }}%
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #tss-cell="{ row }">
-            <span v-if="row.original.tss || row.original.plannedTss">
-              {{ Math.round(row.original.tss || row.original.plannedTss) }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #rpe-cell="{ row }">
-            <span v-if="row.original.rpe">
-              {{ row.original.rpe }}/10
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #trainingLoad-cell="{ row }">
-            <span v-if="row.original.trainingLoad">
-              {{ Math.round(row.original.trainingLoad) }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #trimp-cell="{ row }">
-            <span v-if="row.original.trimp">
-              {{ Math.round(row.original.trimp) }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #sessionRpe-cell="{ row }">
-            <span v-if="row.original.sessionRpe">
-              {{ row.original.sessionRpe }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #feel-cell="{ row }">
-            <span v-if="row.original.feel">
-              {{ row.original.feel }}/10
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #averageWatts-cell="{ row }">
-            <span v-if="row.original.averageWatts" class="font-medium">
-              {{ Math.round(row.original.averageWatts) }}W
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #normalizedPower-cell="{ row }">
-            <span v-if="row.original.normalizedPower" class="font-medium">
-              {{ Math.round(row.original.normalizedPower) }}W
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #weightedAvgWatts-cell="{ row }">
-            <span v-if="row.original.weightedAvgWatts" class="font-medium">
-              {{ Math.round(row.original.weightedAvgWatts) }}W
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #kilojoules-cell="{ row }">
-            <span v-if="row.original.kilojoules">
-              {{ Math.round(row.original.kilojoules) }} kJ
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #calories-cell="{ row }">
-            <span v-if="row.original.calories">
-              {{ Math.round(row.original.calories) }} kcal
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #elapsedTime-cell="{ row }">
-            <span v-if="row.original.elapsedTime">
-              {{ formatDurationCompact(row.original.elapsedTime) }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #deviceName-cell="{ row }">
-            <span v-if="row.original.deviceName" class="text-xs">
-              {{ row.original.deviceName }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #commute-cell="{ row }">
-            <UBadge
-              v-if="row.original.commute"
-              color="blue"
-              variant="subtle"
-              size="xs"
-            >
-              Commute
-            </UBadge>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #isPrivate-cell="{ row }">
-            <UIcon
-              v-if="row.original.isPrivate"
-              name="i-heroicons-lock-closed"
-              class="text-gray-500"
+          <!-- List View Controls -->
+          <div class="flex items-center gap-4 justify-between md:justify-end overflow-x-auto">
+            <UInput
+              v-if="viewMode === 'list'"
+              v-model="tableSearch"
+              icon="i-heroicons-magnifying-glass"
+              placeholder="Filter..."
+              size="sm"
+              class="w-48"
             />
-            <span v-else class="text-gray-400">-</span>
-          </template>
 
-          <template #gearId-cell="{ row }">
-            <span v-if="row.original.gearId" class="text-xs">
-              {{ row.original.gearId }}
-            </span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
-
-          <template #source-cell="{ row }">
-            <UBadge
-              :color="row.original.source === 'completed' ? 'green' : 'gray'"
-              variant="subtle"
-              size="xs"
+            <UDropdownMenu
+              v-if="viewMode === 'list'"
+              :items="columnMenuItems"
+              :content="{ align: 'end' }"
+              :disabled="columnMenuItems.length === 0"
             >
-              {{ row.original.source === 'completed' ? 'Completed' : 'Planned' }}
-            </UBadge>
-          </template>
+              <UButton
+                label="Columns"
+                color="neutral"
+                variant="outline"
+                trailing-icon="i-heroicons-chevron-down"
+                size="sm"
+                class="font-bold"
+                aria-label="Toggle columns"
+                :disabled="columnMenuItems.length === 0"
+              />
+            </UDropdownMenu>
 
-          <template #status-cell="{ row }">
-            <UBadge
-              :color="row.original.status === 'completed' ? 'green' : row.original.status === 'missed' ? 'red' : 'gray'"
-              variant="subtle"
-              size="xs"
+            <UButton
+              to="/workouts/upload"
+              icon="i-heroicons-cloud-arrow-up"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              class="font-bold"
             >
-              {{ row.original.status }}
-            </UBadge>
-          </template>
-        </UTable>
-      </div>
-    </div>
-    <!-- Planned Workout Modal -->
-    <PlannedWorkoutModal
-      v-model="showPlannedWorkoutModal"
-      :planned-workout="selectedPlannedWorkout"
-      @completed="handlePlannedWorkoutCompleted"
-      @deleted="handlePlannedWorkoutDeleted"
-    />
+              <span class="hidden sm:inline">Upload</span>
+            </UButton>
 
-    <!-- Workout Quick View Modal -->
-    <WorkoutQuickViewModal
-      v-model="showWorkoutModal"
-      :workout="selectedWorkout"
-      @deleted="handleWorkoutDeleted"
-    />
-
-    <!-- Wellness Modal -->
-    <WellnessModal
-      v-if="showWellnessModal"
-      v-model:open="showWellnessModal"
-      :date="selectedWellnessDate"
-    />
-    
-    <!-- Weekly Zone Detail Modal -->
-    <WeeklyZoneDetailModal
-      v-model="showWeekZoneModal"
-      :week-data="selectedWeekData"
-      :user-zones="userZones"
-      :streams="selectedWeekStreams"
-    />
-    
-    <!-- Merge Confirmation Modal -->
-    <UModal
-      v-model:open="showMergeModal"
-      title="Merge Workouts?"
-      description="This action cannot be undone."
-      :prevent-close="isMerging"
-    >
-      <template #body>
-        <p class="text-gray-700 dark:text-gray-300">
-          Do you want to merge <strong>{{ mergeSource?.title }}</strong> into <strong>{{ mergeTarget?.title }}</strong>?
-        </p>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          The dragged workout will be marked as a duplicate, and the target workout will be kept as the primary version.
-        </p>
-      </template>
-
-      <template #footer>
-        <div class="flex justify-end gap-3 w-full">
-          <UButton color="neutral" variant="ghost" @click="showMergeModal = false" :disabled="isMerging">Cancel</UButton>
-          <UButton color="primary" @click="confirmMerge" :loading="isMerging">Merge</UButton>
+            <UButton
+              icon="i-heroicons-arrow-path"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              class="font-bold"
+              :loading="status === 'pending'"
+              @click="() => { refresh() }"
+            >
+              <span class="hidden sm:inline">Refresh</span>
+            </UButton>
+          </div>
         </div>
-      </template>
-    </UModal>
-  </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-hidden p-4">
+          <div v-if="status === 'error'" class="p-4 text-red-500 bg-red-50 rounded-lg">
+            Failed to load activities. Please try again.
+          </div>
+
+          <!-- Calendar View -->
+          <div v-if="viewMode === 'calendar'" class="overflow-x-auto overflow-y-auto h-full">
+            <!-- Desktop Grid View (hidden on mobile) -->
+            <div class="hidden lg:grid grid-cols-[80px_repeat(7,minmax(130px,1fr))] gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden min-w-[1000px]">
+              <!-- Header Row -->
+              <div class="bg-gray-50 dark:bg-gray-800 p-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">Week</div>
+              <div v-for="day in weekDays" :key="day" class="bg-gray-50 dark:bg-gray-800 p-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 text-center">
+                {{ day }}
+              </div>
+
+              <!-- Week Rows -->
+              <template v-for="(week, weekIdx) in calendarWeeks" :key="weekIdx">
+                <!-- Week Summary Cell -->
+                <div 
+                  class="bg-gray-50 dark:bg-gray-800/50 p-2 flex flex-col justify-between border-r border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  @click="openWeekZoneDetail(week)"
+                >
+                  <div class="text-xs font-bold text-gray-400">W{{ getWeekNumber(week[0].date) }}</div>
+                  <div class="space-y-1 mt-2">
+                    <div class="flex items-center justify-between text-[10px]">
+                      <span class="text-gray-500">Time:</span>
+                      <span class="font-bold">{{ formatDuration(getWeekSummary(week).duration) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px]">
+                      <span class="text-gray-500">Dist:</span>
+                      <span class="font-bold">{{ formatDistance(getWeekSummary(week).distance) }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px]">
+                      <span class="text-gray-500">TSS:</span>
+                      <span class="font-bold text-green-600 dark:text-green-400">{{ Math.round(getWeekSummary(week).tss) }}</span>
+                    </div>
+                    
+                    <!-- Training Stress Trends -->
+                    <div v-if="getWeekSummary(week).ctl !== null" class="pt-1 mt-1 border-t border-gray-200 dark:border-gray-700">
+                      <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-gray-500">Fitness:</span>
+                        <span class="font-bold text-blue-600">{{ Math.round(getWeekSummary(week).ctl!) }}</span>
+                      </div>
+                      <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-gray-500">Form:</span>
+                        <UTooltip :text="getFormStatusTooltip(getWeekSummary(week).tsb)">
+                          <span class="font-bold" :class="getTSBColor(getWeekSummary(week).tsb!)">
+                            {{ Math.round(getWeekSummary(week).tsb!) }}
+                          </span>
+                        </UTooltip>
+                      </div>
+                      <div class="text-[8px] text-center mt-0.5 font-medium uppercase tracking-tighter" :class="getTSBColor(getWeekSummary(week).tsb!)">
+                        {{ getFormStatusText(getWeekSummary(week).tsb) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Day Cells -->
+                <CalendarDayCell
+                  v-for="day in week"
+                  :key="day.date.toISOString()"
+                  :date="day.date"
+                  :activities="day.activities"
+                  :is-other-month="day.isOtherMonth"
+                  :is-today="isTodayDate(day.date)"
+                  :streams="streamsMap"
+                  :user-zones="userZones"
+                  @activity-click="openActivity"
+                  @wellness-click="openWellnessModal"
+                  @merge-activity="onMergeActivity"
+                />
+              </template>
+            </div>
+
+            <!-- Mobile List View for Calendar (simplified) -->
+            <div class="lg:hidden space-y-4">
+              <div v-for="(week, weekIdx) in calendarWeeks" :key="'mob-week-' + weekIdx" class="space-y-2">
+                <div class="flex items-center justify-between bg-gray-100 dark:bg-gray-800 p-2 rounded-lg sticky top-0 z-10">
+                  <span class="text-xs font-bold uppercase">Week {{ getWeekNumber(week[0].date) }}</span>
+                  <div class="flex items-center gap-3 text-[10px]">
+                    <span>{{ formatDuration(getWeekSummary(week).duration) }}</span>
+                    <span>{{ formatDistance(getWeekSummary(week).distance) }}</span>
+                    <span class="text-green-600 font-bold">{{ Math.round(getWeekSummary(week).tss) }} TSS</span>
+                  </div>
+                </div>
+                
+                <div v-for="day in week" :key="'mob-day-' + day.date.toISOString()" class="space-y-1">
+                  <div v-if="day.activities.length > 0 || isTodayDate(day.date)" class="flex gap-2">
+                    <div class="w-12 text-center shrink-0 pt-1">
+                      <div class="text-[10px] uppercase text-gray-500">{{ format(day.date, 'EEE') }}</div>
+                      <div 
+                        class="w-8 h-8 mx-auto flex items-center justify-center rounded-full text-sm font-bold mt-0.5"
+                        :class="[
+                          isTodayDate(day.date) ? 'bg-primary-500 text-white' : 'text-gray-700 dark:text-gray-300',
+                          day.isOtherMonth ? 'opacity-30' : ''
+                        ]"
+                      >
+                        {{ format(day.date, 'd') }}
+                      </div>
+                    </div>
+                    
+                    <div class="flex-1 space-y-1 pb-4">
+                      <!-- Wellness/Nutrition summary -->
+                      <div v-if="day.activities.some(a => a.wellness || a.nutrition)" class="flex gap-2 mb-1">
+                         <div v-if="day.activities.find(a => a.wellness)?.wellness?.recoveryScore" class="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                           {{ day.activities.find(a => a.wellness).wellness.recoveryScore }}% REC
+                         </div>
+                         <div v-if="day.activities.find(a => a.nutrition)?.nutrition?.calories" class="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                           {{ Math.round(day.activities.find(a => a.nutrition).nutrition.calories) }} KCAL
+                         </div>
+                      </div>
+
+                      <!-- Actual activities -->
+                      <div 
+                        v-for="activity in day.activities.filter(a => a.id)" 
+                        :key="activity.id"
+                        class="p-2 rounded-lg border dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm flex items-center justify-between gap-3"
+                        @click="openActivity(activity)"
+                      >
+                        <div class="flex items-center gap-3 overflow-hidden">
+                          <UIcon :name="getActivityIcon(activity.type)" class="w-5 h-5 shrink-0" :class="activity.source === 'completed' ? 'text-green-500' : 'text-amber-500'" />
+                          <div class="truncate">
+                            <div class="text-xs font-bold truncate">{{ activity.title }}</div>
+                            <div class="text-[10px] text-gray-500">{{ formatDurationCompact(activity.duration || activity.plannedDuration || 0) }} • {{ formatDistance(activity.distance || activity.plannedDistance || 0) }}</div>
+                          </div>
+                        </div>
+                        <div v-if="activity.tss || activity.plannedTss" class="text-xs font-bold text-green-600 shrink-0">
+                          {{ Math.round(activity.tss || activity.plannedTss) }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- List View -->
+          <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-x-auto h-full flex flex-col">
+            <UTable
+              ref="table"
+              :data="sortedActivities"
+              :columns="availableColumns"
+              v-model:column-visibility="columnVisibility"
+              :loading="status === 'pending'"
+              class="flex-1 w-full"
+              empty="No activities found for this month"
+              @select="openActivity"
+              :ui="{
+                root: 'w-full',
+                base: 'w-full table-auto',
+                th: 'text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky top-0 bg-white dark:bg-gray-900 z-10 px-4 py-3',
+                td: 'text-sm text-gray-900 dark:text-gray-100 cursor-pointer px-4 py-3',
+                tbody: 'divide-y divide-gray-200 dark:divide-gray-800'
+              }"
+            >
+              <template #type-cell="{ row }">
+                <div class="flex items-center gap-2">
+                  <UIcon :name="getActivityIcon(row.original.type)" class="w-4 h-4 flex-shrink-0" />
+                  <span class="hidden sm:inline">{{ row.original.type }}</span>
+                </div>
+              </template>
+              
+              <template #date-cell="{ row }">
+                <div class="whitespace-nowrap">
+                  {{ formatDateForList(row.original.date) }}
+                </div>
+              </template>
+
+              <template #title-cell="{ row }">
+                <div class="max-w-xs truncate" :title="row.original.title">
+                  {{ row.original.title }}
+                </div>
+              </template>
+
+              <template #duration-cell="{ row }">
+                <span v-if="row.original.duration || row.original.plannedDuration">
+                  {{ formatDurationCompact(row.original.duration || row.original.plannedDuration || 0) }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #distance-cell="{ row }">
+                <span v-if="row.original.distance || row.original.plannedDistance" class="whitespace-nowrap">
+                  {{ ((row.original.distance || row.original.plannedDistance) / 1000).toFixed(1) }} km
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #averageHr-cell="{ row }">
+                <span v-if="row.original.averageHr" class="flex items-center gap-1 text-red-500 dark:text-red-400">
+                  <UIcon name="i-heroicons-heart" class="w-3.5 h-3.5" />
+                  <span class="font-medium">{{ Math.round(row.original.averageHr) }}</span>
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #intensity-cell="{ row }">
+                <span v-if="row.original.intensity != null">
+                  {{ (row.original.intensity * 100).toFixed(0) }}%
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #tss-cell="{ row }">
+                <span v-if="row.original.tss || row.original.plannedTss">
+                  {{ Math.round(row.original.tss || row.original.plannedTss) }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #rpe-cell="{ row }">
+                <span v-if="row.original.rpe">
+                  {{ row.original.rpe }}/10
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #trainingLoad-cell="{ row }">
+                <span v-if="row.original.trainingLoad">
+                  {{ Math.round(row.original.trainingLoad) }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #trimp-cell="{ row }">
+                <span v-if="row.original.trimp">
+                  {{ Math.round(row.original.trimp) }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #sessionRpe-cell="{ row }">
+                <span v-if="row.original.sessionRpe">
+                  {{ row.original.sessionRpe }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #feel-cell="{ row }">
+                <span v-if="row.original.feel">
+                  {{ row.original.feel }}/10
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #averageWatts-cell="{ row }">
+                <span v-if="row.original.averageWatts" class="font-medium">
+                  {{ Math.round(row.original.averageWatts) }}W
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #normalizedPower-cell="{ row }">
+                <span v-if="row.original.normalizedPower" class="font-medium">
+                  {{ Math.round(row.original.normalizedPower) }}W
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #weightedAvgWatts-cell="{ row }">
+                <span v-if="row.original.weightedAvgWatts" class="font-medium">
+                  {{ Math.round(row.original.weightedAvgWatts) }}W
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #kilojoules-cell="{ row }">
+                <span v-if="row.original.kilojoules">
+                  {{ Math.round(row.original.kilojoules) }} kJ
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #calories-cell="{ row }">
+                <span v-if="row.original.calories">
+                  {{ Math.round(row.original.calories) }} kcal
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #elapsedTime-cell="{ row }">
+                <span v-if="row.original.elapsedTime">
+                  {{ formatDurationCompact(row.original.elapsedTime) }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #deviceName-cell="{ row }">
+                <span v-if="row.original.deviceName" class="text-xs">
+                  {{ row.original.deviceName }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #commute-cell="{ row }">
+                <UBadge
+                  v-if="row.original.commute"
+                  color="blue"
+                  variant="subtle"
+                  size="xs"
+                >
+                  Commute
+                </UBadge>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #isPrivate-cell="{ row }">
+                <UIcon
+                  v-if="row.original.isPrivate"
+                  name="i-heroicons-lock-closed"
+                  class="text-gray-500"
+                />
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #gearId-cell="{ row }">
+                <span v-if="row.original.gearId" class="text-xs">
+                  {{ row.original.gearId }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
+              </template>
+
+              <template #source-cell="{ row }">
+                <UBadge
+                  :color="row.original.source === 'completed' ? 'green' : 'gray'"
+                  variant="subtle"
+                  size="xs"
+                >
+                  {{ row.original.source === 'completed' ? 'Completed' : 'Planned' }}
+                </UBadge>
+              </template>
+
+              <template #status-cell="{ row }">
+                <UBadge
+                  :color="row.original.status === 'completed' ? 'green' : row.original.status === 'missed' ? 'red' : 'gray'"
+                  variant="subtle"
+                  size="xs"
+                >
+                  {{ row.original.status }}
+                </UBadge>
+              </template>
+            </UTable>
+          </div>
+        </div>
+      </div>
+    </template>
+  </UDashboardPanel>
+
+  <!-- Modals -->
+  <PlannedWorkoutModal
+    v-model="showPlannedWorkoutModal"
+    :planned-workout="selectedPlannedWorkout"
+    @completed="handlePlannedWorkoutCompleted"
+    @deleted="handlePlannedWorkoutDeleted"
+  />
+
+  <WorkoutQuickViewModal
+    v-model="showWorkoutModal"
+    :workout="selectedWorkout"
+    @deleted="handleWorkoutDeleted"
+  />
+
+  <WellnessModal
+    v-if="showWellnessModal"
+    v-model:open="showWellnessModal"
+    :date="selectedWellnessDate"
+  />
+  
+  <WeeklyZoneDetailModal
+    v-model="showWeekZoneModal"
+    :week-data="selectedWeekData"
+    :user-zones="userZones"
+    :streams="selectedWeekStreams"
+  />
+  
+  <UModal
+    v-model:open="showMergeModal"
+    title="Merge Workouts?"
+    description="This action cannot be undone."
+    :prevent-close="isMerging"
+  >
+    <template #body>
+      <p class="text-gray-700 dark:text-gray-300">
+        Do you want to merge <strong>{{ mergeSource?.title }}</strong> into <strong>{{ mergeTarget?.title }}</strong>?
+      </p>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        The dragged workout will be marked as a duplicate, and the target workout will be kept as the primary version.
+      </p>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end gap-3 w-full">
+        <UButton color="neutral" variant="ghost" @click="showMergeModal = false" :disabled="isMerging">Cancel</UButton>
+        <UButton color="primary" @click="confirmMerge" :loading="isMerging">Merge</UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, addMonths, subMonths, isSameMonth, getISOWeek, isToday as isTodayDate } from 'date-fns'
 import { useStorage } from '@vueuse/core'
 import type { CalendarActivity } from '~/types/calendar'
+
+definePageMeta({
+  middleware: 'auth',
+  layout: 'default'
+})
 
 // Modal state
 const showPlannedWorkoutModal = ref(false)
@@ -597,11 +581,11 @@ const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // API Fetch
 const { data: activities, status, refresh } = await useFetch<CalendarActivity[]>('/api/calendar', {
   query: computed(() => {
-    const start = startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 })
-    const end = endOfWeek(endOfMonth(currentDate.value), { weekStartsOn: 1 })
+    const start = format(startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 }), 'yyyy-MM-dd')
+    const end = format(endOfWeek(endOfMonth(currentDate.value), { weekStartsOn: 1 }), 'yyyy-MM-dd')
     return {
-      startDate: start.toISOString(),
-      endDate: end.toISOString()
+      startDate: start,
+      endDate: end
     }
   }),
   watch: [currentDate]

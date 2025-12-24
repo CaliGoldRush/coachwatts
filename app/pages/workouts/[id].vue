@@ -8,9 +8,17 @@
             color="neutral"
             variant="ghost"
             to="/data"
+            class="hidden sm:flex"
           >
             Back to Data
           </UButton>
+          <UButton
+            icon="i-heroicons-arrow-left"
+            color="neutral"
+            variant="ghost"
+            to="/data"
+            class="sm:hidden"
+          />
         </template>
 
         <template #right>
@@ -24,7 +32,7 @@
               :loading="sharing"
               @click="handleShare"
             >
-              Share
+              <span class="hidden sm:inline">Share</span>
             </UButton>
             <UButton
               icon="i-heroicons-chat-bubble-left-right"
@@ -34,7 +42,8 @@
               class="font-bold"
               @click="chatAboutWorkout"
             >
-              Chat about this workout
+              <span class="hidden sm:inline">Chat about this workout</span>
+              <span class="sm:hidden">Chat</span>
             </UButton>
           </div>
         </template>

@@ -15,7 +15,7 @@
               size="sm"
               class="font-bold"
             >
-              Upload
+              <span class="hidden sm:inline">Upload</span>
             </UButton>
             <UButton
               v-if="integrationStore?.intervalsConnected"
@@ -28,7 +28,8 @@
               size="sm"
               class="font-bold"
             >
-              Sync Data
+              <span class="hidden sm:inline">Sync Data</span>
+              <span class="sm:hidden">Sync</span>
             </UButton>
           </div>
         </template>

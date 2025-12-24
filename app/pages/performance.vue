@@ -15,7 +15,7 @@
             size="sm"
             class="font-bold"
           >
-            Insights
+            <span class="hidden sm:inline">Insights</span>
           </UButton>
         </template>
       </UDashboardNavbar>
