@@ -129,7 +129,19 @@
                 <th class="px-4 py-2 text-left">Duration</th>
                 <th class="px-4 py-2 text-left">TSS</th>
                 <th class="px-4 py-2 text-center">
-                  <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 inline" title="Structured Workout" />
+                  <div class="flex items-center justify-center gap-1">
+                    <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 inline" title="Structured Workout" />
+                    <UButton
+                      v-if="selectedWeek?.workouts.some((w: any) => !w.structuredWorkout)"
+                      size="2xs"
+                      color="primary"
+                      variant="ghost"
+                      icon="i-heroicons-sparkles"
+                      title="Generate structure for all workouts in this week"
+                      :loading="generatingAllStructures"
+                      @click="generateAllStructureForWeek"
+                    />
+                  </div>
                 </th>
                 <th class="px-4 py-2 text-right">Status</th>
               </tr>
@@ -192,12 +204,19 @@
           </table>
         </div>
       </div>
+
+      <!-- Zone Distribution Chart -->
+      <WeeklyZoneSummary 
+        v-if="selectedWeek" 
+        :workouts="selectedWeek.workouts" 
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
+import WeeklyZoneSummary from '~/components/ui/WeeklyZoneSummary.vue'
 
 const props = defineProps<{
   plan: any
@@ -210,6 +229,7 @@ const selectedWeekId = ref<string | null>(null)
 const showAdaptModal = ref(false)
 const generatingWorkouts = ref(false)
 const generatingStructureForWorkoutId = ref<string | null>(null)
+const generatingAllStructures = ref(false)
 const adapting = ref<string | null>(null)
 const toast = useToast()
 
@@ -300,6 +320,63 @@ async function generateWorkoutsForBlock() {
         color: 'error'
       })
       generatingStructureForWorkoutId.value = null
+    }
+  }
+
+  async function generateAllStructureForWeek() {
+    if (!selectedWeek.value) return
+    
+    // Find workouts without structure
+    const pendingWorkouts = selectedWeek.value.workouts.filter((w: any) => !w.structuredWorkout)
+    
+    if (pendingWorkouts.length === 0) return
+    
+    generatingAllStructures.value = true
+    toast.add({ 
+      title: 'Batch Generation Started', 
+      description: `Designing ${pendingWorkouts.length} workouts. This will take a minute...`, 
+      color: 'info' 
+    })
+    
+    try {
+      // Process in batches of 3 to avoid overwhelming the server/LLM
+      const batchSize = 3
+      for (let i = 0; i < pendingWorkouts.length; i += batchSize) {
+        const batch = pendingWorkouts.slice(i, i + batchSize)
+        await Promise.all(batch.map((w: any) => 
+          $fetch(`/api/workouts/planned/${w.id}/generate-structure`, { method: 'POST' })
+            .catch(e => console.error(`Failed to generate for ${w.id}`, e))
+        ))
+      }
+      
+      // Poll for completion
+      toast.add({ title: 'Generation Queued', description: 'Waiting for AI to finish designing workouts...', color: 'info' })
+      
+      let attempts = 0
+      const maxAttempts = 20
+      const pollInterval = setInterval(() => {
+        attempts++
+        emit('refresh')
+        
+        // We can't easily check completion from here without prop update propogation logic or specialized check
+        // But emit('refresh') triggers parent fetch, which updates 'plan' prop.
+        // We can check inside a watcher or just poll for a fixed duration.
+        // Better: Check if pendingWorkouts still lack structure in the updated prop.
+        
+        if (attempts >= maxAttempts) {
+          clearInterval(pollInterval)
+          generatingAllStructures.value = false
+          toast.add({ title: 'Generation Complete', color: 'success' })
+        }
+      }, 3000)
+      
+      // We return early and let the interval handle the final state
+      return
+
+    } catch (error) {
+      console.error('Batch generation failed', error)
+      toast.add({ title: 'Batch Generation Failed', color: 'error' })
+      generatingAllStructures.value = false
     }
   }
   

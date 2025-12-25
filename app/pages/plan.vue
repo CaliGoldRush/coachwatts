@@ -80,20 +80,15 @@ useHead({
   title: 'Training Plan',
 })
 
-const loading = ref(true)
-const activePlan = ref<any>(null)
 const showWizard = ref(false)
+const toast = useToast()
 
-async function fetchActivePlan() {
-  loading.value = true
-  try {
-    const data: any = await $fetch('/api/plans/active')
-    activePlan.value = data.plan
-  } catch (error) {
-    console.error('Failed to fetch plan', error)
-  } finally {
-    loading.value = false
-  }
+const { data, status, refresh } = await useFetch<any>('/api/plans/active')
+const activePlan = computed(() => data.value?.plan)
+const loading = computed(() => status.value === 'pending')
+
+function fetchActivePlan() {
+  refresh()
 }
 
 function openWizard() {
@@ -107,22 +102,45 @@ function startNewPlan() {
 }
 
 function onPlanCreated(plan: any) {
-  activePlan.value = plan
+  // Optimistic update
+  if (!data.value) data.value = {}
+  data.value.plan = plan
+  
   showWizard.value = false
-  fetchActivePlan() // Refresh to get full relations if needed
+  
+  toast.add({
+    title: 'Plan Created',
+    description: 'AI is generating your workouts. This may take a moment.',
+    color: 'info'
+  })
+  
+  // Start polling for workouts
+  startPolling()
 }
 
-// Safety: Ensure wizard is closed if plan loads successfully on mount
-watch(activePlan, (val) => {
-  if (val && !showWizard.value) {
-    // Keep it closed
-  } else if (val && showWizard.value) {
-    // If a plan exists but wizard is open, user might be creating a NEW one. 
-    // So we don't auto-close here to allow "New Plan" flow.
-  }
-})
+function startPolling() {
+  let attempts = 0
+  const maxAttempts = 20 // 1 minute
+  
+  const interval = setInterval(async () => {
+    attempts++
+    await refresh()
+    
+    // Check if first block has workouts
+    const hasWorkouts = activePlan.value?.blocks?.[0]?.weeks?.[0]?.workouts?.length > 0
+    
+    if (hasWorkouts || attempts >= maxAttempts) {
+      clearInterval(interval)
+      if (hasWorkouts) {
+        toast.add({
+          title: 'Workouts Ready',
+          description: 'Your training plan has been populated.',
+          color: 'success'
+        })
+      }
+    }
+  }, 3000)
+}
 
-onMounted(() => {
-  fetchActivePlan()
-})
+// Safety: Close wizard if plan exists
 </script>
