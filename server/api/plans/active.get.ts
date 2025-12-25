@@ -2,13 +2,22 @@ import { prisma } from '../../utils/db'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
-  if (!session?.user) {
+  if (!session?.user?.email) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true, ftp: true }
+  })
+
+  if (!user) {
+    throw createError({ statusCode: 404, message: 'User not found' })
   }
 
   const plan = await prisma.trainingPlan.findFirst({
     where: {
-      userId: session.user.id,
+      userId: user.id,
       status: 'ACTIVE'
     },
     include: {
@@ -29,5 +38,5 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  return { plan }
+  return { plan, userFtp: user.ftp }
 })
