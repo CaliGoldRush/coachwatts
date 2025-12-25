@@ -17,6 +17,8 @@ Detailed documentation for specific application features.
 ### Chat & AI Coach
 - [**Chat System Overview**](./02-features/chat/overview.md) - Architecture of the AI chat feature.
 - [**Tool Calling Spec**](./02-features/chat/tool-calling-spec.md) - How the AI fetches data (workouts, nutrition, etc.).
+### Training Planning
+- [**Goal-Driven Training**](./02-features/goal-driven-training.md) - Periodized AI training plans and adaptation logic.
 - [**Training Plan Integration**](./02-features/chat/training-plan-integration.md) - Managing training plans via chat.
 
 ### Analytics & Scoring

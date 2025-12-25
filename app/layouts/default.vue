@@ -75,6 +75,13 @@ const links = computed<NavigationMenuItem[][]>(() => {
       open.value = false
     }
   }, {
+    label: 'Events',
+    icon: 'i-lucide-flag',
+    to: '/events',
+    onSelect: () => {
+      open.value = false
+    }
+  }, {
     label: 'Reports',
     icon: 'i-lucide-file-text',
     to: '/reports',
@@ -221,7 +228,7 @@ const groups = computed(() => [{
               <UButton
                 to="https://discord.gg/dPYkzg49T9"
                 target="_blank"
-                color="gray"
+                color="neutral"
                 variant="ghost"
                 icon="i-simple-icons-discord"
                 size="xs"
@@ -233,7 +240,7 @@ const groups = computed(() => [{
               <UButton
                 to="https://github.com/newpush/coach"
                 target="_blank"
-                color="gray"
+                color="neutral"
                 variant="ghost"
                 icon="i-simple-icons-github"
                 size="xs"
