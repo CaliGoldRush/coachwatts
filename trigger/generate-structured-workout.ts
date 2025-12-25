@@ -7,6 +7,7 @@ const workoutStructureSchema = {
   type: "object",
   properties: {
     description: { type: "string", description: "Overall workout strategy description" },
+    coachInstructions: { type: "string", description: "Personalized coaching advice based on athlete profile" },
     steps: {
       type: "array",
       description: "Linear sequence of workout steps",
@@ -32,7 +33,7 @@ const workoutStructureSchema = {
       }
     }
   },
-  required: ["steps"]
+  required: ["steps", "coachInstructions"]
 };
 
 export const generateStructuredWorkoutTask = task({
@@ -44,13 +45,32 @@ export const generateStructuredWorkoutTask = task({
     const workout = await prisma.plannedWorkout.findUnique({
       where: { id: plannedWorkoutId },
       include: {
-        user: { select: { ftp: true } }
+        user: { select: { ftp: true, aiPersona: true, name: true } },
+        trainingWeek: {
+          include: {
+            block: {
+              include: {
+                plan: {
+                  include: {
+                    goal: true
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     });
     
     if (!workout) throw new Error("Workout not found");
     
-    const prompt = `Design a structured cycling workout.
+    // Build context
+    const persona = workout.user.aiPersona || 'Supportive';
+    const goal = workout.trainingWeek?.block.plan.goal.title || 'General Fitness';
+    const phase = workout.trainingWeek?.block.type || 'General';
+    const focus = workout.trainingWeek?.block.primaryFocus || 'Fitness';
+    
+    const prompt = `Design a structured cycling workout for ${workout.user.name || 'Athlete'}.
     
     TITLE: ${workout.title}
     DURATION: ${Math.round((workout.durationSec || 3600) / 60)} minutes
@@ -58,11 +78,18 @@ export const generateStructuredWorkoutTask = task({
     DESCRIPTION: ${workout.description || 'No specific description'}
     USER FTP: ${workout.user.ftp || 250}W
     
+    CONTEXT:
+    - Goal: ${goal}
+    - Phase: ${phase}
+    - Focus: ${focus}
+    - Coach Persona: ${persona}
+    
     INSTRUCTIONS:
     - Create a JSON structure defining the exact steps (Warmup, Intervals, Rest, Cooldown).
     - Ensure total duration matches the target duration exactly.
     - Use % of FTP for power targets (e.g. 0.95 = 95%).
-    - Be creative but realistic.
+    - Include target "cadence" (RPM) for each step (e.g. 85-95 for intervals, 60-80 for rest).
+    - Add "coachInstructions": A personalized message (2-3 sentences) explaining WHY this workout matters for their goal (${goal}) and how to execute it (e.g. "Focus on smooth cadence during the efforts"). Use the '${persona}' persona tone.
     
     OUTPUT JSON format matching the schema.`;
     

@@ -5,6 +5,18 @@
     </div>
 
     <div v-else class="space-y-4">
+      <!-- Legend -->
+      <div class="flex items-center gap-4 text-xs">
+        <div class="flex items-center gap-1.5">
+          <div class="w-3 h-3 rounded-sm bg-amber-500"></div>
+          <span class="text-muted">Power (% FTP)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-3 h-1 bg-white border border-gray-400 border-dashed"></div>
+          <span class="text-muted">Target Cadence (RPM)</span>
+        </div>
+      </div>
+
       <!-- Chart -->
       <div class="relative bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
         <!-- Y-axis labels -->
@@ -38,7 +50,7 @@
                 <!-- Tooltip -->
                 <div
                   v-if="hoveredStep === step"
-                  class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg shadow-lg whitespace-nowrap z-10"
+                  class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg shadow-lg whitespace-nowrap z-50"
                 >
                   <div class="font-semibold">{{ step.name }}</div>
                   <div class="text-[10px] opacity-80 mt-1">
@@ -47,9 +59,24 @@
                   <div v-if="userFtp" class="text-[10px] opacity-80">
                     {{ Math.round((step.power?.value || 0) * userFtp) }}W
                   </div>
+                  <div v-if="step.cadence" class="text-[10px] opacity-80 border-t border-white/20 mt-1 pt-1">
+                    Target Cadence: {{ step.cadence }} RPM
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- Cadence Line Overlay -->
+            <svg class="absolute inset-0 pointer-events-none" preserveAspectRatio="none" viewBox="0 0 1000 100">
+              <path
+                :d="cadencePath"
+                fill="none"
+                stroke="white"
+                stroke-width="2"
+                stroke-dasharray="4,2"
+                class="drop-shadow-sm opacity-60"
+              />
+            </svg>
           </div>
         </div>
 
@@ -79,7 +106,10 @@
               <div class="text-sm font-medium truncate">{{ step.name }}</div>
               <div class="text-xs text-muted">{{ step.type }}</div>
             </div>
-            <div class="flex-shrink-0 text-right">
+            <div v-if="step.cadence" class="flex-shrink-0 text-xs text-blue-500 font-medium">
+              {{ step.cadence }} RPM
+            </div>
+            <div class="flex-shrink-0 text-right ml-2">
               <div class="text-sm font-semibold">{{ Math.round((step.power?.value || 0) * 100) }}%</div>
               <div class="text-xs text-muted">{{ formatDuration(step.durationSeconds) }}</div>
             </div>
@@ -138,6 +168,31 @@ const avgPower = computed(() => {
 const maxPower = computed(() => {
   if (!props.workout?.steps || props.workout.steps.length === 0) return 0
   return Math.max(...props.workout.steps.map((step: any) => step.power?.value || 0))
+})
+
+const cadencePath = computed(() => {
+  if (!props.workout?.steps || props.workout.steps.length === 0) return ''
+
+  let path = ''
+  let currentX = 0
+  const chartWidth = 1000 // Virtual coordinate system
+  const chartHeight = 100 // Virtual coordinate system
+  const maxCadence = 120
+
+  props.workout.steps.forEach((step: any, index: number) => {
+    const stepWidth = (step.durationSeconds / totalDuration.value) * chartWidth
+    const cadence = step.cadence || 0
+    const y = chartHeight - (Math.min(cadence / maxCadence, 1) * chartHeight)
+    
+    if (index === 0) {
+      path += `M ${currentX} ${y} `
+    }
+    
+    path += `L ${currentX + stepWidth} ${y} `
+    currentX += stepWidth
+  })
+
+  return path
 })
 
 // Functions

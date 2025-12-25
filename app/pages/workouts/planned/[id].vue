@@ -95,9 +95,34 @@
             </div>
           </div>
 
+          <!-- Coach Instructions -->
+          <div v-if="workout.structuredWorkout?.coachInstructions" class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-100 dark:border-blue-800">
+            <div class="flex items-start gap-4">
+              <div class="p-2 bg-blue-100 dark:bg-blue-800 rounded-full">
+                <UIcon name="i-heroicons-chat-bubble-bottom-center-text" class="w-6 h-6 text-blue-600 dark:text-blue-300" />
+              </div>
+              <div>
+                <h3 class="font-semibold text-lg text-blue-900 dark:text-blue-100">Coach's Advice</h3>
+                <p class="text-blue-800 dark:text-blue-200 mt-2 italic">"{{ workout.structuredWorkout.coachInstructions }}"</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Workout Visualization -->
           <div v-if="workout.structuredWorkout" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <h3 class="text-lg font-semibold mb-4">Power Profile</h3>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">Power Profile</h3>
+              <UButton 
+                size="sm" 
+                color="gray" 
+                variant="ghost" 
+                icon="i-heroicons-arrow-path" 
+                :loading="generating" 
+                @click="generateStructure"
+              >
+                Regenerate
+              </UButton>
+            </div>
             <WorkoutChart :workout="workout.structuredWorkout" :user-ftp="userFtp" />
           </div>
 

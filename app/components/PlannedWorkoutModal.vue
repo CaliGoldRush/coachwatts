@@ -49,6 +49,37 @@
           </div>
         </div>
 
+        <!-- Coach Instructions -->
+        <div v-if="plannedWorkout.structuredWorkout?.coachInstructions" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-100 dark:border-blue-800">
+          <div class="flex items-start gap-3">
+            <div class="p-2 bg-blue-100 dark:bg-blue-800 rounded-full">
+              <UIcon name="i-heroicons-chat-bubble-bottom-center-text" class="w-5 h-5 text-blue-600 dark:text-blue-300" />
+            </div>
+            <div>
+              <h4 class="font-semibold text-sm text-blue-900 dark:text-blue-100">Coach's Advice</h4>
+              <p class="text-sm text-blue-800 dark:text-blue-200 mt-1 italic">"{{ plannedWorkout.structuredWorkout.coachInstructions }}"</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workout Visualization -->
+        <div v-if="plannedWorkout.structuredWorkout" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div class="flex justify-between items-center mb-2">
+            <h4 class="font-semibold text-sm text-gray-500 dark:text-gray-400">Workout Structure</h4>
+            <UButton 
+              size="xs" 
+              color="gray" 
+              variant="ghost" 
+              icon="i-heroicons-arrow-path" 
+              :loading="generating" 
+              @click="generateStructure"
+            >
+              Regenerate
+            </UButton>
+          </div>
+          <WorkoutChart :workout="plannedWorkout.structuredWorkout" />
+        </div>
+
         <!-- Status Badge -->
         <div v-if="plannedWorkout.completed" class="flex items-center gap-2">
           <UBadge color="success" variant="subtle">
@@ -332,6 +363,7 @@
 
 <script setup lang="ts">
 import { format } from 'date-fns'
+import WorkoutChart from '~/components/workouts/WorkoutChart.vue'
 
 const props = defineProps<{
   plannedWorkout: any | null
