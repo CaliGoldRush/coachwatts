@@ -143,10 +143,25 @@ Return valid JSON matching the schema provided.`;
     
     await prisma.$transaction(async (tx) => {
       // Clear existing generated weeks for this block to avoid duplicates if re-running
-      // (Optional: might want to be smarter about this if preserving history)
-      await tx.trainingWeek.deleteMany({
-        where: { blockId }
+      // First, find existing weeks to delete their workouts
+      const existingWeeks = await tx.trainingWeek.findMany({
+        where: { blockId },
+        select: { id: true }
       });
+      
+      const weekIds = existingWeeks.map(w => w.id);
+      
+      if (weekIds.length > 0) {
+        // Delete workouts attached to these weeks to prevent orphans
+        await tx.plannedWorkout.deleteMany({
+          where: { trainingWeekId: { in: weekIds } }
+        });
+        
+        // Delete the weeks themselves
+        await tx.trainingWeek.deleteMany({
+          where: { blockId }
+        });
+      }
 
       for (const weekData of result.weeks) {
         // Calculate dates
