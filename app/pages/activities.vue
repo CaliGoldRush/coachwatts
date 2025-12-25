@@ -123,6 +123,17 @@
             </UDropdownMenu>
 
             <UButton
+              icon="i-heroicons-link"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              class="font-bold"
+              @click="showMatcherModal = true"
+            >
+              <span class="hidden sm:inline">Link Workouts</span>
+            </UButton>
+
+            <UButton
               to="/workouts/upload"
               icon="i-heroicons-cloud-arrow-up"
               color="neutral"
@@ -447,7 +458,7 @@
               <template #commute-cell="{ row }">
                 <UBadge
                   v-if="row.original.commute"
-                  color="blue"
+                  color="info"
                   variant="subtle"
                   size="xs"
                 >
@@ -474,7 +485,7 @@
 
               <template #source-cell="{ row }">
                 <UBadge
-                  :color="row.original.source === 'completed' ? 'green' : 'gray'"
+                  :color="row.original.source === 'completed' ? 'success' : 'neutral'"
                   variant="subtle"
                   size="xs"
                 >
@@ -484,7 +495,7 @@
 
               <template #status-cell="{ row }">
                 <UBadge
-                  :color="row.original.status === 'completed' ? 'green' : row.original.status === 'missed' ? 'red' : 'gray'"
+                  :color="row.original.status === 'completed' ? 'success' : row.original.status === 'missed' ? 'error' : 'neutral'"
                   variant="subtle"
                   size="xs"
                 >
@@ -547,12 +558,31 @@
       </div>
     </template>
   </UModal>
+
+  <UModal 
+    v-if="showMatcherModal"
+    v-model:open="showMatcherModal" 
+    title="Link Workouts" 
+    description="Manually match completed activities with planned workouts."
+    :ui="{ width: 'sm:max-w-4xl' }"
+  >
+    <template #body>
+      <div class="p-6">
+        <WorkoutMatcher 
+          :completed-workouts="unlinkedCompletedWorkouts" 
+          :planned-workouts="unlinkedPlannedWorkouts" 
+          @matched="onWorkoutsMatched" 
+        />
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, addMonths, subMonths, isSameMonth, getISOWeek, isToday as isTodayDate } from 'date-fns'
 import { useStorage } from '@vueuse/core'
 import type { CalendarActivity } from '~/types/calendar'
+import WorkoutMatcher from '~/components/workouts/WorkoutMatcher.vue'
 
 definePageMeta({
   middleware: 'auth',
@@ -573,6 +603,7 @@ const showMergeModal = ref(false)
 const mergeSource = ref<CalendarActivity | null>(null)
 const mergeTarget = ref<CalendarActivity | null>(null)
 const isMerging = ref(false)
+const showMatcherModal = ref(false)
 
 const currentDate = ref(new Date())
 const viewMode = ref<'calendar' | 'list'>('calendar')
@@ -1048,5 +1079,20 @@ function openWeekZoneDetail(week: any[]) {
   selectedWeekStreams.value = getWeekStreams(week)
   
   showWeekZoneModal.value = true
+}
+
+const unlinkedCompletedWorkouts = computed(() => {
+  if (!activities.value) return []
+  return activities.value.filter(a => a.source === 'completed' && !a.plannedWorkoutId) // Assuming CalendarActivity has plannedWorkoutId if linked, or we can infer
+})
+
+const unlinkedPlannedWorkouts = computed(() => {
+  if (!activities.value) return []
+  return activities.value.filter(a => a.source === 'planned' && a.status !== 'completed')
+})
+
+function onWorkoutsMatched() {
+  refresh()
+  // showMatcherModal.value = false // Optional: keep open to match more
 }
 </script>

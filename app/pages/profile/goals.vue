@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import GoalWizard from '~/components/goals/GoalWizard.vue'
+import EventGoalWizard from '~/components/goals/EventGoalWizard.vue'
 import GoalCard from '~/components/goals/GoalCard.vue'
 
 definePageMeta({
@@ -37,6 +37,17 @@ function closeWizard() {
 
 async function refreshGoals() {
   await refresh()
+}
+
+function onGoalCreated() {
+  refreshGoals()
+  showWizard.value = false
+}
+
+function onGoalUpdated() {
+  refreshGoals()
+  showWizard.value = false
+  editingGoal.value = null
 }
 
 function deleteGoal(id: string) {
@@ -368,7 +379,7 @@ async function acceptSuggestion(suggestion: any) {
                         <UBadge :color="suggestion.priority === 'HIGH' ? 'error' : suggestion.priority === 'MEDIUM' ? 'warning' : 'primary'" size="xs">
                           {{ suggestion.priority }}
                         </UBadge>
-                        <UBadge color="gray" size="xs">{{ suggestion.type.replace('_', ' ') }}</UBadge>
+                        <UBadge color="neutral" size="xs">{{ suggestion.type.replace('_', ' ') }}</UBadge>
                         <UBadge
                           :color="suggestion.difficulty === 'easy' ? 'success' : suggestion.difficulty === 'moderate' ? 'primary' : suggestion.difficulty === 'challenging' ? 'warning' : 'error'"
                           size="xs"
@@ -484,7 +495,7 @@ async function acceptSuggestion(suggestion: any) {
                     <div class="flex-1 space-y-2">
                       <div class="flex items-center gap-2">
                         <UBadge
-                          :color="goalReview.assessment === 'realistic' ? 'success' : goalReview.assessment === 'slightly_ambitious' ? 'primary' : goalReview.assessment === 'too_ambitious' ? 'error' : goalReview.assessment === 'too_conservative' ? 'warning' : 'gray'"
+                          :color="goalReview.assessment === 'realistic' ? 'success' : goalReview.assessment === 'slightly_ambitious' ? 'primary' : goalReview.assessment === 'too_ambitious' ? 'error' : goalReview.assessment === 'too_conservative' ? 'warning' : 'neutral'"
                           size="xs"
                         >
                           {{ goalReview.assessment?.replace('_', ' ') }}
@@ -544,11 +555,12 @@ async function acceptSuggestion(suggestion: any) {
                   <UButton icon="i-heroicons-x-mark" variant="ghost" size="sm" @click="closeWizard" />
                 </div>
               </template>
-              <GoalWizard
+              <EventGoalWizard
                 :goal="editingGoal"
+                hide-approach
                 @close="closeWizard"
-                @created="refreshGoals"
-                @updated="refreshGoals"
+                @created="onGoalCreated"
+                @updated="onGoalUpdated"
               />
             </UCard>
           </div>

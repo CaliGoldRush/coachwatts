@@ -44,6 +44,14 @@
           <UButton
             variant="ghost"
             color="neutral"
+            @click="scrollToSection('events')"
+          >
+            <UIcon name="i-lucide-trophy" class="w-4 h-4 mr-2" />
+            Events
+          </UButton>
+          <UButton
+            variant="ghost"
+            color="neutral"
             @click="scrollToSection('workouts')"
           >
             <UIcon name="i-lucide-bike" class="w-4 h-4 mr-2" />
@@ -548,6 +556,75 @@
           </div>
         </div>
 
+        <!-- Racing Events Section -->
+        <div id="events" class="scroll-mt-20"></div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Racing Events</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Key races and events stored in your profile</p>
+          </div>
+          
+          <div v-if="loading" class="p-8 text-center text-gray-600 dark:text-gray-400">
+            Loading...
+          </div>
+          
+          <div v-else-if="events.length === 0" class="p-8 text-center text-gray-600 dark:text-gray-400">
+            No events found. Add an event via the Training Plan or Goals page.
+          </div>
+          
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Event
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Distance
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Elevation
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Terrain
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Source
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="event in events" :key="event.id">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {{ formatDate(event.date) }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    <div class="font-medium">{{ event.title }}</div>
+                    <div class="text-xs text-gray-500">{{ event.subType || event.type }}</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 tabular-nums">
+                    {{ event.distance ? event.distance + ' km' : '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 tabular-nums">
+                    {{ event.elevation ? event.elevation + ' m' : '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {{ event.terrain || '-' }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span :class="getSourceBadgeClass(event.source || 'manual')">
+                      {{ event.source || 'manual' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Recent Workouts Table -->
         <div id="workouts" class="scroll-mt-20"></div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -901,6 +978,7 @@ const dataSummary = ref({
 })
 const recentWorkouts = ref<any[]>([])
 const plannedWorkouts = ref<any[]>([])
+const events = ref<any[]>([])
 const fitnessData = ref<any[]>([])
 const nutritionData = ref<any[]>([])
 
@@ -986,6 +1064,15 @@ async function fetchPlannedWorkouts() {
   }
 }
 
+// Fetch racing events
+async function fetchEvents() {
+  try {
+    events.value = await $fetch('/api/events')
+  } catch (error) {
+    console.error('Error fetching events:', error)
+  }
+}
+
 // Fetch fitness data
 async function fetchFitnessData() {
   try {
@@ -1058,6 +1145,7 @@ async function syncIntegration(provider: string) {
       await fetchRecentWorkouts()
       await fetchFitnessData()
       await fetchPlannedWorkouts()
+      await fetchEvents()
       await fetchNutritionData()
       
       // Show completion notification if successful
@@ -1314,6 +1402,7 @@ onMounted(async () => {
   await fetchRecentWorkouts()
   await fetchFitnessData()
   await fetchPlannedWorkouts()
+  await fetchEvents()
   await fetchNutritionData()
 })
 </script>
