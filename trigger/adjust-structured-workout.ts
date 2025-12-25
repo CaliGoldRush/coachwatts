@@ -22,7 +22,8 @@ const workoutStructureSchema = {
               value: { type: "number", description: "Target % of FTP (e.g. 0.95)" },
               range: { 
                 type: "object", 
-                properties: { min: { type: "number" }, max: { type: "number" } } 
+                properties: { start: { type: "number" }, end: { type: "number" } },
+                description: "For ramps: start and end % of FTP"
               }
             }
           },
@@ -98,6 +99,7 @@ export const adjustStructuredWorkoutTask = task({
     - Ensure total duration matches the NEW target duration (${Math.round((workout.durationSec || 3600) / 60)}m).
     - Respect the user's feedback (e.g. "make intervals harder", "more rest").
     - Use % of FTP for power targets.
+    - For ramps, use "range" with "start" and "end" values (ensure correct direction: start < end for ramp up, start > end for cooldown).
     - Include target cadence.
     - Add updated "coachInstructions".
     

@@ -22,7 +22,8 @@ const workoutStructureSchema = {
               value: { type: "number", description: "Target % of FTP (e.g. 0.95)" },
               range: { 
                 type: "object", 
-                properties: { min: { type: "number" }, max: { type: "number" } } 
+                properties: { start: { type: "number" }, end: { type: "number" } },
+                description: "For ramps: start and end % of FTP"
               }
             }
           },
@@ -88,6 +89,7 @@ export const generateStructuredWorkoutTask = task({
     - Create a JSON structure defining the exact steps (Warmup, Intervals, Rest, Cooldown).
     - Ensure total duration matches the target duration exactly.
     - Use % of FTP for power targets (e.g. 0.95 = 95%).
+    - For ramps (Warmup/Cooldown), use "range" with "start" and "end" values (e.g. start: 0.50, end: 0.75 for warmup).
     - Include target "cadence" (RPM) for each step (e.g. 85-95 for intervals, 60-80 for rest).
     - Add "coachInstructions": A personalized message (2-3 sentences) explaining WHY this workout matters for their goal (${goal}) and how to execute it (e.g. "Focus on smooth cadence during the efforts"). Use the '${persona}' persona tone.
     
