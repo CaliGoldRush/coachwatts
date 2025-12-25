@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
   // Verify the goal belongs to this user
   const existingGoal = await prisma.goal.findUnique({
     where: { id },
-    select: { userId: true, eventId: true }
+    include: { events: true }
   })
   
   if (!existingGoal) {
@@ -102,8 +102,12 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   
   // Handle Event updates
-  const { eventData, ...goalData } = body
+  const { eventData, eventId, ...goalData } = body
   const data: any = { ...goalData }
+  
+  if (eventId) {
+    data.events = { connect: { id: eventId } }
+  }
   
   if (eventData) {
     const { externalId, source, title, date, ...details } = eventData
@@ -140,13 +144,13 @@ export default defineEventHandler(async (event) => {
           terrain: details.terrain
         }
       })
-      data.eventId = eventRecord.id
+      data.events = { connect: { id: eventRecord.id } }
     } else if (title && date) {
       // Determine which event to update
-      const eventIdToUpdate = data.eventId || existingGoal.eventId
-      if (eventIdToUpdate) {
+      const existingEvent = existingGoal.events[0]
+      if (existingEvent) {
         await prisma.event.update({
-          where: { id: eventIdToUpdate },
+          where: { id: existingEvent.id },
           data: {
             title,
             date: new Date(date),
@@ -172,7 +176,7 @@ export default defineEventHandler(async (event) => {
             terrain: details.terrain
           }
         })
-        data.eventId = eventRecord.id
+        data.events = { connect: { id: eventRecord.id } }
       }
     }
   }

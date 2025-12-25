@@ -208,7 +208,7 @@ export default defineEventHandler(async (event) => {
         duration: data.duration,
         terrain: data.terrain,
         phase: data.phase,
-        eventId: finalEventId
+        events: finalEventId ? { connect: { id: finalEventId } } : undefined
       }
     })
     
