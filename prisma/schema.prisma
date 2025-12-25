@@ -95,8 +95,11 @@ model User {
   llmUsage LlmUsage[]
   syncQueue SyncQueue[]
   goals         Goal[]
+  events        Event[]
   shareTokens   ShareToken[]
   apiKeys       ApiKey[]
+  
+  trainingPlans TrainingPlan[]
 
   // Coaching Relations
   coaches    CoachingRelationship[] @relation("AthleteRelation")
@@ -213,6 +216,11 @@ model Goal {
   // Event specific
   eventDate   DateTime?
   eventType   String?  // "race", "challenge"
+  distance    Float?
+  elevation   Int?
+  duration    Float?
+  terrain     String?  // "Flat", "Rolling", "Hilly", "Mountainous", "Technical"
+  phase       String?  // "BASE", "BUILD", "SPECIALTY", "TRANSITION"
   
   // Status
   status      String   @default("ACTIVE") // ACTIVE, COMPLETED, ARCHIVED
@@ -225,8 +233,58 @@ model Goal {
   updatedAt   DateTime @updatedAt
   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events      Event[]
+  trainingPlans TrainingPlan[]
   
   @@index([userId])
+}
+
+// --------------------------------------
+// Racing Events (The "Targets")
+// --------------------------------------
+
+model Event {
+  id              String   @id @default(uuid())
+  userId          String
+  externalId      String?  // ID from Intervals.icu or Strava
+  source          String?  // "intervals", "strava"
+  
+  title           String
+  description     String?  @db.Text
+  date            DateTime
+  startTime       String?  // e.g., "09:00"
+  
+  type            String?  // "Ride", "Run", etc.
+  subType         String?  // "Road Race", "Gran Fondo", "Marathon"
+  
+  // Settings & Visibility
+  priority        String?  @default("B") // "A", "B", "C" race
+  isVirtual       Boolean  @default(false)
+  isPublic        Boolean  @default(false)
+  
+  // Location
+  country         String?
+  city            String?
+  location        String?  // General location or venue name
+  websiteUrl      String?
+  
+  // Course Details
+  distance        Float?   // km
+  elevation       Int?     // m
+  expectedDuration Float?  // hours
+  terrain         String?  // "Flat", "Rolling", "Hilly", "Mountainous", "Technical"
+  
+  // Relations
+  goals           Goal[]
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, source, externalId])
+  @@index([userId])
+  @@index([date])
 }
 
 model Account {
@@ -586,6 +644,17 @@ model PlannedWorkout {
   lastSyncedAt    DateTime?
   syncError       String?  @db.Text
   modifiedLocally Boolean  @default(false)
+
+  // Periodization Link
+  trainingWeekId  String?
+  trainingWeek    TrainingWeek? @relation(fields: [trainingWeekId], references: [id], onDelete: SetNull)
+
+  // Structured Workout Data (The "AWP")
+  // JSON structure defining warmup, main set, cooldown
+  structuredWorkout Json?
+  
+  // Completion Status tracking
+  completionStatus String @default("PENDING") // PENDING, COMPLETED, MISSED, SKIPPED
   
   // Raw Data
   rawJson         Json?    // Store the original full payload
@@ -891,7 +960,88 @@ model ActivityRecommendation {
 }
 
 // --------------------------------------
-// Training Plan Management
+// Periodized Training Plan System
+// --------------------------------------
+
+// The high-level macrocycle linked to a user's goal
+model TrainingPlan {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalId      String
+  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  
+  startDate   DateTime
+  targetDate  DateTime
+  
+  // The plan is composed of blocks (Mesocycles)
+  blocks      TrainingBlock[]
+  
+  // Metadata for the overall strategy
+  strategy    String   @default("LINEAR") // LINEAR, UNDULATING, BLOCK, POLARIZED
+  status      String   @default("ACTIVE") // DRAFT, ACTIVE, COMPLETED, ARCHIVED
+  
+  currentBlockId String? // Shortcut to current block for quick UI access
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, status])
+}
+
+// Mesocycle: A distinct phase of training (e.g., "Base 1")
+model TrainingBlock {
+  id              String         @id @default(uuid())
+  trainingPlanId  String
+  plan            TrainingPlan   @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  
+  order           Int            // Sequence: 1, 2, 3...
+  name            String         // "Base Phase 1"
+  type            String         // PREP, BASE, BUILD, PEAK, RACE, TRANSITION
+  primaryFocus    String         // AEROBIC_ENDURANCE, TEMPO, SWEET_SPOT, THRESHOLD, VO2_MAX, etc.
+  
+  startDate       DateTime
+  durationWeeks   Int            // e.g., 4 weeks
+  
+  // Rules/Logic for generation
+  recoveryWeekIndex Int?         // e.g., 4 (meaning every 4th week is recovery)
+  progressionLogic  String?      // AI context: "Increase interval duration by 10% weekly"
+  
+  weeks           TrainingWeek[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([trainingPlanId, order])
+}
+
+// Microcycle: A single week of training
+model TrainingWeek {
+  id              String         @id @default(uuid())
+  blockId         String
+  block           TrainingBlock  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  
+  weekNumber      Int            // 1, 2, 3 within the block
+  startDate       DateTime
+  endDate         DateTime
+  
+  // Targets
+  volumeTargetMinutes Int        // Planned volume
+  tssTarget       Int            // Planned TSS
+  isRecovery      Boolean        @default(false)
+  focus           String?        // Optional override: "Recovery", "Test Week"
+  
+  // Links to workouts
+  workouts        PlannedWorkout[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([blockId, weekNumber])
+}
+
+// --------------------------------------
+// Training Plan Management (Legacy / Simple)
 // --------------------------------------
 
 // User's training availability preferences
