@@ -81,6 +81,7 @@ const currentRoomId = ref('')
 const loadingMessages = ref(true)
 const rooms = ref<Room[]>([])
 const loadingRooms = ref(true)
+const isRoomListOpen = ref(false)
 
 // Fetch session and initialize
 const { data: session } = await useFetch('/api/auth/session')
@@ -147,6 +148,7 @@ async function loadChat() {
 async function selectRoom(roomId: string) {
   currentRoomId.value = roomId
   await loadMessages(roomId)
+  isRoomListOpen.value = false
 }
 
 async function onSubmit() {
@@ -262,6 +264,16 @@ function formatTimestamp(timestamp: string | undefined) {
   <UDashboardPanel id="chat" :ui="{ body: 'p-0' }">
     <template #header>
       <UDashboardNavbar :title="currentRoomName">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-bars-3"
+            class="lg:hidden"
+            @click="isRoomListOpen = true"
+          />
+        </template>
         <template #right>
           <UButton
             color="neutral"
@@ -272,7 +284,7 @@ function formatTimestamp(timestamp: string | undefined) {
             class="font-bold"
             @click="createNewChat"
           >
-            New Chat
+            <span class="hidden sm:inline">New Chat</span>
           </UButton>
           <UButton
             to="/settings/ai"
@@ -288,8 +300,8 @@ function formatTimestamp(timestamp: string | undefined) {
     
     <template #body>
       <div class="flex h-full">
-        <!-- Room List Sidebar -->
-        <div class="w-64 border-r border-gray-200 dark:border-gray-800 flex flex-col bg-gray-50 dark:bg-gray-900/40">
+        <!-- Room List Sidebar (Desktop) -->
+        <div class="hidden lg:flex w-64 border-r border-gray-200 dark:border-gray-800 flex-col bg-gray-50 dark:bg-gray-900/40">
           <div class="p-4 border-b border-gray-200 dark:border-gray-800">
             <h2 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Chat History</h2>
           </div>
@@ -329,6 +341,46 @@ function formatTimestamp(timestamp: string | undefined) {
             </div>
           </div>
         </div>
+
+        <!-- Room List Drawer (Mobile) -->
+        <USlideover v-model:open="isRoomListOpen" title="Chat History" side="left">
+          <template #body>
+            <div class="flex-1 overflow-y-auto py-2 px-2">
+              <div v-if="loadingRooms" class="flex items-center justify-center py-8">
+                <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+              
+              <UNavigationMenu
+                v-else-if="navigationItems.length > 0"
+                orientation="vertical"
+                variant="link"
+                color="primary"
+                :highlight="true"
+                :items="navigationItems"
+                :ui="{
+                  link: 'px-2 py-2',
+                  linkLabel: 'text-sm',
+                  linkLeadingAvatarSize: '2xs'
+                }"
+              >
+                <template #item-label="{ item }">
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">
+                      {{ item.label }}
+                    </div>
+                    <div v-if="item.description" class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                      {{ item.description }}
+                    </div>
+                  </div>
+                </template>
+              </UNavigationMenu>
+              
+              <div v-else class="text-center py-8 text-sm text-gray-500">
+                No chat history yet
+              </div>
+            </div>
+          </template>
+        </USlideover>
 
         <!-- Chat Messages Area -->
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -390,11 +442,11 @@ function formatTimestamp(timestamp: string | undefined) {
 
           <!-- Chat Prompt Footer -->
           <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-800">
-            <UContainer class="py-4">
+            <UContainer class="py-2 sm:py-4 px-2 sm:px-4">
               <UChatPrompt
                 v-model="input"
                 :error="error"
-                placeholder="Ask Coach Watts anything about your training..."
+                placeholder="Ask Coach Watts..."
                 @submit="onSubmit"
               >
                 <UChatPromptSubmit
