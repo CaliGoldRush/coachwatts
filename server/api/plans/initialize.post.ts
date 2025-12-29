@@ -1,13 +1,16 @@
 import { prisma } from '../../utils/db'
 import { z } from 'zod'
 import { tasks } from "@trigger.dev/sdk/v3"
+import { getServerSession } from '../../utils/session'
 
 const initializePlanSchema = z.object({
   goalId: z.string(),
   startDate: z.string().datetime(), // ISO string
   endDate: z.string().datetime().optional(), // ISO string
   volumePreference: z.enum(['LOW', 'MID', 'HIGH']).default('MID'),
-  strategy: z.enum(['LINEAR', 'UNDULATING', 'BLOCK', 'POLARIZED']).default('LINEAR')
+  volumeHours: z.number().optional(),
+  strategy: z.enum(['LINEAR', 'UNDULATING', 'BLOCK', 'POLARIZED']).default('LINEAR'),
+  preferredActivityTypes: z.array(z.string()).default(['Ride'])
 })
 
 export default defineEventHandler(async (event) => {
@@ -23,7 +26,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: validation.error.message })
   }
 
-  const { goalId, startDate, endDate, volumePreference, strategy } = validation.data
+  const { goalId, startDate, endDate, volumePreference, volumeHours, strategy, preferredActivityTypes } = validation.data
   const userId = session.user.id
   
   // 1. Fetch Goal to get target date
@@ -66,6 +69,7 @@ export default defineEventHandler(async (event) => {
       targetDate: end,
       strategy,
       status: 'DRAFT',
+      activityTypes: preferredActivityTypes,
       blocks: {
         create: blocks.map(block => ({
           order: block.order,
@@ -84,13 +88,29 @@ export default defineEventHandler(async (event) => {
               
               const isRecovery = (i + 1) % (block.recoveryWeekIndex || 4) === 0
               
+              // Determine target volume
+              let targetMinutes = 450; // Default MID
+              if (volumeHours) {
+                  targetMinutes = volumeHours * 60;
+                  if (isRecovery) targetMinutes = Math.round(targetMinutes * 0.6); // 60% volume on recovery weeks
+              } else {
+                  // Fallback to bucket logic
+                  if (volumePreference === 'LOW') targetMinutes = 240;
+                  else if (volumePreference === 'HIGH') targetMinutes = 600;
+                  
+                  if (isRecovery) targetMinutes = Math.round(targetMinutes * 0.6);
+              }
+
+              // Default TSS estimation (0.6 IF avg => 36 TSS/hr)
+              const tssTarget = Math.round((targetMinutes / 60) * 50);
+
               return {
                 weekNumber: i + 1,
                 startDate: weekStart,
                 endDate: weekEnd,
                 isRecovery,
-                volumeTargetMinutes: isRecovery ? 300 : 450, // Placeholder - dynamic sizing later
-                tssTarget: isRecovery ? 200 : 350 // Placeholder
+                volumeTargetMinutes: targetMinutes,
+                tssTarget: tssTarget
               }
             })
           }
