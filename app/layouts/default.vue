@@ -265,16 +265,19 @@ const groups = computed(() => [{
               :alt="user.email || ''"
               size="md"
             />
-            <div v-if="!collapsed" class="flex-1 min-w-0">
-              <p class="text-sm font-medium truncate">{{ impersonatedEmail || user?.email }}</p>
+            <div v-if="!collapsed" class="flex-1 min-w-0 flex flex-col items-start gap-0.5">
+              <UTooltip :text="impersonatedEmail || user?.email || ''" :popper="{ placement: 'right' }">
+                <p class="text-sm font-medium truncate text-gray-900 dark:text-white">{{ user?.name || impersonatedEmail || user?.email }}</p>
+              </UTooltip>
               <UButton
-                variant="ghost"
+                variant="link"
                 color="neutral"
                 size="xs"
-                class="mt-1"
+                :padded="false"
+                class="p-0 h-auto font-normal text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 @click="signOut({ callbackUrl: '/login' })"
               >
-                Sign Out
+                Sign out
               </UButton>
             </div>
           </div>

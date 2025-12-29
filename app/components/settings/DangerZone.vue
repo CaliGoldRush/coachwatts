@@ -40,7 +40,12 @@
         <p class="text-sm text-muted">
           Once you delete your account, there is no going back. Please be certain.
         </p>
-        <UButton color="error" variant="outline">
+        <UButton 
+          color="error" 
+          variant="outline"
+          :loading="deletingAccount"
+          @click="confirmDeleteAccount"
+        >
           Delete Account
         </UButton>
       </div>
@@ -50,7 +55,9 @@
 
 <script setup lang="ts">
 const toast = useToast()
+const { signOut } = useAuth()
 const clearingSchedule = ref(false)
+const deletingAccount = ref(false)
 
 async function confirmClearSchedule() {
   if (!confirm('Are you sure? This will delete all future planned workouts that are not marked as complete.')) {
@@ -77,6 +84,37 @@ async function confirmClearSchedule() {
     })
   } finally {
     clearingSchedule.value = false
+  }
+}
+
+async function confirmDeleteAccount() {
+  if (!confirm('ARE YOU SURE? This action is irreversible. All your data including workouts, metrics, and reports will be permanently deleted.')) {
+    return
+  }
+
+  deletingAccount.value = true
+  try {
+    await $fetch('/api/profile', {
+      method: 'DELETE'
+    })
+    
+    toast.add({
+      title: 'Account Deleted',
+      description: 'Your account has been scheduled for deletion. Signing out...',
+      color: 'success'
+    })
+
+    // Give a moment for the toast to be seen? No, just sign out.
+    await signOut({ callbackUrl: '/login' })
+    
+  } catch (error) {
+    console.error('Failed to delete account', error)
+    toast.add({
+      title: 'Action Failed',
+      description: 'Could not delete account. Please try again.',
+      color: 'error'
+    })
+    deletingAccount.value = false
   }
 }
 </script>
