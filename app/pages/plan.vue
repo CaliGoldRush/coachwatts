@@ -79,6 +79,62 @@
              </div>
           </template>
         </UModal>
+
+        <!-- Share Plan Modal -->
+        <UModal 
+          v-model:open="isShareModalOpen" 
+          title="Share Training Plan"
+          description="Anyone with this link can view your training plan. The link will expire in 30 days."
+        >
+          <template #body>
+            <div class="space-y-4">
+              <div v-if="generatingShareLink" class="flex items-center justify-center py-8">
+                <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
+              </div>
+              <div v-else-if="shareLink" class="space-y-4">
+                <UFormField label="Share Link">
+                  <div class="flex gap-2">
+                    <UInput
+                      v-model="shareLink"
+                      readonly
+                      class="flex-1"
+                    />
+                    <UButton
+                      icon="i-heroicons-clipboard"
+                      color="neutral"
+                      variant="outline"
+                      @click="copyToClipboard"
+                    >
+                      Copy
+                    </UButton>
+                  </div>
+                </UFormField>
+                <p class="text-xs text-gray-500">
+                  This link provides read-only access to this specific version of your training plan.
+                </p>
+              </div>
+              <div v-else class="flex flex-col items-center justify-center py-8 text-center">
+                <UIcon name="i-heroicons-link" class="w-8 h-8 text-gray-400 mb-2" />
+                <p class="text-gray-600 mb-4">Click below to generate a shareable link.</p>
+                <UButton
+                  color="primary"
+                  @click="generateShareLink"
+                  :loading="generatingShareLink"
+                >
+                  Generate Link
+                </UButton>
+              </div>
+            </div>
+          </template>
+          <template #footer>
+            <UButton
+              label="Close"
+              color="neutral"
+              variant="ghost"
+              @click="isShareModalOpen = false"
+            />
+          </template>
+        </UModal>
       </div>
     </template>
   </UDashboardPanel>
