@@ -6,7 +6,7 @@ import { wellnessRepository } from "../server/utils/repositories/wellnessReposit
 import { generateTrainingContext } from "../server/utils/training-metrics";
 import { userBackgroundQueue } from "./queues";
 
-const weeklyPlanSchema = {
+    const weeklyPlanSchema = {
   type: 'object',
   properties: {
     weekSummary: {
@@ -36,6 +36,8 @@ const weeklyPlanSchema = {
           title: { type: 'string', description: 'Workout title' },
           description: { type: 'string', description: 'Detailed workout description' },
           durationMinutes: { type: 'number', description: 'Duration in minutes' },
+          distanceMeters: { type: 'number', description: 'Estimated distance in meters (for Run/Swim)' },
+          targetArea: { type: 'string', description: 'Focus area for Gym workouts (e.g. Legs, Upper Body, Core)' },
           targetTSS: { type: 'number', description: 'Target Training Stress Score' },
           intensity: {
             type: 'string',
@@ -62,10 +64,10 @@ const weeklyPlanSchema = {
 export const generateWeeklyPlanTask = task({
   id: "generate-weekly-plan",
   queue: userBackgroundQueue,
-  run: async (payload: { userId: string; startDate: Date; daysToPlann: number }) => {
-    const { userId, startDate, daysToPlann } = payload;
+  run: async (payload: { userId: string; startDate: Date; daysToPlann: number; userInstructions?: string }) => {
+    const { userId, startDate, daysToPlann, userInstructions } = payload;
     
-    logger.log("Starting weekly plan generation", { userId, startDate, daysToPlann });
+    logger.log("Starting weekly plan generation", { userId, startDate, daysToPlann, userInstructions });
     
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
@@ -80,7 +82,7 @@ export const generateWeeklyPlanTask = task({
     weekEnd.setDate(weekEnd.getDate() + (daysToPlann - 1));
     
     // Fetch user data
-    const [user, availability, recentWorkouts, recentWellness, currentPlan, athleteProfile, activeGoals] = await Promise.all([
+    const [user, availability, recentWorkouts, recentWellness, currentPlan, athleteProfile, activeGoals, existingPlannedWorkouts] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { ftp: true, weight: true, maxHr: true }
@@ -145,6 +147,29 @@ export const generateWeeklyPlanTask = task({
           eventType: true,
           priority: true,
           aiContext: true
+        }
+      }),
+      
+      // Existing planned workouts for this week
+      prisma.plannedWorkout.findMany({
+        where: {
+          userId,
+          date: {
+            gte: weekStart,
+            lte: weekEnd
+          }
+        },
+        orderBy: { date: 'asc' },
+        select: {
+          id: true,
+          date: true,
+          title: true,
+          description: true,
+          type: true,
+          durationSec: true,
+          distanceMeters: true,
+          tss: true,
+          targetArea: true
         }
       })
     ]);
@@ -318,6 +343,15 @@ ${athleteContext}
 
 TRAINING AVAILABILITY (when user can train):
 ${availabilitySummary || 'No availability set - assume flexible schedule'}
+${userInstructions ? `\nUSER SPECIAL INSTRUCTIONS FOR THIS WEEK:\n"${userInstructions}"\n(These instructions override default availability and standard progression where they conflict, but safety and equipment constraints still apply)` : ''}
+
+CURRENT PLANNED WORKOUTS FOR THIS WEEK:
+${existingPlannedWorkouts.length > 0 
+  ? existingPlannedWorkouts.map(w => 
+      `- ${new Date(w.date).toLocaleDateString()}: ${w.title} (${w.type}, ${Math.round(w.durationSec / 60)}min)`
+    ).join('\n')
+  : 'None currently planned'
+}
 
 RECENT TRAINING (Last 14 days):
 - Total TSS: ${recentTSS.toFixed(0)}
@@ -364,6 +398,12 @@ INSTRUCTIONS:
 10. Each workout should have clear objectives and be actionable
 11. Consider location constraints (indoor vs outdoor vs gym)
 12. **Reference the activity type breakdown** to maintain balanced training across disciplines
+
+13. **RESPECT EXISTING PLANS UNLESS INSTRUCTED OTHERWISE**:
+    - If user instructions ask for specific changes (e.g., "add a gym session on Tuesday"), try to keep the REST of the week similar to what was already planned if it was reasonable.
+    - If user says "regenerate the week", feel free to rebuild from scratch.
+    - If user instructions conflict with existing workouts, prioritize the instructions.
+    - If there are NO user instructions, create the best possible plan from scratch based on the context.
 
 WORKOUT TYPES AND EQUIPMENT REQUIREMENTS:
 - Ride: Requires bike/trainer available - DO NOT use if not available
