@@ -109,6 +109,13 @@
       </template>
     </UModal>
 
+    <!-- Plan with AI Modal -->
+    <PlanAIModal 
+      v-model="showAIPlanModal" 
+      :loading="generatingWorkouts"
+      @generate="generatePlanWithAI" 
+    />
+
     <!-- Block Timeline -->
     <div class="relative pt-6 pb-2">
       <div class="h-2 bg-gray-200 dark:bg-gray-800 rounded-full w-full absolute top-9 z-0"></div>
@@ -136,6 +143,15 @@
       <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
         <h3 class="font-semibold text-lg">{{ selectedBlock.name }} - Overview</h3>
         <div class="flex gap-2">
+           <UButton
+             size="xs"
+             color="primary"
+             variant="soft"
+             icon="i-heroicons-sparkles"
+             @click="showAIPlanModal = true"
+           >
+             Plan with AI
+           </UButton>
            <UButton 
              v-for="week in selectedBlock.weeks" 
              :key="week.id"
@@ -185,7 +201,7 @@
                 <th class="px-4 py-2 text-left w-10"></th>
                 <th class="px-4 py-2 text-left">Day</th>
                 <th class="px-4 py-2 text-left">Workout</th>
-                <th class="px-4 py-2 text-left">Duration / Metric</th>
+                <th class="px-4 py-2 text-left">Duration / Metric / Target</th>
                 <th class="px-4 py-2 text-center">
                   <div class="flex items-center justify-center gap-1">
                     <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 inline" title="Structured Workout" />
@@ -233,7 +249,10 @@
                         {{ Math.round(workout.durationSec / 60) }}m <span v-if="workout.distanceMeters">/ {{ Math.round(workout.distanceMeters / 1000 * 10) / 10 }} km</span>
                     </div>
                     <div v-else-if="workout.type === 'Swim'">{{ Math.round(workout.distanceMeters || 0) }}m</div>
-                    <div v-else-if="workout.type === 'Gym' || workout.type === 'WeightTraining'">{{ Math.round(workout.durationSec / 60) }}m</div>
+                    <div v-else-if="workout.type === 'Gym' || workout.type === 'WeightTraining'">
+                      {{ Math.round(workout.durationSec / 60) }}m
+                      <div v-if="workout.targetArea" class="text-xs text-muted mt-0.5">Focus: {{ workout.targetArea }}</div>
+                    </div>
                     <div v-else>-</div>
                 </td>
                 <td class="px-4 py-3 text-center">
@@ -302,6 +321,7 @@
 <script setup lang="ts">
 import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
 import WeeklyZoneSummary from '~/components/ui/WeeklyZoneSummary.vue'
+import PlanAIModal from '~/components/plans/PlanAIModal.vue'
 
 const props = defineProps<{
   plan: any
@@ -317,6 +337,7 @@ const selectedWeekId = ref<string | null>(null)
 const showAdaptModal = ref(false)
 const showSaveTemplateModal = ref(false)
 const showAbandonModal = ref(false)
+const showAIPlanModal = ref(false)
 const templateName = ref('')
 const templateDescription = ref('')
 const savingTemplate = ref(false)
@@ -654,6 +675,56 @@ async function generateWorkoutsForBlock() {
       toast.add({ title: 'Failed to save template', description: error.message, color: 'error' })
     } finally {
       savingTemplate.value = false
+    }
+  }
+
+  async function generatePlanWithAI(instructions: string) {
+    if (!selectedBlockId.value || !selectedWeekId.value) return
+
+    showAIPlanModal.value = false
+    generatingWorkouts.value = true
+    
+    try {
+      await $fetch('/api/plans/generate-ai-week', {
+        method: 'POST',
+        body: {
+          blockId: selectedBlockId.value,
+          weekId: selectedWeekId.value,
+          instructions
+        }
+      })
+
+      toast.add({
+        title: 'Plan Generation Started',
+        description: 'AI is redesigning your week based on your instructions. This may take a minute.',
+        color: 'success'
+      })
+
+      // Poll for updates
+      const pollInterval = setInterval(() => {
+        emit('refresh')
+        // We could optimize this by checking a status endpoint, 
+        // but simple refreshing works for now to see new workouts appear
+        
+        // Stop polling after some time or logic? 
+        // Ideally the backend returns a job ID and we poll that status.
+        // For now, let's just refresh periodically for a minute
+      }, 5000)
+
+      setTimeout(() => {
+        clearInterval(pollInterval)
+        generatingWorkouts.value = false
+        toast.add({ title: 'Plan Updated', description: 'Check the new schedule.', color: 'info' })
+      }, 45000)
+
+    } catch (error: any) {
+      console.error(error)
+      toast.add({
+        title: 'Generation Failed',
+        description: error.data?.message || 'Failed to start AI planning',
+        color: 'error'
+      })
+      generatingWorkouts.value = false
     }
   }
   
