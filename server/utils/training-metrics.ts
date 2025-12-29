@@ -479,10 +479,40 @@ export async function generateTrainingContext(
   }
   summary.avgTSS = summary.totalWorkouts > 0 ? summary.totalTSS / summary.totalWorkouts : 0
   
-  // Get latest load values
+  // Fetch latest wellness for current load metrics (often more up to date than workouts)
+  const latestWellness = await prisma.wellness.findFirst({
+    where: { userId },
+    orderBy: { date: 'desc' },
+    select: {
+      date: true,
+      ctl: true,
+      atl: true
+    }
+  })
+
+  // Get latest load values (comparing workout and wellness)
   const latestWorkout = workouts[0] // Already sorted by date desc
-  const currentCTL = latestWorkout?.ctl || null
-  const currentATL = latestWorkout?.atl || null
+  
+  let currentCTL: number | null = null
+  let currentATL: number | null = null
+  
+  // Logic to pick the most recent data source
+  if (latestWellness && latestWorkout) {
+    if (latestWellness.date >= latestWorkout.date) {
+      currentCTL = latestWellness.ctl
+      currentATL = latestWellness.atl
+    } else {
+      currentCTL = latestWorkout.ctl
+      currentATL = latestWorkout.atl
+    }
+  } else if (latestWellness) {
+    currentCTL = latestWellness.ctl
+    currentATL = latestWellness.atl
+  } else if (latestWorkout) {
+    currentCTL = latestWorkout.ctl
+    currentATL = latestWorkout.atl
+  }
+  
   const currentTSB = calculateTSB(currentCTL, currentATL)
   
   // Calculate weekly TSS average

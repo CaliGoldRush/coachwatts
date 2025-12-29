@@ -127,6 +127,7 @@ export async function calculatePMCForDateRange(
 ): Promise<PMCMetrics[]> {
   const { prisma } = await import('./db')
   
+  // Fetch workouts for TSS calculation
   const workouts = await prisma.workout.findMany({
     where: {
       userId,
@@ -135,31 +136,97 @@ export async function calculatePMCForDateRange(
     },
     orderBy: { date: 'asc' }
   })
+  
+  // Fetch wellness data for "Source of Truth" CTL/ATL
+  const wellness = await prisma.wellness.findMany({
+    where: {
+      userId,
+      date: { gte: startDate, lte: endDate }
+    },
+    select: {
+      date: true,
+      ctl: true,
+      atl: true
+    }
+  })
 
   let ctl = initialCTL
   let atl = initialATL
   const results: PMCMetrics[] = []
-
+  
+  // Map date string (YYYY-MM-DD) to daily TSS sum
+  const dailyTSS = new Map<string, number>()
   for (const workout of workouts) {
+    const dateKey = workout.date.toISOString().split('T')[0]
     const tss = getStressScore(workout)
-    ctl = calculateCTL(ctl, tss)
-    atl = calculateATL(atl, tss)
-    const tsb = calculateTSB(ctl, atl)!  // Non-null: ctl and atl are always numbers here
+    dailyTSS.set(dateKey, (dailyTSS.get(dateKey) || 0) + tss)
+  }
+  
+  // Map date string to "Known" CTL/ATL from Wellness (Source of Truth)
+  // or use Workouts as fallback if Wellness is missing but Workout has valid CTL/ATL
+  const knownMetrics = new Map<string, { ctl: number, atl: number }>()
+  
+  // 1. Populate from Wellness (Highest Priority)
+  for (const w of wellness) {
+    if (w.ctl !== null && w.atl !== null) {
+      const dateKey = w.date.toISOString().split('T')[0]
+      knownMetrics.set(dateKey, { ctl: w.ctl, atl: w.atl })
+    }
+  }
+  
+  // 2. Populate from Workouts (Fallback)
+  for (const w of workouts) {
+    // Only use if not already set by Wellness
+    const dateKey = w.date.toISOString().split('T')[0]
+    if (!knownMetrics.has(dateKey) && w.ctl !== null && w.atl !== null) {
+      knownMetrics.set(dateKey, { ctl: w.ctl!, atl: w.atl! })
+    }
+  }
+  
+  // Iterate through each day in the range
+  const currentDate = new Date(startDate)
+  // Reset time to midnight to avoid issues
+  currentDate.setHours(0, 0, 0, 0)
+  
+  const endDateTime = new Date(endDate)
+  endDateTime.setHours(23, 59, 59, 999)
+
+  while (currentDate <= endDateTime) {
+    const dateKey = currentDate.toISOString().split('T')[0]
+    const tss = dailyTSS.get(dateKey) || 0
+    
+    // Check if we have a known "Truth" value for this day
+    const known = knownMetrics.get(dateKey)
+    
+    if (known) {
+      // Resync our running calculation to the stored truth
+      ctl = known.ctl
+      atl = known.atl
+    } else {
+      // Calculate based on previous day
+      ctl = calculateCTL(ctl, tss)
+      atl = calculateATL(atl, tss)
+    }
+
+    const tsb = calculateTSB(ctl, atl)!
 
     results.push({
-      date: workout.date,
+      date: new Date(currentDate),
       ctl,
       atl,
       tsb,
       tss
     })
+    
+    // Move to next day
+    currentDate.setDate(currentDate.getDate() + 1)
   }
 
   return results
 }
 
 /**
- * Get initial CTL/ATL values from last known workout before date range
+ * Get initial CTL/ATL values from last known workout OR wellness before date range
  */
 export async function getInitialPMCValues(
   userId: string,
@@ -167,6 +234,7 @@ export async function getInitialPMCValues(
 ): Promise<{ ctl: number; atl: number }> {
   const { prisma } = await import('./db')
   
+  // Find last workout with metrics
   const lastWorkout = await prisma.workout.findFirst({
     where: {
       userId,
@@ -179,10 +247,36 @@ export async function getInitialPMCValues(
     },
     orderBy: { date: 'desc' }
   })
+  
+  // Find last wellness with metrics
+  const lastWellness = await prisma.wellness.findFirst({
+    where: {
+      userId,
+      date: { lt: beforeDate },
+      ctl: { not: null },
+      atl: { not: null }
+    },
+    orderBy: { date: 'desc' }
+  })
+
+  // Compare dates to find the most recent one
+  let startCTL = 0
+  let startATL = 0
+  
+  const workoutDate = lastWorkout?.date ? new Date(lastWorkout.date).getTime() : 0
+  const wellnessDate = lastWellness?.date ? new Date(lastWellness.date).getTime() : 0
+  
+  if (workoutDate > wellnessDate && lastWorkout) {
+    startCTL = lastWorkout.ctl ?? 0
+    startATL = lastWorkout.atl ?? 0
+  } else if (lastWellness) {
+    startCTL = lastWellness.ctl ?? 0
+    startATL = lastWellness.atl ?? 0
+  }
 
   return {
-    ctl: lastWorkout?.ctl ?? 0,
-    atl: lastWorkout?.atl ?? 0
+    ctl: startCTL,
+    atl: startATL
   }
 }
 
@@ -236,8 +330,35 @@ export async function getCurrentFitnessSummary(userId: string) {
     },
     orderBy: { date: 'desc' }
   })
+  
+  const latestWellness = await prisma.wellness.findFirst({
+    where: {
+      userId,
+      ctl: { not: null },
+      atl: { not: null }
+    },
+    orderBy: { date: 'desc' }
+  })
 
-  if (!latestWorkout || !latestWorkout.ctl || !latestWorkout.atl) {
+  // Determine which is more recent (or use defaults)
+  let ctl = 0
+  let atl = 0
+  let lastUpdated: Date | null = null
+  
+  const workoutDate = latestWorkout?.date ? new Date(latestWorkout.date).getTime() : 0
+  const wellnessDate = latestWellness?.date ? new Date(latestWellness.date).getTime() : 0
+  
+  // Prioritize Wellness if it's the same day or newer (Wellness is usually end-of-day summary)
+  if (wellnessDate >= workoutDate && latestWellness && latestWellness.ctl !== null && latestWellness.atl !== null) {
+    ctl = latestWellness.ctl
+    atl = latestWellness.atl
+    lastUpdated = latestWellness.date
+  } else if (latestWorkout && latestWorkout.ctl !== null && latestWorkout.atl !== null) {
+    ctl = latestWorkout.ctl
+    atl = latestWorkout.atl
+    lastUpdated = latestWorkout.date
+  } else {
+    // No data found
     return {
       ctl: 0,
       atl: 0,
@@ -247,13 +368,13 @@ export async function getCurrentFitnessSummary(userId: string) {
     }
   }
 
-  const tsb = calculateTSB(latestWorkout.ctl, latestWorkout.atl)!  // Non-null: checked above
+  const tsb = calculateTSB(ctl, atl)!
 
   return {
-    ctl: latestWorkout.ctl,
-    atl: latestWorkout.atl,
+    ctl,
+    atl,
     tsb,
     formStatus: getFormStatus(tsb),
-    lastUpdated: latestWorkout.date
+    lastUpdated
   }
 }
