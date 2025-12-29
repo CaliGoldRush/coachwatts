@@ -157,10 +157,63 @@ const isPolling = ref(false)
 const autoTriggerStructure = ref(false)
 const toast = useToast()
 
+// Share state
+const isShareModalOpen = ref(false)
+const shareLink = ref('')
+const generatingShareLink = ref(false)
+
 const { data, status, refresh } = await useFetch<any>('/api/plans/active')
 const activePlan = computed(() => data.value?.plan)
 const userFtp = computed(() => data.value?.userFtp)
 const loading = computed(() => status.value === 'pending')
+
+const generateShareLink = async () => {
+  if (!activePlan.value?.id) return
+  
+  generatingShareLink.value = true
+  try {
+    const response = await $fetch('/api/share/generate', {
+      method: 'POST',
+      body: {
+        resourceType: 'TRAINING_PLAN',
+        resourceId: activePlan.value.id
+      }
+    })
+    shareLink.value = response.url
+  } catch (error) {
+    console.error('Failed to generate share link:', error)
+    toast.add({
+      title: 'Error',
+      description: 'Failed to generate share link. Please try again.',
+      color: 'error'
+    })
+  } finally {
+    generatingShareLink.value = false
+  }
+}
+
+const copyToClipboard = () => {
+  if (!shareLink.value) return
+  
+  navigator.clipboard.writeText(shareLink.value)
+  toast.add({
+    title: 'Copied',
+    description: 'Share link copied to clipboard.',
+    color: 'success'
+  })
+}
+
+// Watch for share modal opening to generate link if it doesn't exist
+watch(isShareModalOpen, (newValue) => {
+  if (newValue && !shareLink.value) {
+    generateShareLink()
+  }
+})
+
+// Watch for plan changes to reset share link
+watch(() => activePlan.value?.id, () => {
+  shareLink.value = ''
+})
 
 function fetchActivePlan() {
   refresh()

@@ -124,6 +124,18 @@
                   </div>
                </NuxtLink>
             </div>
+            
+            <div class="p-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+              <div class="flex flex-wrap gap-2 justify-end">
+                  <div v-for="workout in week.workouts" :key="workout.id + '_mini'" class="">
+                    <MiniWorkoutChart
+                        v-if="workout.structuredWorkout"
+                        :workout="workout.structuredWorkout"
+                        class="w-16 h-8 opacity-75"
+                     />
+                  </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -132,6 +144,8 @@
 </template>
 
 <script setup lang="ts">
+import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
+
 definePageMeta({
   layout: 'share'
 })
@@ -145,7 +159,12 @@ const plan = computed(() => data.value?.data)
 const user = computed(() => data.value?.user)
 
 // Meta tags
-const pageTitle = computed(() => plan.value ? `${plan.value.name} - Shared Training Plan | Coach Wattz` : 'Shared Training Plan | Coach Wattz')
+const pageTitle = computed(() => {
+  if (plan.value?.name) {
+    return `${plan.value.name} - Shared Training Plan | Coach Wattz`
+  }
+  return 'Shared Training Plan | Coach Wattz'
+})
 const pageDescription = computed(() => {
   if (plan.value) {
     return `Check out this training plan: ${plan.value.name}. ${plan.value.description || ''}`.substring(0, 160)
