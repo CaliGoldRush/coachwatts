@@ -76,7 +76,17 @@ export default defineEventHandler(async (event) => {
   const days = parseInt(query.days as string) || 90
   const userId = (session.user as any).id
   
-  const endDate = new Date()
+  // Get current fitness summary first to determine the true end date
+  const summary = await getCurrentFitnessSummary(userId)
+  
+  let endDate = new Date()
+  
+  // If we have data from "tomorrow" (timezone diff), extend the chart to include it
+  if (summary.lastUpdated && new Date(summary.lastUpdated) > endDate) {
+    endDate = new Date(summary.lastUpdated)
+    endDate.setUTCHours(23, 59, 59, 999)
+  }
+  
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
   
@@ -92,8 +102,10 @@ export default defineEventHandler(async (event) => {
     initialValues.atl
   )
   
-  // Get current fitness summary
-  const summary = await getCurrentFitnessSummary(userId)
+  // Calculate average TSS (per workout in the period)
+  const totalTSS = metrics.reduce((sum, m) => sum + m.tss, 0)
+  const workoutCount = metrics.filter(m => m.tss > 0).length
+  const avgTSS = workoutCount > 0 ? totalTSS / workoutCount : 0
   
   // Format data for chart
   const data = metrics.map((m: PMCMetrics) => ({
@@ -110,6 +122,7 @@ export default defineEventHandler(async (event) => {
       currentCTL: summary.ctl,
       currentATL: summary.atl,
       currentTSB: summary.tsb,
+      avgTSS,
       formStatus: summary.formStatus.status,
       formColor: summary.formStatus.color,
       formDescription: summary.formStatus.description,
