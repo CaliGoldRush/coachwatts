@@ -193,7 +193,7 @@
                     </div>
                     <div class="flex items-center justify-between text-[10px]">
                       <span class="text-gray-500">TSS:</span>
-                      <span class="font-bold text-green-600 dark:text-green-400">{{ Math.round(getWeekSummary(week).tss) }}</span>
+                      <span class="font-bold text-green-600 dark:text-green-400">{{ Math.round(getWeekSummary(week).tss || getWeekSummary(week).plannedTss) }}</span>
                     </div>
                     
                     <!-- Training Stress Trends -->
@@ -240,9 +240,9 @@
                 <div class="flex items-center justify-between bg-gray-100 dark:bg-gray-800 p-2 rounded-lg sticky top-0 z-10">
                   <span class="text-xs font-bold uppercase">Week {{ getWeekNumber(week[0].date) }}</span>
                   <div class="flex items-center gap-3 text-[10px]">
-                    <span>{{ formatDuration(getWeekSummary(week).duration) }}</span>
+                    <span>{{ formatDuration(getWeekSummary(week).duration || getWeekSummary(week).plannedDuration) }}</span>
                     <span>{{ formatDistance(getWeekSummary(week).distance) }}</span>
-                    <span class="text-green-600 font-bold">{{ Math.round(getWeekSummary(week).tss) }} TSS</span>
+                    <span class="text-green-600 font-bold">{{ Math.round(getWeekSummary(week).tss || getWeekSummary(week).plannedTss) }} TSS</span>
                   </div>
                 </div>
                 
@@ -745,15 +745,21 @@ function getWeekSummary(weekDays: any[]) {
   
   return weekDays.reduce((acc, day) => {
     day.activities.forEach((act: CalendarActivity) => {
-      acc.duration += (act.duration || act.plannedDuration || 0)
-      acc.distance += (act.distance || act.plannedDistance || 0)
-      // Use same fallback logic as training stress calculations
-      const stressScore = act.tss ?? act.trimp ?? act.plannedTss ?? 0
-      acc.tss += stressScore
-      
-      // Track the last (most recent) CTL/ATL values in the week
-      if (act.ctl !== null && act.ctl !== undefined) lastCTL = act.ctl
-      if (act.atl !== null && act.atl !== undefined) lastATL = act.atl
+      // Only count completed activities for actual totals
+      if (act.source === 'completed') {
+        acc.duration += (act.duration || 0)
+        acc.distance += (act.distance || 0)
+        acc.tss += (act.tss ?? act.trimp ?? 0)
+        
+        // Track the last (most recent) CTL/ATL values in the week
+        if (act.ctl !== null && act.ctl !== undefined) lastCTL = act.ctl
+        if (act.atl !== null && act.atl !== undefined) lastATL = act.atl
+      } else if (act.source === 'planned' && act.status !== 'completed_plan') {
+        // Only count planned activities if they haven't been completed yet
+        // to avoid double counting
+        acc.plannedDuration += (act.plannedDuration || 0)
+        acc.plannedTss += (act.plannedTss || 0)
+      }
     })
     
     // Calculate TSB from last available CTL/ATL
@@ -767,7 +773,7 @@ function getWeekSummary(weekDays: any[]) {
       atl: lastATL,
       tsb: lastTSB
     }
-  }, { duration: 0, distance: 0, tss: 0, ctl: null as number | null, atl: null as number | null, tsb: null as number | null })
+  }, { duration: 0, distance: 0, tss: 0, plannedDuration: 0, plannedTss: 0, ctl: null as number | null, atl: null as number | null, tsb: null as number | null })
 }
 
 function getTSBColor(tsb: number | null): string {
@@ -1069,9 +1075,9 @@ function openWeekZoneDetail(week: any[]) {
   selectedWeekData.value = {
     weekNumber: week[0] ? getWeekNumber(week[0].date) : 0,
     completedWorkouts: completedActivities.length,
-    totalDuration: summary.duration,
+    totalDuration: summary.duration || summary.plannedDuration,
     totalDistance: summary.distance,
-    totalTSS: summary.tss,
+    totalTSS: summary.tss || summary.plannedTss,
     workoutIds: getWeekWorkoutIds(week),
     activities: completedActivities
   }
