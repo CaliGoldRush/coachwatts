@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
         ftp: true,
         weight: true,
         maxHr: true,
+        lthr: true,
         dob: true,
         hrZones: true
       }
@@ -33,55 +34,51 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Query wellness for today's date specifically, working backwards up to 30 days
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Start of today
-    
+    // Query the most recent wellness data available with actual values
+    const wellness = await prisma.wellness.findFirst({
+      where: { 
+        userId: user.id,
+        restingHr: { not: null }
+      },
+      orderBy: { date: 'desc' },
+      select: {
+        date: true,
+        restingHr: true,
+        hrv: true,
+        weight: true,
+        readiness: true,
+        sleepHours: true,
+        recoveryScore: true
+      }
+    })
+
+    // Also check DailyMetric as fallback
+    const dailyMetric = await prisma.dailyMetric.findFirst({
+      where: { 
+        userId: user.id,
+        restingHr: { not: null }
+      },
+      orderBy: { date: 'desc' },
+      select: {
+        date: true,
+        restingHr: true,
+        hrv: true,
+        sleepScore: true,
+        hoursSlept: true
+      }
+    })
+
+    // Determine which record is more recent or use Wellness as primary
     let wellnessData = null
     let wellnessDate = null
-    
-    // Try each day going backwards until we find data
-    for (let daysBack = 0; daysBack < 30; daysBack++) {
-      const checkDate = new Date(today)
-      checkDate.setDate(today.getDate() - daysBack)
-      
-      // Check Wellness table first
-      const wellness = await wellnessRepository.findFirst(user.id, {
-        date: checkDate,
-        select: {
-          date: true,
-          restingHr: true,
-          hrv: true,
-          weight: true,
-          readiness: true,
-          sleepHours: true,
-          recoveryScore: true
-        }
-      })
-      
-      // Check if wellness has actual data (not all null)
-      if (wellness && (wellness.hrv != null || wellness.restingHr != null || wellness.sleepHours != null || wellness.recoveryScore != null)) {
+
+    if (wellness && dailyMetric) {
+      // If we have both, take the more recent one
+      if (new Date(wellness.date).getTime() >= new Date(dailyMetric.date).getTime()) {
         wellnessData = wellness
-        wellnessDate = checkDate
-        break
-      }
-      
-      // If Wellness is null or empty, check DailyMetric as fallback
-      const dailyMetric = await prisma.dailyMetric.findFirst({
-        where: {
-          userId: user.id,
-          date: checkDate
-        },
-        select: {
-          date: true,
-          restingHr: true,
-          hrv: true,
-          sleepScore: true,
-          hoursSlept: true
-        }
-      })
-      
-      if (dailyMetric && (dailyMetric.hrv != null || dailyMetric.restingHr != null || dailyMetric.hoursSlept != null)) {
+        wellnessDate = wellness.date
+      } else {
+        // DailyMetric is newer, use that
         wellnessData = {
           date: dailyMetric.date,
           restingHr: dailyMetric.restingHr,
@@ -91,9 +88,22 @@ export default defineEventHandler(async (event) => {
           sleepHours: dailyMetric.hoursSlept,
           recoveryScore: dailyMetric.sleepScore
         }
-        wellnessDate = checkDate
-        break
+        wellnessDate = dailyMetric.date
       }
+    } else if (wellness) {
+      wellnessData = wellness
+      wellnessDate = wellness.date
+    } else if (dailyMetric) {
+      wellnessData = {
+        date: dailyMetric.date,
+        restingHr: dailyMetric.restingHr,
+        hrv: dailyMetric.hrv,
+        weight: null,
+        readiness: null,
+        sleepHours: dailyMetric.hoursSlept,
+        recoveryScore: dailyMetric.sleepScore
+      }
+      wellnessDate = dailyMetric.date
     }
     
     // Calculate age from date of birth
@@ -214,11 +224,11 @@ export default defineEventHandler(async (event) => {
         age: age,
         weight: recentWeight,
         ftp: user.ftp,
-        restingHR: recentRestingHR,
+        restingHr: recentRestingHR,
         maxHR: user.maxHr,
         estimatedMaxHR,
         recentHRV,
-        lthr: Array.isArray(user.hrZones) ? (user.hrZones as any[]).find((z: any) => z.id === 'lthr')?.min || null : null,
+        lthr: user.lthr,
         avgRecentHRV: avgRecentHRV ? Math.round(avgRecentHRV * 10) / 10 : null,
         recentSleep,
         recentRecoveryScore,

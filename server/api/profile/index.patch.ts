@@ -73,10 +73,9 @@ const profileSchema = z.object({
   heightUnits: z.string().nullable().optional(),
   distanceUnits: z.string().nullable().optional(),
   temperatureUnits: z.string().nullable().optional(),
-  restingHr: z.coerce.number().nullable().optional(),
-  maxHr: z.coerce.number().nullable().optional(),
-  ftp: z.coerce.number().nullable().optional(),
-  form: z.string().nullable().optional(),
+    restingHr: z.coerce.number().nullable().optional(),
+    lthr: z.coerce.number().nullable().optional(),
+    form: z.string().optional(),
   visibility: z.string().nullable().optional(),
   sex: z.string().nullable().optional(),
   dob: z.string().nullable().optional(), // Expecting YYYY-MM-DD

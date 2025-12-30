@@ -54,6 +54,10 @@ export default defineEventHandler(async (event) => {
     if (intervalsProfile.maxHR && intervalsProfile.maxHR !== user.maxHr) {
       diff.maxHr = intervalsProfile.maxHR
     }
+    // Map lthr (Intervals) to lthr (Prisma)
+    if (intervalsProfile.lthr && intervalsProfile.lthr !== user.lthr) {
+      diff.lthr = intervalsProfile.lthr
+    }
     if (intervalsProfile.weight && intervalsProfile.weight !== user.weight) {
       diff.weight = intervalsProfile.weight
     }
