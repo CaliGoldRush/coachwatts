@@ -6,7 +6,7 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-3">
             <UButton
               to="/workouts/upload"
               icon="i-heroicons-cloud-arrow-up"
@@ -16,6 +16,17 @@
               class="font-bold"
             >
               <span class="hidden sm:inline">Upload</span>
+            </UButton>
+            <UButton
+              to="/chat"
+              icon="i-heroicons-chat-bubble-left-right"
+              color="primary"
+              variant="solid"
+              size="sm"
+              class="font-bold"
+            >
+              <span class="hidden sm:inline">New Chat</span>
+              <span class="sm:hidden">Chat</span>
             </UButton>
             <UButton
               v-if="integrationStore?.intervalsConnected"
@@ -44,7 +55,7 @@
         </div>
 
         <!-- Dashboard Grid (Connected User) -->
-        <div v-else class="p-4 sm:p-6 space-y-6 sm:space-y-8">
+        <div v-else class="p-3 sm:p-6 space-y-4 sm:space-y-8">
           <DashboardMissingDataBanner v-if="missingFields.length > 0" :missing-fields="missingFields" />
 
           <div>
@@ -53,7 +64,7 @@
           </div>
         
           <!-- Row 1: Athlete Profile / Today's Training / Performance Overview -->
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 items-stretch">
             <!-- Athlete Profile Card - shown when connected -->
             <DashboardAthleteProfileCard @open-wellness="openWellnessModal" />
             
@@ -66,7 +77,7 @@
           </div>
           
           <!-- Row 2: Recent Activity / Next Steps / Connection Status -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             <!-- Recent Activity Card -->
             <DashboardRecentActivityCard />
             
