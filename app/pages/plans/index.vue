@@ -23,15 +23,38 @@
               @click="viewPlan(plan.id)"
             >
               <template #header>
-                <div class="flex justify-between items-start">
-                  <div class="font-bold truncate pr-4">{{ plan.name || 'Untitled Template' }}</div>
-                  <UBadge color="neutral" variant="soft" size="xs">{{ plan.strategy }}</UBadge>
+                <div class="flex justify-between items-start gap-2">
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold truncate">{{ plan.name || 'Untitled Template' }}</div>
+                    <div v-if="plan.goal?.title" class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                      {{ plan.goal.title }}
+                    </div>
+                  </div>
+                  <UBadge color="neutral" variant="soft" size="xs" class="shrink-0">{{ plan.strategy }}</UBadge>
                 </div>
               </template>
               
-              <p class="text-sm text-muted line-clamp-3 h-10 mb-4">
-                {{ plan.description || 'No description provided.' }}
-              </p>
+              <div class="space-y-3">
+                <p class="text-sm text-muted line-clamp-2 min-h-[2.5rem]">
+                  {{ plan.description || 'No description provided.' }}
+                </p>
+                
+                <!-- Plan Stats -->
+                <div class="flex flex-wrap gap-3 text-xs text-gray-600 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <div v-if="plan._count?.blocks" class="flex items-center gap-1">
+                    <UIcon name="i-heroicons-cube-transparent" class="w-3.5 h-3.5" />
+                    <span>{{ plan._count.blocks }} {{ plan._count.blocks === 1 ? 'Block' : 'Blocks' }}</span>
+                  </div>
+                  <div v-if="getTotalWeeks(plan)" class="flex items-center gap-1">
+                    <UIcon name="i-heroicons-calendar-days" class="w-3.5 h-3.5" />
+                    <span>{{ getTotalWeeks(plan) }} {{ getTotalWeeks(plan) === 1 ? 'Week' : 'Weeks' }}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <UIcon name="i-heroicons-clock" class="w-3.5 h-3.5" />
+                    <span>{{ formatDate(plan.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
               
               <template #footer>
                 <div class="flex justify-end gap-2">
@@ -190,7 +213,7 @@
               <UIcon name="i-heroicons-cube-transparent" class="w-6 h-6 text-primary-500" />
               {{ block.name }}
             </h2>
-            <UBadge color="gray" variant="soft">{{ block.weeks?.length || 0 }} Weeks</UBadge>
+            <UBadge color="neutral" variant="soft">{{ block.weeks?.length || 0 }} Weeks</UBadge>
           </div>
 
           <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -416,6 +439,13 @@ async function confirmUse() {
   } finally {
     activating.value = false
   }
+}
+
+function getTotalWeeks(plan: any) {
+  if (!plan.blocks || plan.blocks.length === 0) return 0
+  return plan.blocks.reduce((total: number, block: any) => {
+    return total + (block._count?.weeks || 0)
+  }, 0)
 }
 
 function getStatusColor(status: string) {
