@@ -21,11 +21,18 @@ export default defineEventHandler(async (event) => {
       image: true,
       isAdmin: true,
       createdAt: true,
+      integrations: {
+        select: {
+          provider: true
+        }
+      },
       _count: {
         select: {
           workouts: true,
           nutrition: true,
-          wellness: true
+          wellness: true,
+          chatParticipations: true,
+          plannedWorkouts: true
         }
       }
     },
