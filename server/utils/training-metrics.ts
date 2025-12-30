@@ -229,7 +229,8 @@ export async function calculateLoadTrends(
   const workouts = await prisma.workout.findMany({
     where: {
       userId,
-      date: { gte: startDate, lte: endDate }
+      date: { gte: startDate, lte: endDate },
+      isDuplicate: false
     },
     select: {
       date: true,
@@ -291,7 +292,8 @@ export async function calculateActivityBreakdown(
     where: {
       userId,
       date: { gte: startDate, lte: endDate },
-      durationSec: { gt: 0 }
+      durationSec: { gt: 0 },
+      isDuplicate: false
     },
     select: {
       type: true,
@@ -346,7 +348,8 @@ export async function calculateIntensityDistribution(
     where: {
       userId,
       date: { gte: startDate, lte: endDate },
-      intensity: { not: null }
+      intensity: { not: null },
+      isDuplicate: false
     },
     select: {
       id: true,
@@ -452,7 +455,8 @@ export async function generateTrainingContext(
     where: {
       userId,
       date: { gte: startDate, lte: endDate },
-      durationSec: { gt: 0 }
+      durationSec: { gt: 0 },
+      isDuplicate: false
     },
     select: {
       id: true,
