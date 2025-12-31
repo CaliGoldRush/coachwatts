@@ -1,3 +1,36 @@
+# 🎉 Coach Watts v0.5.2 is Live! More Precision, More Control
+
+We’re excited to roll out v0.5.2, focusing on bringing a key performance metric to your profile and giving you greater control over your automatic settings. Update your app now to check out the improvements!
+
+## ❤️ New Performance Metrics
+
+### **Track Your Lactate Threshold Heart Rate (LTHR)**
+You asked, and we delivered! You can now input and track your **Lactate Threshold Heart Rate (LTHR)** directly in your Profile Settings. 
+
+This crucial metric allows Coach Watts to calculate your personalized heart rate training zones with much greater accuracy, helping you dial in your workouts for maximum benefit!
+
+## 🧠 Smarter Profile Updates
+
+### **You're in Control of Auto-Detection**
+Coach Watts often uses your activity data to detect new performance benchmarks (like a change in FTP or Weight). We’ve made this process clearer and safer than ever:
+
+*   **Confirmation Modal:** If we detect a potential update to your profile settings, you will now see a clear confirmation screen.
+*   **Diff Detection:** This screen explicitly shows you *exactly* what the change is (e.g., "FTP changing from 250W to 255W") before you approve it.
+
+This ensures you are always aware of, and in full control of, the settings Coach Watts uses for your training plans. ✅
+
+## ⚙️ Stability & Chart Improvements
+
+We’ve ironed out a couple of technical kinks to ensure a smoother experience:
+
+*   **Accurate Charts:** We fixed an issue where some performance charts (like the CTL/ATL/TSB graph) occasionally tried to calculate or display data far into the future unnecessarily. Your charts now reflect current and relevant performance data more reliably.
+*   **Snappier Data:** General optimizations to how we fetch interval data mean quicker loading times and a more responsive app experience. 🚀
+
+---
+Happy Cycling!
+
+— The Coach Watts Team
+
 # 🚀 Coach Watts v0.5.1 is Here! Faster, Cleaner, and More Reliable 📈
 
 We’ve just rolled out a fresh update focused on providing a smoother planning experience and ensuring your training data is perfectly accurate.

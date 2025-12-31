@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.3](https://github.com/newpush/coach/compare/v0.5.2...v0.5.3) (2025-12-31)
+
+
+### Features
+
+* **api:** add endpoint to fetch current release notes ([8b62f7b](https://github.com/newpush/coach/commit/8b62f7b65616e0c8c1156df99080ead9b014e4eb))
+* **api:** add publish endpoint for syncing workouts to intervals.icu ([5c786f0](https://github.com/newpush/coach/commit/5c786f0d8dea1b00bb4cceb0a00761a3d37c1585))
+* **components:** add publish button to plan dashboard for syncing workouts ([3c6ede3](https://github.com/newpush/coach/commit/3c6ede3a6fb4de55d0785889157fb7516a92c4fd))
+* **components:** add release notification component with modal ([778f719](https://github.com/newpush/coach/commit/778f7192ff10c27b559ffad7926b03173ccfb4bb))
+* **components:** add training load and form metrics to athlete profile ([e3a7311](https://github.com/newpush/coach/commit/e3a7311ae9d2fe2f38e56edfd815dd02fbf80f99))
+* **composables:** add composable for release notes management ([89dbeb1](https://github.com/newpush/coach/commit/89dbeb1ecd24b23595a0da0718e09f9aba820d14))
+* **pages:** add publish button and modal for syncing workouts to intervals.icu ([0c9f45a](https://github.com/newpush/coach/commit/0c9f45a780b1ede655c93a9d9e38b8869154977c))
+* **pages:** integrate release notification into dashboard header ([21e7665](https://github.com/newpush/coach/commit/21e766562f00413af1ba0d9869198c63baf86feb))
+* **utils:** add intervals.icu workout format converter and update api client ([67d9c36](https://github.com/newpush/coach/commit/67d9c36a4f9524f0f2df5e1949d936366e53aa43))
+
 ## [0.5.2](https://github.com/newpush/coach/compare/v0.5.1...v0.5.2) (2025-12-30)
 
 
