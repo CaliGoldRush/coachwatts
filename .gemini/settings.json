@@ -1,4 +1,10 @@
 {
+  "mcpServers": {
+    "nuxt-ui": {
+      "url": "https://ui.nuxt.com/mcp",
+      "trust": true
+    }
+  },
   "permissions": {
     "allow": [
       "Bash(git:*)",
