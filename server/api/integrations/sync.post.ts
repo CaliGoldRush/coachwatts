@@ -16,6 +16,11 @@ defineRouteMeta({
               provider: {
                 type: 'string',
                 enum: ['intervals', 'whoop', 'withings', 'yazio', 'strava', 'hevy', 'all']
+              },
+              days: {
+                type: 'number',
+                description: 'Number of days to sync.',
+                optional: true,
               }
             }
           }
@@ -64,7 +69,7 @@ export default defineEventHandler(async (event) => {
   }
   
   const body = await readBody(event)
-  const { provider } = body
+  const { provider, days } = body
   
   if (!provider || !['intervals', 'whoop', 'withings', 'yazio', 'strava', 'hevy', 'all'].includes(provider)) {
     throw createError({
@@ -98,7 +103,10 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  if (provider === 'all') {
+  if (days) {
+    startDate.setDate(startDate.getDate() - days)
+  }
+  else if (provider === 'all') {
     // For batch sync, use a moderate 7-day window for recent data
     // This balances API rate limits across all services
     startDate.setDate(startDate.getDate() - 7)
