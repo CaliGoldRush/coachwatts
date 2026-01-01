@@ -66,13 +66,13 @@ const hevyConnected = computed(() =>
 
 const syncingProviders = ref(new Set<string>())
 
-const syncIntegration = async (provider: string) => {
+const syncIntegration = async (provider: string, days?: number) => {
   syncingProviders.value.add(provider)
   
   try {
     await $fetch('/api/integrations/sync', {
       method: 'POST',
-      body: { provider }
+      body: { provider, days }
     })
     
     const providerName = provider === 'intervals' ? 'Intervals.icu' : 
