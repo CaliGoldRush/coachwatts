@@ -21,10 +21,35 @@ Welcome to the Coach Watts documentation. This comprehensive guide covers the sy
     -   [Database Guidelines](./.roo/rules-code/database-guidelines.md)
     -   [Deployment Guidelines](./.roo/rules-code/deployment-guidelines.md)
     -   [Design Guidelines](./.roo/rules-code/design-guidelines.md)
-    -   [Frontend Patterns](./.roo/rules-code/frontend-patterns.md)
+### [Frontend Patterns](./.roo/rules-code/frontend-patterns.md)
+#### Nuxt UI Modal Implementation Guide
+When implementing modals using Nuxt UI, it is critical to follow best practices to ensure they function correctly. Incorrect implementation can lead to modals that are always visible, empty, or improperly positioned.
+
+**Key Guidelines:**
+1.  **Visibility Control:** Always use the `v-model:open` directive to control the modal's visibility state. This is the correct directive for managing the open/closed state of the modal.
+    ```vue
+    <UModal v-model:open="isModalOpen">
+      ...
+    </UModal>
+    ```
+2.  **Content Placement:** Place all modal content inside the `#content` slot. This ensures that the content is correctly rendered within the modal's structure.
+    ```vue
+    <UModal v-model:open="isModalOpen">
+      <template #content>
+        <UCard>
+          ...
+        </UCard>
+      </template>
+    </UModal>
+    ```
+3.  **Top-Level Placement:** Ensure the `<UModal>` component is a top-level element in your component's template. Do not nest it inside other components like `<UCard>`, as this can interfere with its positioning and visibility.
+4.  **Read the Documentation:** Before implementing a modal, use the `nuxt-ui-mcp` tool to read the official documentation for `UModal` and related components. This will provide the most up-to-date information on props, slots, and usage examples.
+
+By following these guidelines, you can avoid common pitfalls and ensure that modals are implemented correctly and consistently across the application.
     -   [Nuxt Server Patterns](./.roo/rules-code/nuxt-server-patterns.md)
     -   [Repository Pattern](./.roo/rules-code/repository-pattern.md)
     -   [Server Management](./.roo/rules-code/server-management.md)
+
 
 **Key Mandates:**
 1.  **NEVER** reset the dev database.
