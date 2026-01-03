@@ -178,7 +178,7 @@ export const generateWeeklyReportTask = task({
       logger.log("Fetching data", { startDate, endDate });
       
       // Fetch data (excluding duplicate workouts)
-      const [workouts, metrics, user] = await Promise.all([
+      const [workouts, metrics, user, activeGoals] = await Promise.all([
         workoutRepository.getForUser(userId, {
           startDate,
           endDate,
@@ -192,6 +192,12 @@ export const generateWeeklyReportTask = task({
         prisma.user.findUnique({
           where: { id: userId },
           select: { ftp: true, weight: true, maxHr: true }
+        }),
+        prisma.goal.findMany({
+          where: {
+            userId,
+            status: 'ACTIVE'
+          }
         })
       ]);
       
