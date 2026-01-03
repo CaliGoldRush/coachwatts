@@ -49,6 +49,7 @@ By following these guidelines, you can avoid common pitfalls and ensure that mod
     -   [Nuxt Server Patterns](./.roo/rules-code/nuxt-server-patterns.md)
     -   [Repository Pattern](./.roo/rules-code/repository-pattern.md)
     -   [Server Management](./.roo/rules-code/server-management.md)
+    -   [TypeScript Guidelines](./.roo/rules-code/typescript-guidelines.md)
 
 
 **Key Mandates:**

@@ -115,9 +115,9 @@ This file aggregates all critical development rules and guidelines for the Coach
 
 ---
 
-## 9. Documentation
+## 10. TypeScript & Code Quality
 
--   **Read First**: Always refer to `docs/INDEX.md` to navigate the documentation.
--   **Maintenance**: Follow the guidelines in `.roo/rules-code/documentation-guidelines.md` when adding or modifying documentation.
--   **Structure**: Keep files organized in `01-architecture`, `02-features`, etc.
--   **Updates**: Ensure documentation is kept in sync with code changes.
+-   **Follow Guidelines**: Strictly adhere to [.roo/rules-code/typescript-guidelines.md](.roo/rules-code/typescript-guidelines.md).
+-   **Strict Null Checks**: Always handle `undefined`/`null` using `?.` and `??`.
+-   **Semantic Colors**: Use `primary`, `neutral`, `success`, `error`, `warning` instead of raw colors.
+-   **No Duplicate Imports**: Check for existing imports before adding new ones.
