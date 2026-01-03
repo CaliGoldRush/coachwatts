@@ -1,6 +1,6 @@
 import { getServerSession } from '../../../utils/session'
 
-export default defineEventHandler({
+defineRouteMeta({
   openAPI: {
     tags: ['Settings'],
     summary: 'List API keys',
@@ -29,33 +29,34 @@ export default defineEventHandler({
       },
       401: { description: 'Unauthorized' }
     }
-  },
-  async handler(event) {
-    const session = await getServerSession(event)
-    if (!session?.user?.id) {
-      throw createError({
-        statusCode: 401,
-        message: 'Unauthorized'
-      })
-    }
-
-    const keys = await prisma.apiKey.findMany({
-      where: {
-        userId: session.user.id
-      },
-      select: {
-        id: true,
-        name: true,
-        prefix: true,
-        lastUsedAt: true,
-        expiresAt: true,
-        createdAt: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
-
-    return keys
   }
+})
+
+export default defineEventHandler(async (event) => {
+  const session = await getServerSession(event)
+  if (!session?.user?.id) {
+    throw createError({
+      statusCode: 401,
+      message: 'Unauthorized'
+    })
+  }
+
+  const keys = await prisma.apiKey.findMany({
+    where: {
+      userId: session.user.id
+    },
+    select: {
+      id: true,
+      name: true,
+      prefix: true,
+      lastUsedAt: true,
+      expiresAt: true,
+      createdAt: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  return keys
 })

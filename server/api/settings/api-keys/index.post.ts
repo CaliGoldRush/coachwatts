@@ -1,16 +1,23 @@
 import { getServerSession } from '../../../utils/session'
+import { generateApiKey, hashApiKey } from '../../../utils/api-keys'
 
-export default defineEventHandler({
+defineRouteMeta({
   openAPI: {
     tags: ['Settings'],
     summary: 'Create an API key',
     description: 'Generates a new API key for the authenticated user.',
-    body: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', description: 'Friendly name for the API key' }
-      },
-      required: ['name']
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'Friendly name for the API key' }
+            },
+            required: ['name']
+          }
+        }
+      }
     },
     responses: {
       200: {
@@ -32,42 +39,43 @@ export default defineEventHandler({
       },
       401: { description: 'Unauthorized' }
     }
-  },
-  async handler(event) {
-    const session = await getServerSession(event)
-    if (!session?.user?.id) {
-      throw createError({
-        statusCode: 401,
-        message: 'Unauthorized'
-      })
-    }
+  }
+})
 
-    const body = await readBody(event)
-    if (!body.name) {
-      throw createError({
-        statusCode: 400,
-        message: 'Name is required'
-      })
-    }
-
-    const { key, prefix } = generateApiKey()
-    const hashedKey = hashApiKey(key)
-
-    const apiKey = await prisma.apiKey.create({
-      data: {
-        userId: session.user.id,
-        name: body.name,
-        key: hashedKey,
-        prefix
-      }
+export default defineEventHandler(async (event) => {
+  const session = await getServerSession(event)
+  if (!session?.user?.id) {
+    throw createError({
+      statusCode: 401,
+      message: 'Unauthorized'
     })
+  }
 
-    return {
-      id: apiKey.id,
-      name: apiKey.name,
-      prefix: apiKey.prefix,
-      key, // Return the plain key only once
-      createdAt: apiKey.createdAt
+  const body = await readBody(event)
+  if (!body.name) {
+    throw createError({
+      statusCode: 400,
+      message: 'Name is required'
+    })
+  }
+
+  const { key, prefix } = generateApiKey()
+  const hashedKey = hashApiKey(key)
+
+  const apiKey = await prisma.apiKey.create({
+    data: {
+      userId: session.user.id,
+      name: body.name,
+      key: hashedKey,
+      prefix
     }
+  })
+
+  return {
+    id: apiKey.id,
+    name: apiKey.name,
+    prefix: apiKey.prefix,
+    key, // Return the plain key only once
+    createdAt: apiKey.createdAt
   }
 })

@@ -672,7 +672,7 @@ ${dateReference}
 
 **IMPORTANT - Understanding Date References**:
 When users say "next Monday", "this weekend", "tomorrow", etc., refer to the date reference above.
-- "Tomorrow" = ${nextSevenDays[1].dayName}, ${nextSevenDays[1].dateStr}
+${nextSevenDays[1] ? `- "Tomorrow" = ${nextSevenDays[1].dayName}, ${nextSevenDays[1].dateStr}` : ''}
 - "This weekend" = Saturday & Sunday in the list above
 - Use the exact dates (YYYY-MM-DD format) when creating or modifying workouts
 
@@ -864,7 +864,7 @@ OR
   }))
 
   // Remove any leading 'model' messages to ensure first message is 'user'
-  while (historyForModel.length > 0 && historyForModel[0].role === 'model') {
+  while (historyForModel.length > 0 && historyForModel[0] && historyForModel[0].role === 'model') {
     historyForModel = historyForModel.slice(1)
   }
 

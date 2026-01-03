@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
       description: workout.description || '',
       steps: (workout.structuredWorkout as any).steps || [],
       messages: (workout.structuredWorkout as any).messages || [],
-      ftp: workout.user.ftp || 250
+      ftp: (workout.user as any).ftp || 250
     }
     workoutDoc = WorkoutConverter.toIntervalsICU(workoutData)
   }
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
         description: workout.description || '',
         type: workout.type || 'Ride',
         durationSec: workout.durationSec || 3600,
-        tss: workout.tss,
+        tss: workout.tss ?? undefined,
         workout_doc: workoutDoc
       })
       
@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
         description: workout.description || '',
         type: workout.type || 'Ride',
         durationSec: workout.durationSec || 3600,
-        tss: workout.tss,
+        tss: workout.tss ?? undefined,
         workout_doc: workoutDoc
       })
       

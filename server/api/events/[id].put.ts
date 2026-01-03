@@ -25,9 +25,11 @@ const eventSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
-  if (!session?.user) throw createError({ statusCode: 401, message: 'Unauthorized' })
+  if (!session?.user?.id) throw createError({ statusCode: 401, message: 'Unauthorized' })
 
   const id = getRouterParam(event, 'id')
+  if (!id) throw createError({ statusCode: 400, message: 'Missing event ID' })
+  
   const body = await readBody(event)
   const result = eventSchema.safeParse(body)
   
@@ -35,7 +37,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid input', data: result.error.issues })
   }
 
-  const userId = (session.user as any).id
+  const userId = session.user.id
   
   try {
     const updatedEvent = await eventRepository.update(id, userId, {

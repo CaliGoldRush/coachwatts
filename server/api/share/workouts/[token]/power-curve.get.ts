@@ -1,8 +1,6 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { prisma } from '../../../../utils/db'
 
-import { defineEventHandler, createError, getRouterParam } from 'h3'
-import { prisma } from '../../../../utils/db'
 
 defineRouteMeta({
   openAPI: {

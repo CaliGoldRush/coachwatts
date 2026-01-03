@@ -161,10 +161,12 @@ export default defineEventHandler(async (event) => {
 
   // Calculate statistics
   // Current FTP is always the profile FTP (source of truth for "Now")
-  const currentFTP = user.ftp || (ftpData.length > 0 ? ftpData[ftpData.length - 1].ftp : null)
+  const lastFtpEntry = ftpData.length > 0 ? ftpData[ftpData.length - 1] : null
+  const currentFTP = user.ftp || (lastFtpEntry ? lastFtpEntry.ftp : null)
   
   // Starting FTP is the first data point in the period
-  const startingFTP = ftpData.length > 0 ? ftpData[0].ftp : null
+  const firstFtpEntry = ftpData.length > 0 ? ftpData[0] : null
+  const startingFTP = firstFtpEntry ? firstFtpEntry.ftp : null
   
   // Peak is max over the period
   const peakFTP = ftpData.length > 0 ? Math.max(...ftpData.map(d => d.ftp)) : null

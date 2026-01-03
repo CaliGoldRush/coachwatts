@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
   }
 
   let targetDate = endDate ? new Date(endDate) : (goal.targetDate || goal.eventDate)
-  if (!targetDate && goal.events.length > 0 && !endDate) {
+  if (!targetDate && goal.events.length > 0 && goal.events[0] && !endDate) {
     targetDate = goal.events[0].date
   }
 

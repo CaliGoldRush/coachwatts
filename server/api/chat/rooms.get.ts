@@ -111,7 +111,7 @@ export default defineEventHandler(async (event) => {
         {
           _id: userId,
           username: 'Me',
-          avatar: session.user.image,
+          avatar: session.user?.image || null,
           status: {
             state: 'online',
             lastChanged: 'today'

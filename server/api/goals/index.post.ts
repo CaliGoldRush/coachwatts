@@ -67,8 +67,8 @@ const goalSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   targetDate: z.string().optional(), // ISO string
-  // eventDate: z.string().optional(), // Deprecated for EVENT goals
-  // eventType: z.string().optional(), // Deprecated for EVENT goals
+  eventDate: z.string().optional(), // Added for other goals
+  eventType: z.string().optional(), // Added for other goals
   metric: z.string().optional(),
   targetValue: z.number().optional(),
   startValue: z.number().optional(),
@@ -229,9 +229,10 @@ export default defineEventHandler(async (event) => {
         select: { date: true }
       })
       
-      if (linkedEvents.length > 0) {
+      if (linkedEvents.length > 0 && linkedEvents[0]) {
         // Find max date
-        const maxDate = linkedEvents.reduce((max, e) => e.date > max ? e.date : max, linkedEvents[0].date)
+        const firstDate = linkedEvents[0].date
+        const maxDate = linkedEvents.reduce((max, e) => e.date > max ? e.date : max, firstDate)
         finalTargetDate = maxDate
       }
     }
@@ -251,11 +252,11 @@ export default defineEventHandler(async (event) => {
         // For EVENT goals, we do NOT set these redundant fields
         // For other goals, we allow them
         eventDate: isEventGoal ? null : (data.eventDate ? new Date(data.eventDate) : null),
-        eventType: isEventGoal ? null : data.eventType, // Or should this be null too?
-        distance: isEventGoal ? null : data.distance,
-        elevation: isEventGoal ? null : data.elevation,
-        duration: isEventGoal ? null : data.duration,
-        terrain: isEventGoal ? null : data.terrain,
+        eventType: isEventGoal ? null : (data.eventType || null),
+        distance: isEventGoal ? null : (data.distance || null),
+        elevation: isEventGoal ? null : (data.elevation || null),
+        duration: isEventGoal ? null : (data.duration || null),
+        terrain: isEventGoal ? null : (data.terrain || null),
         
         metric: data.metric,
         targetValue: data.targetValue,

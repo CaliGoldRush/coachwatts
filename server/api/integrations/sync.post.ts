@@ -19,8 +19,7 @@ defineRouteMeta({
               },
               days: {
                 type: 'number',
-                description: 'Number of days to sync.',
-                optional: true,
+                description: 'Number of days to sync.'
               }
             }
           }
@@ -61,12 +60,14 @@ defineRouteMeta({
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     throw createError({ 
       statusCode: 401,
       message: 'Unauthorized' 
     })
   }
+  
+  const userId = session.user.id
   
   const body = await readBody(event)
   const { provider, days } = body
@@ -90,7 +91,7 @@ export default defineEventHandler(async (event) => {
     const integration = await prisma.integration.findUnique({
       where: {
         userId_provider: {
-          userId: (session.user as any).id,
+          userId,
           provider: 'intervals'
         }
       }
@@ -138,7 +139,7 @@ export default defineEventHandler(async (event) => {
     const integration = await prisma.integration.findUnique({
       where: {
         userId_provider: {
-          userId: (session.user as any).id,
+          userId,
           provider
         }
       }
@@ -168,13 +169,12 @@ export default defineEventHandler(async (event) => {
     : 'ingest-hevy'
   
   try {
-    console.log(`[Sync] Triggering task: ${taskId} for user: ${(session.user as any).id}`)
+    console.log(`[Sync] Triggering task: ${taskId} for user: ${userId}`)
     console.log(`[Sync] Current time: ${now.toISOString()}`)
     console.log(`[Sync] Start date: ${startDate.toISOString()} (${startDate.toISOString().split('T')[0]})`)
     console.log(`[Sync] End date: ${endDate.toISOString()} (${endDate.toISOString().split('T')[0]})`)
     console.log(`[Sync] Days to sync: ${Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000))}`)
     
-    const userId = (session.user as any).id
     const handle = await tasks.trigger(taskId, {
       userId,
       startDate: startDate.toISOString(),

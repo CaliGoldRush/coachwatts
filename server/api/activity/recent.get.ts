@@ -44,14 +44,14 @@ defineRouteMeta({
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     throw createError({ 
       statusCode: 401,
       message: 'Unauthorized' 
     })
   }
   
-  const userId = (session.user as any).id
+  const userId = session.user.id
   
   // Get date range for the past 5 days
   const endDate = new Date()
@@ -122,10 +122,12 @@ export default defineEventHandler(async (event) => {
     const nutritionByDay = new Map<string, typeof nutrition>()
     nutrition.forEach(entry => {
       const dateKey = entry.date.toISOString().split('T')[0]
-      if (!nutritionByDay.has(dateKey)) {
-        nutritionByDay.set(dateKey, [])
+      if (dateKey) {
+        if (!nutritionByDay.has(dateKey)) {
+          nutritionByDay.set(dateKey, [])
+        }
+        nutritionByDay.get(dateKey)!.push(entry)
       }
-      nutritionByDay.get(dateKey)!.push(entry)
     })
     
     nutritionByDay.forEach((entries, dateKey) => {
@@ -146,15 +148,17 @@ export default defineEventHandler(async (event) => {
       
       // Use the first entry's date for the timeline
       const firstEntry = entries[0]
-      timelineItems.push({
-        id: `nutrition-${dateKey}`,
-        type: 'nutrition',
-        date: firstEntry.date,
-        icon: 'i-heroicons-cake',
-        color: 'green',
-        title: `Nutrition (${entries.length} meals)`,
-        description: description.join(' • ')
-      })
+      if (firstEntry) {
+        timelineItems.push({
+          id: `nutrition-${dateKey}`,
+          type: 'nutrition',
+          date: firstEntry.date,
+          icon: 'i-heroicons-cake',
+          color: 'green',
+          title: `Nutrition (${entries.length} meals)`,
+          description: description.join(' • ')
+        })
+      }
     })
     
     // Add wellness entries

@@ -104,13 +104,13 @@ export default defineEventHandler(async (event) => {
         // We will simulate a curve based on FTP/Max models if real data is missing
         
         // Use real data if available in rawJson (from Intervals/Strava streams)
-        if (w.maxWatts) {
-            curve[1] = Math.max(curve[1], w.maxWatts)
-            curve[5] = Math.max(curve[5], w.maxWatts * 0.9) // Estimate
+        if (w.maxWatts !== null && w.maxWatts !== undefined) {
+            curve[1] = Math.max(curve[1] || 0, w.maxWatts)
+            curve[5] = Math.max(curve[5] || 0, w.maxWatts * 0.9) // Estimate
         }
-        if (w.averageWatts) {
+        if (w.averageWatts !== null && w.averageWatts !== undefined) {
              // Rough estimate if we don't have granular data
-            curve[3600] = Math.max(curve[3600], w.averageWatts)
+            curve[3600] = Math.max(curve[3600] || 0, w.averageWatts)
         }
         // ... more sophisticated stream processing would go here
     })

@@ -2,9 +2,6 @@ import { defineEventHandler, readBody, createError } from 'h3'
 import { getServerSession } from '../../utils/session'
 import { TASK_DEPENDENCIES, getTasksByLevel, canExecuteTask, type TaskExecutionState } from '../../../types/task-dependencies'
 
-import { defineEventHandler, readBody, createError } from 'h3'
-import { getServerSession } from '../../utils/session'
-import { TASK_DEPENDENCIES, getTasksByLevel, canExecuteTask, type TaskExecutionState } from '../../../types/task-dependencies'
 
 defineRouteMeta({
   openAPI: {
@@ -129,6 +126,8 @@ async function runOrchestration(userId: string, syncState: any) {
   
   for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
     const level = levels[levelIndex]
+    if (!level) continue
+    
     const levelName = `Level ${levelIndex + 1}`
     
     broadcastToSubscribers(userId, {
@@ -144,7 +143,7 @@ async function runOrchestration(userId: string, syncState: any) {
     // Check if any required task failed
     const hasFailedRequiredTask = level.some(task => {
       const state = syncState.states[task.id]
-      return task.required && state.status === 'failed'
+      return state && task.required && state.status === 'failed'
     })
     
     if (hasFailedRequiredTask) {

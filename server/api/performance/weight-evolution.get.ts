@@ -118,8 +118,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // Calculate stats
-  const currentWeight = user.weight || (data.length > 0 ? data[data.length - 1].weight : null)
-  const startingWeight = data.length > 0 ? data[0].weight : null
+  const lastEntry = data.length > 0 ? data[data.length - 1] : null
+  const currentWeight = user.weight || (lastEntry ? lastEntry.weight : null)
+  
+  const firstEntry = data.length > 0 ? data[0] : null
+  const startingWeight = firstEntry ? firstEntry.weight : null
+  
   const minWeight = data.length > 0 ? Math.min(...data.map(d => d.weight!)) : null
   const maxWeight = data.length > 0 ? Math.max(...data.map(d => d.weight!)) : null
   

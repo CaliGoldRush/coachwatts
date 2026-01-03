@@ -108,12 +108,14 @@ export default defineEventHandler(async (event) => {
     d.setDate(d.getDate() + (i * 7))
     const start = getWeekStart(d)
     const key = start.toISOString().split('T')[0]
-    weeklyData.set(key, {
-      weekStart: key,
-      powerZones: new Array(7).fill(0),
-      hrZones: new Array(7).fill(0),
-      totalDuration: 0
-    })
+    if (key) {
+      weeklyData.set(key, {
+        weekStart: key,
+        powerZones: new Array(7).fill(0),
+        hrZones: new Array(7).fill(0),
+        totalDuration: 0
+      })
+    }
   }
 
   // 4. Aggregate
@@ -122,6 +124,8 @@ export default defineEventHandler(async (event) => {
     
     const weekStart = getWeekStart(workout.date)
     const key = weekStart.toISOString().split('T')[0]
+    if (!key) continue
+    
     const bucket = weeklyData.get(key)
     if (!bucket) continue
 
@@ -139,21 +143,29 @@ export default defineEventHandler(async (event) => {
     const hr = (streams.heartrate as number[]) || []
 
     for (let i = 0; i < time.length; i++) {
-      const delta = i === 0 ? 0 : time[i] - (time[i - 1] || 0)
+      const currentTime = time[i]
+      if (currentTime === undefined || currentTime === null) continue
+      
+      const prevTime = i === 0 ? currentTime : time[i - 1]
+      const delta = i === 0 ? 0 : currentTime - (prevTime || 0)
       if (delta <= 0 || delta > 10) continue // Skip pauses
 
       bucket.totalDuration += delta
 
-      if (watts[i] !== undefined && watts[i] !== null) {
-        const w = watts[i]
+      const w = watts[i]
+      if (w !== undefined && w !== null) {
         const zIndex = pZones.findIndex((z: any) => w >= z.min && w <= z.max)
-        if (zIndex !== -1) bucket.powerZones[zIndex] += delta
+        if (zIndex !== -1 && bucket.powerZones[zIndex] !== undefined) {
+          bucket.powerZones[zIndex] += delta
+        }
       }
 
-      if (hr[i] !== undefined && hr[i] !== null) {
-        const h = hr[i]
+      const h = hr[i]
+      if (h !== undefined && h !== null) {
         const zIndex = hZones.findIndex((z: any) => h >= z.min && h <= z.max)
-        if (zIndex !== -1) bucket.hrZones[zIndex] += delta
+        if (zIndex !== -1 && bucket.hrZones[zIndex] !== undefined) {
+          bucket.hrZones[zIndex] += delta
+        }
       }
     }
   }
