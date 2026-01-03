@@ -78,7 +78,14 @@ Format as Markdown.
     `;
 
     try {
-      const userChangelog = await generateCoachAnalysis(prompt, 'flash');
+      const userChangelog = await generateCoachAnalysis(
+        prompt, 
+        'flash',
+        {
+          operation: 'generate_changelog',
+          entityType: 'System'
+        }
+      );
 
       if (options.write) {
         // 1. Update master USER_CHANGELOG.md
