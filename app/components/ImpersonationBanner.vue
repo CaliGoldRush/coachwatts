@@ -1,10 +1,9 @@
 <template>
-  <div v-if="isImpersonating" class="bg-yellow-500 text-black py-2 px-4 flex items-center justify-between sticky top-0 z-[60]">
+  <div v-if="isImpersonating" class="bg-yellow-500 text-black py-2 px-4 rounded-md shadow-lg flex items-center gap-4 fixed bottom-4 right-4 z-[60]">
     <div class="flex items-center gap-2 text-sm font-medium">
       <UIcon name="i-heroicons-eye" class="w-5 h-5" />
       <span>
-        Impersonating <strong>{{ impersonatedUserEmail }}</strong> 
-        (Admin: {{ originalUserEmail }})
+        Impersonating <strong>{{ impersonatedUserEmail }}</strong>
       </span>
     </div>
     <div class="flex items-center gap-4">
@@ -12,7 +11,7 @@
         color="neutral" 
         variant="solid" 
         size="xs" 
-        label="Exit Impersonation" 
+        label="Exit" 
         :loading="stopping"
         @click="stopImpersonation" 
       />

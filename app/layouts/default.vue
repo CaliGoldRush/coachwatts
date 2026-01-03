@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const { data, signOut } = useAuth()
+const { data, signOut, refresh } = useAuth()
 const user = computed(() => data.value?.user)
+const toast = useToast()
+const stoppingImpersonation = ref(false)
 
 const impersonationMeta = useCookie<{
   adminId: string
@@ -12,6 +14,30 @@ const impersonationMeta = useCookie<{
 }>('auth.impersonation_meta')
 
 const impersonatedEmail = computed(() => impersonationMeta.value?.impersonatedUserEmail)
+
+async function stopImpersonation() {
+  stoppingImpersonation.value = true
+  try {
+    await $fetch('/api/admin/stop-impersonation', { method: 'POST' })
+    toast.add({
+      title: 'Impersonation stopped',
+      description: 'Returning to admin account',
+      color: 'success'
+    })
+    // Refresh session and redirect
+    await refresh()
+    await navigateTo('/admin/users')
+  } catch (error) {
+    console.error('Failed to stop impersonation:', error)
+    toast.add({
+      title: 'Error',
+      description: 'Failed to stop impersonation',
+      color: 'error'
+    })
+  } finally {
+    stoppingImpersonation.value = false
+  }
+}
 
 const route = useRoute()
 
@@ -270,6 +296,19 @@ const groups = computed(() => [{
                 <p class="text-sm font-medium truncate text-gray-900 dark:text-white">{{ user?.name || impersonatedEmail || user?.email }}</p>
               </UTooltip>
               <UButton
+                v-if="impersonatedEmail"
+                variant="link"
+                color="warning"
+                size="xs"
+                :padded="false"
+                class="p-0 h-auto font-normal text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300"
+                :loading="stoppingImpersonation"
+                @click="stopImpersonation"
+              >
+                Stop impersonating
+              </UButton>
+              <UButton
+                v-else
                 variant="link"
                 color="neutral"
                 size="xs"
