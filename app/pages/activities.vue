@@ -230,6 +230,7 @@
                   @activity-click="openActivity"
                   @wellness-click="openWellnessModal"
                   @merge-activity="onMergeActivity"
+                  @link-activity="onLinkActivity"
                 />
               </template>
             </div>
@@ -559,6 +560,26 @@
     </template>
   </UModal>
 
+  <UModal
+    v-model:open="showLinkModal"
+    title="Link Workouts?"
+    description="This will mark the planned workout as completed by this activity."
+    :prevent-close="isLinking"
+  >
+    <template #body>
+      <p class="text-gray-700 dark:text-gray-300">
+        Do you want to link the planned workout <strong>{{ linkPlanned?.title }}</strong> to the completed activity <strong>{{ linkCompleted?.title }}</strong>?
+      </p>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end gap-3 w-full">
+        <UButton color="neutral" variant="ghost" @click="showLinkModal = false" :disabled="isLinking">Cancel</UButton>
+        <UButton color="primary" @click="confirmLink" :loading="isLinking">Link</UButton>
+      </div>
+    </template>
+  </UModal>
+
   <UModal 
     v-if="showMatcherModal"
     v-model:open="showMatcherModal" 
@@ -604,6 +625,11 @@ const mergeSource = ref<CalendarActivity | null>(null)
 const mergeTarget = ref<CalendarActivity | null>(null)
 const isMerging = ref(false)
 const showMatcherModal = ref(false)
+
+const showLinkModal = ref(false)
+const linkPlanned = ref<CalendarActivity | null>(null)
+const linkCompleted = ref<CalendarActivity | null>(null)
+const isLinking = ref(false)
 
 const currentDate = ref(new Date())
 const viewMode = ref<'calendar' | 'list'>('calendar')
@@ -875,6 +901,50 @@ function onMergeActivity({ source, target }: { source: CalendarActivity, target:
   mergeSource.value = source
   mergeTarget.value = target
   showMergeModal.value = true
+}
+
+function onLinkActivity({ planned, completed }: { planned: CalendarActivity, completed: CalendarActivity }) {
+  linkPlanned.value = planned
+  linkCompleted.value = completed
+  showLinkModal.value = true
+}
+
+async function confirmLink() {
+  if (!linkPlanned.value || !linkCompleted.value) return
+  
+  isLinking.value = true
+  try {
+    await $fetch(`/api/workouts/${linkCompleted.value.id}/link`, {
+      method: 'POST',
+      body: {
+        plannedWorkoutId: linkPlanned.value.id
+      }
+    })
+    
+    // Refresh activities
+    await refresh()
+    
+    showLinkModal.value = false
+    linkPlanned.value = null
+    linkCompleted.value = null
+    
+    const toast = useToast()
+    toast.add({
+      title: 'Workouts linked',
+      description: 'The workout has been successfully linked to the planned activity.',
+      color: 'success'
+    })
+  } catch (error: any) {
+    console.error('Link failed:', error)
+    const toast = useToast()
+    toast.add({
+      title: 'Link failed',
+      description: error.data?.message || 'Could not link workouts.',
+      color: 'error'
+    })
+  } finally {
+    isLinking.value = false
+  }
 }
 
 async function confirmMerge() {

@@ -67,7 +67,7 @@
       >
         <!-- Drag Handle -->
         <div
-          v-if="activity.source === 'completed'"
+          v-if="activity.source === 'completed' || (activity.source === 'planned' && activity.status !== 'completed')"
           class="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing z-10 hover:bg-black/5 rounded-bl"
           :draggable="true"
           @dragstart.stop="(e) => onDragStart(e, activity)"
@@ -222,6 +222,7 @@ const emit = defineEmits<{
   'activity-click': [activity: CalendarActivity]
   'wellness-click': [date: Date]
   'merge-activity': [data: { source: CalendarActivity, target: CalendarActivity }]
+  'link-activity': [data: { planned: CalendarActivity, completed: CalendarActivity }]
 }>()
 
 const dayNumber = computed(() => format(props.date, 'd'))
@@ -255,10 +256,22 @@ function onDrop(event: DragEvent, targetActivity: CalendarActivity) {
         
         if (sourceActivity.id === targetActivity.id) return
         
-        emit('merge-activity', {
-          source: sourceActivity,
-          target: targetActivity
-        })
+        // Case 1: Linking a planned workout to a completed workout
+        if (sourceActivity.source === 'planned' && targetActivity.source === 'completed') {
+          emit('link-activity', {
+            planned: sourceActivity,
+            completed: targetActivity
+          })
+          return
+        }
+
+        // Case 2: Merging two completed workouts
+        if (sourceActivity.source === 'completed' && targetActivity.source === 'completed') {
+          emit('merge-activity', {
+            source: sourceActivity,
+            target: targetActivity
+          })
+        }
       } catch (e) {
         console.error('Error parsing drop data', e)
       }
