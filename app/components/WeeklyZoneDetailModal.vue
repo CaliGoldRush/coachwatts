@@ -103,14 +103,21 @@ const isOpen = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
-// Zone colors
+// Zone colors expanded to support up to 8 zones
 const zoneColors = [
   'rgb(34, 197, 94)',    // Z1 - Green
   'rgb(59, 130, 246)',   // Z2 - Blue
   'rgb(245, 158, 11)',   // Z3 - Yellow
   'rgb(249, 115, 22)',   // Z4 - Orange
   'rgb(239, 68, 68)',    // Z5 - Red
+  'rgb(124, 58, 237)',   // Z6 - Violet
+  'rgb(168, 85, 247)',   // Z7 - Purple
+  'rgb(236, 72, 153)',   // Z8 - Pink
 ]
+
+function getZoneColor(index: number): string {
+  return zoneColors[index] || '#999999'
+}
 
 const aggregatedZones = ref<number[]>([])
 const zoneType = ref<'hr' | 'power'>('hr')
@@ -130,7 +137,7 @@ const zoneBreakdown = computed(() => {
       name: zone.name,
       time: timeInZone,
       percentage: total > 0 ? (timeInZone / total) * 100 : 0,
-      color: zoneColors[index] || '#999999'
+      color: getZoneColor(index)
     }
   }).filter((z: any) => z.time > 0)
 })
@@ -194,8 +201,8 @@ async function fetchZoneData() {
     }
     
     // Aggregate zone data
-    const hrZoneTimes = new Array(5).fill(0)
-    const powerZoneTimes = new Array(5).fill(0)
+    const hrZoneTimes = new Array(8).fill(0)
+    const powerZoneTimes = new Array(8).fill(0)
     let hasHrData = false
     let hasPowerData = false
     
@@ -208,7 +215,7 @@ async function fetchZoneData() {
         stream.heartrate.forEach((hr: number) => {
           if (hr === null || hr === undefined) return
           const zoneIndex = getZoneIndex(hr, props.userZones.hrZones)
-          if (zoneIndex >= 0) hrZoneTimes[zoneIndex]++
+          if (zoneIndex >= 0 && zoneIndex < 8) hrZoneTimes[zoneIndex]++
         })
       }
       
@@ -218,7 +225,7 @@ async function fetchZoneData() {
         stream.watts.forEach((watts: number) => {
           if (watts === null || watts === undefined) return
           const zoneIndex = getZoneIndex(watts, props.userZones.powerZones)
-          if (zoneIndex >= 0) powerZoneTimes[zoneIndex]++
+          if (zoneIndex >= 0 && zoneIndex < 8) powerZoneTimes[zoneIndex]++
         })
       }
     })

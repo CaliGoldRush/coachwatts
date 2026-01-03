@@ -159,13 +159,16 @@ const streamData = ref<any>(null)
 const userZones = ref<any>(null)
 const selectedZoneType = ref<'hr' | 'power'>('hr')
 
-// Default zone colors (from Z1 to Z5+)
+// Default zone colors (from Z1 to Z8) - expanded to support up to 8 zones
 const zoneColors = [
   'rgb(34, 197, 94)',    // Z1 - Green (Recovery)
   'rgb(59, 130, 246)',   // Z2 - Blue (Endurance)
   'rgb(245, 158, 11)',   // Z3 - Yellow (Tempo)
   'rgb(249, 115, 22)',   // Z4 - Orange (Threshold)
   'rgb(239, 68, 68)',    // Z5 - Red (Anaerobic/VO2 Max)
+  'rgb(124, 58, 237)',   // Z6 - Violet (Anaerobic Capacity)
+  'rgb(168, 85, 247)',   // Z7 - Purple (Neuromuscular)
+  'rgb(236, 72, 153)',   // Z8 - Pink (Extra)
 ]
 
 function getZoneColor(index: number): string {
@@ -335,7 +338,7 @@ const chartData = computed(() => {
     datasets: currentZones.value.map((zone: any, index: number) => ({
       label: zone.name,
       data: zoneData[index],
-      backgroundColor: zoneColors[index],
+      backgroundColor: getZoneColor(index),
       borderWidth: 0,
       barThickness: 'flex',
       maxBarThickness: 10
@@ -502,11 +505,13 @@ async function fetchData() {
 
 function getDefaultHrZones() {
   return [
-    { name: 'Z1 Recovery', min: 60, max: 120 },
-    { name: 'Z2 Endurance', min: 121, max: 145 },
+    { name: 'Z1 Recovery', min: 0, max: 120 },
+    { name: 'Z2 Aerobic', min: 121, max: 145 },
     { name: 'Z3 Tempo', min: 146, max: 160 },
-    { name: 'Z4 Threshold', min: 161, max: 175 },
-    { name: 'Z5 Anaerobic', min: 176, max: 220 }
+    { name: 'Z4 SubThreshold', min: 161, max: 175 },
+    { name: 'Z5 SuperThreshold', min: 176, max: 185 },
+    { name: 'Z6 Aerobic Capacity', min: 186, max: 200 },
+    { name: 'Z7 Anaerobic', min: 201, max: 220 }
   ]
 }
 
@@ -515,8 +520,11 @@ function getDefaultPowerZones() {
     { name: 'Z1 Active Recovery', min: 0, max: 137 },
     { name: 'Z2 Endurance', min: 138, max: 187 },
     { name: 'Z3 Tempo', min: 188, max: 225 },
-    { name: 'Z4 Threshold', min: 226, max: 262 },
-    { name: 'Z5 VO2 Max', min: 263, max: 999 }
+    { name: 'SS Sweet Spot', min: 226, max: 240 },
+    { name: 'Z4 Threshold', min: 241, max: 262 },
+    { name: 'Z5 VO2 Max', min: 263, max: 300 },
+    { name: 'Z6 Anaerobic', min: 301, max: 400 },
+    { name: 'Z7 Neuromuscular', min: 401, max: 999 }
   ]
 }
 
