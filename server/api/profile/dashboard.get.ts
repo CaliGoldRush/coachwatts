@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
         ftp: true,
         weight: true,
         maxHr: true,
+        restingHr: true,
         lthr: true,
         dob: true,
         hrZones: true
@@ -203,6 +204,8 @@ export default defineEventHandler(async (event) => {
     const missingFields: string[] = []
     if (!user.ftp) missingFields.push('Functional Threshold Power (FTP)')
     if (!user.weight) missingFields.push('Weight')
+    if (!user.maxHr || !user.restingHr) missingFields.push('Heart Rate Settings (HRR)')
+    if (!user.hrZones) missingFields.push('Custom Zones')
     
     const response = {
       connected: true,
