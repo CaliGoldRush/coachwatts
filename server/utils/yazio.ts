@@ -87,7 +87,7 @@ export function normalizeYazioData(
   date: string
 ) {
   // Parse date string to create Date object at midnight UTC
-  const [year, month, day] = date.split('-').map(Number)
+  const [year = 0, month = 1, day = 1] = date.split('-').map(Number)
   const dateObj = new Date(Date.UTC(year, month - 1, day))
   
   // Group items by meal time
@@ -127,9 +127,9 @@ export function normalizeYazioData(
     }
     
     if (mealGroups[mealTime]) {
-      mealGroups[mealTime].push(enrichedItem)
+      mealGroups[mealTime]!.push(enrichedItem)
     } else {
-      mealGroups.snacks.push(enrichedItem)
+      mealGroups.snacks!.push(enrichedItem)
     }
   }
   
@@ -166,9 +166,9 @@ export function normalizeYazioData(
     }
     
     if (mealGroups[mealTime]) {
-      mealGroups[mealTime].push(transformedItem)
+      mealGroups[mealTime]!.push(transformedItem)
     } else {
-      mealGroups.snacks.push(transformedItem)
+      mealGroups.snacks!.push(transformedItem)
     }
   }
   
@@ -218,10 +218,10 @@ export function normalizeYazioData(
     proteinGoal: summary.goals?.['nutrient.protein'] || null,
     carbsGoal: summary.goals?.['nutrient.carb'] || null,
     fatGoal: summary.goals?.['nutrient.fat'] || null,
-    breakfast: mealGroups.breakfast.length > 0 ? mealGroups.breakfast : null,
-    lunch: mealGroups.lunch.length > 0 ? mealGroups.lunch : null,
-    dinner: mealGroups.dinner.length > 0 ? mealGroups.dinner : null,
-    snacks: mealGroups.snacks.length > 0 ? mealGroups.snacks : null,
+    breakfast: mealGroups.breakfast!.length > 0 ? mealGroups.breakfast : null,
+    lunch: mealGroups.lunch!.length > 0 ? mealGroups.lunch : null,
+    dinner: mealGroups.dinner!.length > 0 ? mealGroups.dinner : null,
+    snacks: mealGroups.snacks!.length > 0 ? mealGroups.snacks : null,
     rawJson: { summary, items }
   }
   

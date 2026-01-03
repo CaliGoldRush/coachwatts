@@ -30,7 +30,10 @@ export const altitudeService = {
     
     // Calculate median to avoid GPS spikes
     startSegment.sort((a, b) => a - b)
-    const medianAltitude = Math.round(startSegment[Math.floor(startSegment.length / 2)])
+    const medianValue = startSegment[Math.floor(startSegment.length / 2)]
+    if (medianValue === undefined || medianValue === null) return
+    
+    const medianAltitude = Math.round(medianValue)
 
     // Get current setting
     const user = await userRepository.getById(userId) as any // Casting until schema update

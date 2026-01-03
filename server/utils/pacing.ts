@@ -19,24 +19,26 @@ export function calculateLapSplits(
     const distance = distanceData[i]
     const time = timeData[i]
     
-    if (distance >= currentLap * lapDistance) {
-      const lapTime = time - lastLapTime
-      const lapDist = distance - lastLapDistance
-      const paceSeconds = (lapTime / lapDist) * 1000 // seconds per 1000m
-      const paceMinutes = Math.floor(paceSeconds / 60)
-      const paceRemainingSeconds = Math.round(paceSeconds % 60)
-      
-      splits.push({
-        lap: currentLap,
-        distance: Math.round(lapDist),
-        time: Math.round(lapTime),
-        pace: `${paceMinutes}:${paceRemainingSeconds.toString().padStart(2, '0')}/km`,
-        paceSeconds: Math.round(paceSeconds)
-      })
-      
-      lastLapDistance = distance
-      lastLapTime = time
-      currentLap++
+    if (distance !== undefined && time !== undefined) {
+      if (distance >= currentLap * lapDistance) {
+        const lapTime = time - lastLapTime
+        const lapDist = distance - lastLapDistance
+        const paceSeconds = (lapTime / lapDist) * 1000 // seconds per 1000m
+        const paceMinutes = Math.floor(paceSeconds / 60)
+        const paceRemainingSeconds = Math.round(paceSeconds % 60)
+        
+        splits.push({
+          lap: currentLap,
+          distance: Math.round(lapDist),
+          time: Math.round(lapTime),
+          pace: `${paceMinutes}:${paceRemainingSeconds.toString().padStart(2, '0')}/km`,
+          paceSeconds: Math.round(paceSeconds)
+        })
+        
+        lastLapDistance = distance
+        lastLapTime = time
+        currentLap++
+      }
     }
   }
   
@@ -44,21 +46,24 @@ export function calculateLapSplits(
   if (distanceData.length > 0) {
     const finalDistance = distanceData[distanceData.length - 1]
     const finalTime = timeData[timeData.length - 1]
-    const remainingDistance = finalDistance - lastLapDistance
     
-    if (remainingDistance > 100) { // Only add if > 100m remaining
-      const lapTime = finalTime - lastLapTime
-      const paceSeconds = (lapTime / remainingDistance) * 1000
-      const paceMinutes = Math.floor(paceSeconds / 60)
-      const paceRemainingSeconds = Math.round(paceSeconds % 60)
+    if (finalDistance !== undefined && finalTime !== undefined) {
+      const remainingDistance = finalDistance - lastLapDistance
       
-      splits.push({
-        lap: currentLap,
-        distance: Math.round(remainingDistance),
-        time: Math.round(lapTime),
-        pace: `${paceMinutes}:${paceRemainingSeconds.toString().padStart(2, '0')}/km`,
-        paceSeconds: Math.round(paceSeconds)
-      })
+      if (remainingDistance > 100) { // Only add if > 100m remaining
+        const lapTime = finalTime - lastLapTime
+        const paceSeconds = (lapTime / remainingDistance) * 1000
+        const paceMinutes = Math.floor(paceSeconds / 60)
+        const paceRemainingSeconds = Math.round(paceSeconds % 60)
+        
+        splits.push({
+          lap: currentLap,
+          distance: Math.round(remainingDistance),
+          time: Math.round(lapTime),
+          pace: `${paceMinutes}:${paceRemainingSeconds.toString().padStart(2, '0')}/km`,
+          paceSeconds: Math.round(paceSeconds)
+        })
+      }
     }
   }
   
@@ -108,18 +113,26 @@ export function calculatePaceZones(
   
   for (let i = 1; i < velocityData.length; i++) {
     const velocity = velocityData[i]
-    const timeInterval = timeData[i] - timeData[i - 1]
-    
-    // Only count moving time
-    if (velocity > 0.5) {
-      totalMovingTime += timeInterval
+    const currentTime = timeData[i]
+    const prevTime = timeData[i - 1]
+
+    if (velocity !== undefined && currentTime !== undefined && prevTime !== undefined) {
+      const timeInterval = currentTime - prevTime
       
-      for (let j = 0; j < zones.length; j++) {
-        if (velocity >= zones[j].min && velocity <= zones[j].max) {
-          timeInZones[j].timeInZone += timeInterval
-          break
-        }
-      }
+      // Only count moving time
+      if (velocity > 0.5) {
+        totalMovingTime += timeInterval
+        
+              for (let j = 0; j < zones.length; j++) {
+                const zone = zones[j]
+                if (zone && velocity >= zone.min && velocity <= zone.max) {
+                  const targetZone = timeInZones[j]
+                  if (targetZone) {
+                    targetZone.timeInZone += timeInterval
+                  }
+                  break
+                }
+              }      }
     }
   }
   
@@ -235,17 +248,21 @@ export function detectSurges(
   for (let i = 10; i < velocityData.length - 10; i++) {
     const prevVelocity = velocityData[i - 5]
     const currentVelocity = velocityData[i]
-    const velocityIncrease = currentVelocity - prevVelocity
+    const currentTime = timeData[i]
     
-    if (velocityIncrease > threshold && currentVelocity > 2.0) { // Must be moving
-      surges.push({
-        time: Math.round(timeData[i]),
-        velocityBefore: Math.round(prevVelocity * 100) / 100,
-        velocityAfter: Math.round(currentVelocity * 100) / 100,
-        increase: Math.round(velocityIncrease * 100) / 100
-      })
+    if (prevVelocity !== undefined && currentVelocity !== undefined && currentTime !== undefined) {
+      const velocityIncrease = currentVelocity - prevVelocity
       
-      i += 20 // Skip ahead to avoid duplicate detections
+      if (velocityIncrease > threshold && currentVelocity > 2.0) { // Must be moving
+        surges.push({
+          time: Math.round(currentTime),
+          velocityBefore: Math.round(prevVelocity * 100) / 100,
+          velocityAfter: Math.round(currentVelocity * 100) / 100,
+          increase: Math.round(velocityIncrease * 100) / 100
+        })
+        
+        i += 20 // Skip ahead to avoid duplicate detections
+      }
     }
   }
   

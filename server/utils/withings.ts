@@ -457,8 +457,8 @@ export async function fetchWithingsWorkouts(
   const url = new URL('https://wbsapi.withings.net/v2/measure')
   url.searchParams.set('action', 'getworkouts')
   url.searchParams.set('access_token', validIntegration.accessToken)
-  url.searchParams.set('startdateymd', startDate.toISOString().split('T')[0])
-  url.searchParams.set('enddateymd', endDate.toISOString().split('T')[0])
+  url.searchParams.set('startdateymd', startDate.toISOString().split('T')[0] ?? '')
+  url.searchParams.set('enddateymd', endDate.toISOString().split('T')[0] ?? '')
   url.searchParams.set('data_fields', 'steps,distance,elevation,calories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3,manual_calories,algo_pause_duration')
   
   console.log('[Withings] Fetching workouts:', {
@@ -657,8 +657,8 @@ export async function fetchWithingsSleep(
   const url = new URL('https://wbsapi.withings.net/v2/sleep')
   url.searchParams.set('action', 'getsummary')
   url.searchParams.set('access_token', validIntegration.accessToken)
-  url.searchParams.set('startdateymd', startDate.toISOString().split('T')[0])
-  url.searchParams.set('enddateymd', endDate.toISOString().split('T')[0])
+  url.searchParams.set('startdateymd', startDate.toISOString().split('T')[0] ?? '')
+  url.searchParams.set('enddateymd', endDate.toISOString().split('T')[0] ?? '')
   // Request all useful fields
   url.searchParams.set('data_fields', 'total_timeinbed,total_sleep_time,asleepduration,lightsleepduration,remsleepduration,deepsleepduration,sleep_efficiency,sleep_latency,wakeup_latency,wakeupduration,wakeupcount,waso,nb_rem_episodes,out_of_bed_count,hr_average,hr_min,hr_max,rr_average,rr_min,rr_max,breathing_quality_assessment,breathing_disturbances_intensity,snoring,snoringepisodecount,sleep_score,apnea_hypopnea_index')
   

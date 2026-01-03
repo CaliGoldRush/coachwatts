@@ -313,8 +313,11 @@ export async function fetchIntervalsPlannedWorkouts(
   const athleteId = integration.externalUserId || 'i0'
   
   const url = new URL(`https://intervals.icu/api/v1/athlete/${athleteId}/events`)
-  url.searchParams.set('oldest', startDate.toISOString().split('T')[0])
-  url.searchParams.set('newest', endDate.toISOString().split('T')[0])
+  const oldestStr = startDate.toISOString().split('T')[0]
+  const newestStr = endDate.toISOString().split('T')[0]
+  
+  if (oldestStr) url.searchParams.set('oldest', oldestStr)
+  if (newestStr) url.searchParams.set('newest', newestStr)
   
   const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
     
@@ -339,8 +342,11 @@ export async function fetchIntervalsWorkouts(
   const athleteId = integration.externalUserId || 'i0' // i0 means "current authenticated user"
   
   const url = new URL(`https://intervals.icu/api/v1/athlete/${athleteId}/activities`)
-  url.searchParams.set('oldest', startDate.toISOString().split('T')[0])
-  url.searchParams.set('newest', endDate.toISOString().split('T')[0])
+  const oldestStr = startDate.toISOString().split('T')[0]
+  const newestStr = endDate.toISOString().split('T')[0]
+  
+  if (oldestStr) url.searchParams.set('oldest', oldestStr)
+  if (newestStr) url.searchParams.set('newest', newestStr)
   
   // Intervals.icu API expects Basic Auth with "API_KEY" as username and the API key as password
   const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')

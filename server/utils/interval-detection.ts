@@ -68,7 +68,10 @@ export function detectIntervals(
   const candidates: { start: number; end: number }[] = []
   
   for (let i = 0; i < smoothed.length; i++) {
-    const isWork = smoothed[i] >= workThreshold
+    const smoothedValue = smoothed[i]
+    if (smoothedValue === undefined) continue
+    
+    const isWork = smoothedValue >= workThreshold
     
     if (isWork && !inInterval) {
       // Start of potential interval
@@ -77,17 +80,24 @@ export function detectIntervals(
     } else if (!isWork && inInterval) {
       // End of potential interval
       inInterval = false
-      const duration = times[i] - times[startIndex]
+      const currentTime = times[i]
+      const startTime = times[startIndex]
       
-      if (duration >= minDuration) {
-        candidates.push({ start: startIndex, end: i })
+      if (currentTime !== undefined && startTime !== undefined) {
+        const duration = currentTime - startTime
+      
+        if (duration >= minDuration) {
+          candidates.push({ start: startIndex, end: i })
+        }
       }
     }
   }
   
   // Handle case where workout ends during an interval
-  if (inInterval) {
-    const duration = times[times.length - 1] - times[startIndex]
+  const lastTime = times[times.length - 1]
+  const startTime = times[startIndex]
+  if (inInterval && lastTime !== undefined && startTime !== undefined) {
+    const duration = lastTime - startTime
     if (duration >= minDuration) {
       candidates.push({ start: startIndex, end: times.length - 1 })
     }
@@ -95,22 +105,32 @@ export function detectIntervals(
   
   // Second pass: Merge close intervals
   const merged: { start: number; end: number }[] = []
-  if (candidates.length > 0) {
+  if (candidates.length > 0 && candidates[0]) {
     let current = candidates[0]
     
     for (let i = 1; i < candidates.length; i++) {
       const next = candidates[i]
-      const gap = times[next.start] - times[current.end]
+      if (!next) continue
       
-      if (gap < minRecovery) {
-        // Merge
-        current.end = next.end
+      const tNextStart = times[next.start]
+      const tCurrentEnd = times[current.end]
+      
+      if (tNextStart !== undefined && tCurrentEnd !== undefined) {
+        const gap = tNextStart - tCurrentEnd
+        
+        if (gap < minRecovery) {
+          // Merge
+          current.end = next.end
+        } else {
+          merged.push(current)
+          current = next
+        }
       } else {
-        merged.push(current)
-        current = next
+          merged.push(current)
+          current = next
       }
     }
-    merged.push(current)
+    if (current) merged.push(current)
   }
   
   // Third pass: Classify and calculate stats
@@ -123,17 +143,21 @@ export function detectIntervals(
     // Add recovery/warmup segment before this work interval
     if (candidate.start > lastEndIndex) {
       const type = index === 0 ? 'WARMUP' : 'RECOVERY'
-      intervals.push(createIntervalObj(times, values, lastEndIndex, candidate.start, type, threshold, metricType))
+      if (times[lastEndIndex] !== undefined && times[candidate.start] !== undefined) {
+          intervals.push(createIntervalObj(times, values, lastEndIndex, candidate.start, type, threshold, metricType))
+      }
     }
     
     // Add the work interval
-    intervals.push(createIntervalObj(times, values, candidate.start, candidate.end, 'WORK', threshold, metricType))
+    if (times[candidate.start] !== undefined && times[candidate.end] !== undefined) {
+        intervals.push(createIntervalObj(times, values, candidate.start, candidate.end, 'WORK', threshold, metricType))
+    }
     
     lastEndIndex = candidate.end
   })
   
   // Add cooldown if there's data after the last interval
-  if (lastEndIndex < times.length - 1) {
+  if (lastEndIndex < times.length - 1 && times[lastEndIndex] !== undefined && times[times.length - 1] !== undefined) {
     intervals.push(createIntervalObj(times, values, lastEndIndex, times.length - 1, 'COOLDOWN', threshold, metricType))
   }
   
@@ -166,7 +190,8 @@ export function findPeakEfforts(
   // Since we need max average, a simple sliding window is O(N) per duration.
   
   for (const dur of durations) {
-    if (times[times.length - 1] < dur.sec) continue
+    const lastTime = times[times.length - 1]
+    if (lastTime === undefined || lastTime < dur.sec) continue
     
     // Find approximate number of data points for this duration
     // Assuming 1Hz sampling for simplicity, or we check timestamps
@@ -180,37 +205,54 @@ export function findPeakEfforts(
     let startPtr = 0
     
     for (let endPtr = 0; endPtr < values.length; endPtr++) {
-      currentSum += values[endPtr]
+      const val = values[endPtr]
+      if (val !== undefined) currentSum += val
       
       // Shrink window from left until duration is approx correct
       // We want times[endPtr] - times[startPtr] approx dur.sec
       
-      while (times[endPtr] - times[startPtr] > dur.sec) {
-        currentSum -= values[startPtr]
-        startPtr++
+      while (times[endPtr] !== undefined && times[startPtr] !== undefined) {
+        const tEnd = times[endPtr]
+        const tStart = times[startPtr]
+        if (tEnd !== undefined && tStart !== undefined && (tEnd - tStart > dur.sec)) {
+          const startVal = values[startPtr]
+          if (startVal !== undefined) currentSum -= startVal
+          startPtr++
+        } else {
+          break
+        }
       }
       
       // Check if window is valid duration (close enough)
-      const windowDuration = times[endPtr] - times[startPtr]
-      if (windowDuration >= dur.sec * 0.95) { // Allow slight tolerance
-        const avg = currentSum / (endPtr - startPtr + 1)
-        if (avg > maxSum) {
-          maxSum = avg
-          bestStartIdx = startPtr
-          bestEndIdx = endPtr
-        }
+      const tEnd = times[endPtr]
+      const tStart = times[startPtr]
+      
+      if (tEnd !== undefined && tStart !== undefined) {
+          const windowDuration = tEnd - tStart
+          if (windowDuration >= dur.sec * 0.95) { // Allow slight tolerance
+            const avg = currentSum / (endPtr - startPtr + 1)
+            if (avg > maxSum) {
+              maxSum = avg
+              bestStartIdx = startPtr
+              bestEndIdx = endPtr
+            }
+          }
       }
     }
     
-    if (bestStartIdx !== -1) {
-      peaks.push({
-        duration: dur.sec,
-        duration_label: dur.label,
-        start_time: times[bestStartIdx],
-        end_time: times[bestEndIdx],
-        value: Math.round(maxSum),
-        metric
-      })
+    if (bestStartIdx !== -1 && bestEndIdx !== -1) {
+      const startTimeValue = times[bestStartIdx]
+      const endTimeValue = times[bestEndIdx]
+      if (startTimeValue !== undefined && endTimeValue !== undefined) {
+        peaks.push({
+          duration: dur.sec,
+          duration_label: dur.label,
+          start_time: startTimeValue,
+          end_time: endTimeValue,
+          value: Math.round(maxSum),
+          metric
+        })
+      }
     }
   }
   
@@ -226,7 +268,7 @@ function smoothData(data: number[], windowSize: number): number[] {
     const start = Math.max(0, i - Math.floor(windowSize / 2))
     const end = Math.min(data.length, i + Math.ceil(windowSize / 2))
     const subset = data.slice(start, end)
-    const avg = subset.reduce((a, b) => a + b, 0) / subset.length
+    const avg = subset.reduce((a, b) => a + (b || 0), 0) / subset.length
     result.push(avg)
   }
   return result
@@ -236,7 +278,8 @@ function calculateBaseline(data: number[]): number {
   // Simple baseline: Median or Mean of non-zero values
   const nonZeros = data.filter(v => v > 0).sort((a, b) => a - b)
   if (nonZeros.length === 0) return 0
-  return nonZeros[Math.floor(nonZeros.length / 2)] // Median
+  const median = nonZeros[Math.floor(nonZeros.length / 2)]
+  return median !== undefined ? median : 0
 }
 
 function createIntervalObj(
@@ -249,9 +292,9 @@ function createIntervalObj(
   metricType?: 'power' | 'heartrate' | 'pace'
 ): Interval {
   const segmentValues = values.slice(startIdx, endIdx + 1)
-  const sum = segmentValues.reduce((a, b) => a + b, 0)
+  const sum = segmentValues.reduce((a, b) => a + (b || 0), 0)
   const avg = sum / segmentValues.length
-  const max = Math.max(...segmentValues)
+  const max = Math.max(...segmentValues.map(v => v || 0))
   
   let intensity_zone: number | undefined
 
@@ -262,7 +305,7 @@ function createIntervalObj(
        if (zone) {
          // Extract zone number from name "Z2 Endurance" -> 2
          const match = zone.name.match(/^Z(\d+)/)
-         if (match) intensity_zone = parseInt(match[1])
+         if (match && match[1]) intensity_zone = parseInt(match[1])
        }
     } else if (metricType === 'heartrate') {
        // Estimate maxHR roughly if threshold is LTHR
@@ -275,12 +318,15 @@ function createIntervalObj(
     }
   }
 
+  const startTimeValue = times[startIdx] || 0
+  const endTimeValue = times[endIdx] || 0
+
   return {
     start_index: startIdx,
     end_index: endIdx,
-    start_time: times[startIdx],
-    end_time: times[endIdx],
-    duration: times[endIdx] - times[startIdx],
+    start_time: startTimeValue,
+    end_time: endTimeValue,
+    duration: endTimeValue - startTimeValue,
     avg_power: avg, // Assumes 'values' is power/metric
     max_power: max,
     type,
@@ -305,8 +351,9 @@ export function calculateHeartRateRecovery(
   let maxIdx = -1
   
   for (let i = 0; i < hrValues.length; i++) {
-    if (hrValues[i] > maxHr) {
-      maxHr = hrValues[i]
+    const val = hrValues[i]
+    if (val !== undefined && val > maxHr) {
+      maxHr = val
       maxIdx = i
     }
   }
@@ -315,12 +362,15 @@ export function calculateHeartRateRecovery(
   
   // Look ahead 60 seconds (or closest available)
   const peakTime = times[maxIdx]
+  if (peakTime === undefined) return null
+
   const targetTime = peakTime + 60
   
   let recoveryIdx = -1
   
   for (let i = maxIdx; i < times.length; i++) {
-    if (times[i] >= targetTime) {
+    const currentTime = times[i]
+    if (currentTime !== undefined && currentTime >= targetTime) {
       recoveryIdx = i
       break
     }
@@ -333,11 +383,13 @@ export function calculateHeartRateRecovery(
   
   if (recoveryIdx !== -1) {
     const recoveryHr = hrValues[recoveryIdx]
-    return {
-      peakHr: maxHr,
-      peakTime,
-      recoveryHr,
-      drops: maxHr - recoveryHr
+    if (recoveryHr !== undefined) {
+      return {
+        peakHr: maxHr,
+        peakTime,
+        recoveryHr,
+        drops: maxHr - recoveryHr
+      }
     }
   }
   
@@ -362,8 +414,10 @@ export function calculateAerobicDecoupling(
   // Filter out zeros and non-moving time (simplification: just zeros in power/hr)
   const validData: { p: number; h: number }[] = []
   for (let i = 0; i < powerValues.length; i++) {
-    if (powerValues[i] > 10 && hrValues[i] > 40) {
-      validData.push({ p: powerValues[i], h: hrValues[i] })
+    const p = powerValues[i]
+    const h = hrValues[i]
+    if (p !== undefined && h !== undefined && p > 10 && h > 40) {
+      validData.push({ p, h })
     }
   }
 
@@ -376,6 +430,7 @@ export function calculateAerobicDecoupling(
 
   // Calculate Efficiency Factor (EF) = AvgPower / AvgHR
   const getEF = (data: { p: number; h: number }[]) => {
+    if (data.length === 0) return 0
     const avgP = data.reduce((sum, d) => sum + d.p, 0) / data.length
     const avgH = data.reduce((sum, d) => sum + d.h, 0) / data.length
     return avgH > 0 ? avgP / avgH : 0
@@ -419,6 +474,8 @@ export function calculateCoastingStats(
     const c = cadenceValues ? cadenceValues[i] : 0
     const v = velocityValues ? velocityValues[i] : 5 // Assume moving if no velocity stream
     
+    if (p === undefined || c === undefined || v === undefined) continue
+
     // Check if moving but not pedaling
     // If cadence data exists, rely on it primarily. If not, use power < 10W.
     const isPedaling = cadenceValues ? c > minCadence : p > minPower
@@ -436,7 +493,9 @@ export function calculateCoastingStats(
     }
   }
 
-  const totalDuration = times[times.length - 1] - times[0]
+  const firstTime = times[0]
+  const lastTime = times[times.length - 1]
+  const totalDuration = (firstTime !== undefined && lastTime !== undefined) ? lastTime - firstTime : 0
   
   return {
     totalTime: coastingTime,
@@ -476,7 +535,10 @@ export function detectSurgesAndFades(
   const candidates: { start: number; end: number }[] = []
 
   for (let i = 0; i < powerValues.length; i++) {
-    if (powerValues[i] >= surgeThreshold) {
+    const p = powerValues[i]
+    if (p === undefined) continue
+
+    if (p >= surgeThreshold) {
       if (!inSurge) {
         inSurge = true
         startIndex = i
@@ -485,9 +547,14 @@ export function detectSurgesAndFades(
       if (inSurge) {
         inSurge = false
         // Check duration (assuming 1s intervals for simplicity, or use times)
-        const duration = times[i] - times[startIndex]
-        if (duration >= minSurgeDuration) {
-          candidates.push({ start: startIndex, end: i })
+        const tStart = times[startIndex]
+        const tCurrent = times[i]
+        
+        if (tStart !== undefined && tCurrent !== undefined) {
+            const duration = tCurrent - tStart
+            if (duration >= minSurgeDuration) {
+              candidates.push({ start: startIndex, end: i })
+            }
         }
       }
     }
@@ -495,9 +562,14 @@ export function detectSurgesAndFades(
 
   // Handle surge at end of workout
   if (inSurge) {
-     const duration = times[times.length - 1] - times[startIndex]
-     if (duration >= minSurgeDuration) {
-       candidates.push({ start: startIndex, end: times.length - 1 })
+     const tStart = times[startIndex]
+     const tLast = times[times.length - 1]
+     
+     if (tStart !== undefined && tLast !== undefined) {
+         const duration = tLast - tStart
+         if (duration >= minSurgeDuration) {
+           candidates.push({ start: startIndex, end: times.length - 1 })
+         }
      }
   }
 
@@ -506,8 +578,9 @@ export function detectSurgesAndFades(
 
   candidates.forEach(cand => {
     const segment = powerValues.slice(cand.start, cand.end + 1)
-    const avg = segment.reduce((a, b) => a + b, 0) / segment.length
-    const max = Math.max(...segment)
+    const sum = segment.reduce((a, b) => a + (b || 0), 0)
+    const avg = sum / segment.length
+    const max = Math.max(...segment.map(v => v || 0))
 
     // Calculate "Cost" - power in the recovery window
     // Look ahead 60s
@@ -516,19 +589,27 @@ export function detectSurgesAndFades(
     const recoveryEndIndex = Math.min(powerValues.length - 1, cand.end + recoveryWindow)
     
     for (let k = cand.end + 1; k <= recoveryEndIndex; k++) {
-      costSum += powerValues[k]
-      costCount++
+      const val = powerValues[k]
+      if (val !== undefined) {
+        costSum += val
+        costCount++
+      }
     }
     
     const costAvg = costCount > 0 ? costSum / costCount : 0
 
-    surges.push({
-      start_time: times[cand.start],
-      duration: times[cand.end] - times[cand.start],
-      avg_power: Math.round(avg),
-      max_power: Math.round(max),
-      cost_avg_power: Math.round(costAvg)
-    })
+    const tStart = times[cand.start]
+    const tEnd = times[cand.end]
+    
+    if (tStart !== undefined && tEnd !== undefined) {
+        surges.push({
+          start_time: tStart,
+          duration: tEnd - tStart,
+          avg_power: Math.round(avg),
+          max_power: Math.round(max),
+          cost_avg_power: Math.round(costAvg)
+        })
+    }
   })
 
   return surges
@@ -564,10 +645,13 @@ export function calculateRecoveryRateTrend(
     const peakHr = hrStream[endIdx]
     const endTime = times[endIdx]
 
+    if (peakHr === undefined || endTime === undefined) return
+
     const getHrAtOffset = (offset: number) => {
       const targetTime = endTime + offset
       for (let i = endIdx; i < times.length; i++) {
-        if (times[i] >= targetTime) return hrStream[i]
+        const t = times[i]
+        if (t !== undefined && t >= targetTime) return hrStream[i] || null
       }
       return null
     }
@@ -583,9 +667,9 @@ export function calculateRecoveryRateTrend(
       hr30s,
       hr60s,
       hr90s,
-      drop30s: hr30s ? peakHr - hr30s : null,
-      drop60s: hr60s ? peakHr - hr60s : null,
-      drop90s: hr90s ? peakHr - hr90s : null
+      drop30s: (hr30s !== null) ? peakHr - hr30s : null,
+      drop60s: (hr60s !== null) ? peakHr - hr60s : null,
+      drop90s: (hr90s !== null) ? peakHr - hr90s : null
     })
   })
 

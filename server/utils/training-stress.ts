@@ -157,7 +157,7 @@ export async function calculatePMCForDateRange(
   // Map date string (YYYY-MM-DD) to daily TSS sum
   const dailyTSS = new Map<string, number>()
   for (const workout of workouts) {
-    const dateKey = workout.date.toISOString().split('T')[0]
+    const dateKey = workout.date.toISOString().split('T')[0] ?? ''
     const tss = getStressScore(workout)
     dailyTSS.set(dateKey, (dailyTSS.get(dateKey) || 0) + tss)
   }
@@ -169,7 +169,7 @@ export async function calculatePMCForDateRange(
   // 1. Populate from Wellness (Highest Priority)
   for (const w of wellness) {
     if (w.ctl !== null && w.atl !== null) {
-      const dateKey = w.date.toISOString().split('T')[0]
+      const dateKey = w.date.toISOString().split('T')[0] ?? ''
       knownMetrics.set(dateKey, { ctl: w.ctl, atl: w.atl })
     }
   }
@@ -177,7 +177,7 @@ export async function calculatePMCForDateRange(
   // 2. Populate from Workouts (Fallback)
   for (const w of workouts) {
     // Only use if not already set by Wellness
-    const dateKey = w.date.toISOString().split('T')[0]
+    const dateKey = w.date.toISOString().split('T')[0] ?? ''
     if (!knownMetrics.has(dateKey) && w.ctl !== null && w.atl !== null) {
       knownMetrics.set(dateKey, { ctl: w.ctl!, atl: w.atl! })
     }
@@ -192,7 +192,7 @@ export async function calculatePMCForDateRange(
   endDateTime.setHours(23, 59, 59, 999)
 
   while (currentDate <= endDateTime) {
-    const dateKey = currentDate.toISOString().split('T')[0]
+    const dateKey = currentDate.toISOString().split('T')[0] ?? ''
     const tss = dailyTSS.get(dateKey) || 0
     
     // Check if we have a known "Truth" value for this day

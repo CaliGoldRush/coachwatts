@@ -1184,12 +1184,14 @@ async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
       weekStart.setDate(weekStart.getDate() - weekStart.getDay())
       const weekKey = weekStart.toISOString().split('T')[0]
 
-      if (!weeklyData[weekKey]) {
-        weeklyData[weekKey] = { duration_hours: 0, tss: 0, count: 0 }
+      if (weekKey) {
+        if (!weeklyData[weekKey]) {
+          weeklyData[weekKey] = { duration_hours: 0, tss: 0, count: 0 }
+        }
+        weeklyData[weekKey].duration_hours += w.durationSec / 3600
+        weeklyData[weekKey].tss += w.tss || 0
+        weeklyData[weekKey].count++
       }
-      weeklyData[weekKey].duration_hours += w.durationSec / 3600
-      weeklyData[weekKey].tss += w.tss || 0
-      weeklyData[weekKey].count++
     })
 
     response.weekly_training_hours = Object.entries(weeklyData)

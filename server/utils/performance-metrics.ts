@@ -63,8 +63,10 @@ export function calculateFatigueSensitivity(
 
   const efValues: number[] = []
   for (let i = 0; i < powerStream.length; i++) {
-    if (hrStream[i] > 40 && powerStream[i] > 10) {
-      efValues.push(powerStream[i] / hrStream[i])
+    const power = powerStream[i]!
+    const hr = hrStream[i]!
+    if (hr > 40 && power > 10) {
+      efValues.push(power / hr)
     }
   }
 
@@ -143,9 +145,9 @@ export function calculateWPrimeBalance(
 
   // Iterate through each data point
   for (let i = 0; i < powerStream.length; i++) {
-    const power = powerStream[i]
+    const power = powerStream[i]!
     // Default to 1 second interval if time stream is irregular or missing
-    const dt = i > 0 ? timeStream[i] - timeStream[i - 1] : 1
+    const dt = i > 0 ? (timeStream[i]! - timeStream[i - 1]!) : 1
     
     // Ensure positive time delta
     const interval = Math.max(0.1, dt)
@@ -204,8 +206,8 @@ export function calculateEfficiencyFactorDecay(
   
   // 1. Calculate raw EF for valid points
   for (let i = 0; i < powerStream.length; i++) {
-    const power = powerStream[i]
-    const hr = hrStream[i]
+    const power = powerStream[i]!
+    const hr = hrStream[i]!
     
     // Avoid division by zero and unrealistic HR values (e.g. < 40)
     if (hr > 40) {
@@ -228,8 +230,8 @@ export function calculateEfficiencyFactorDecay(
     const end = Math.min(rawEF.length, i + Math.floor(windowSize / 2))
     
     for (let j = start; j < end; j++) {
-      if (rawEF[j] > 0) {
-        sum += rawEF[j]
+      if (rawEF[j]! > 0) {
+        sum += rawEF[j]!
         count++
       }
     }
@@ -300,8 +302,8 @@ export function calculateQuadrantAnalysis(
   let totalValidSeconds = 0
 
   for (let i = 0; i < powerStream.length; i++) {
-    const power = powerStream[i]
-    const cadence = cadenceStream[i]
+    const power = powerStream[i]!
+    const cadence = cadenceStream[i]!
     
     // Ignore zeros/coasting for quadrant distribution?
     // Usually QA includes everything, but zeros skew Q3/Q4 massively.

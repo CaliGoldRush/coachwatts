@@ -112,7 +112,7 @@ export async function createPlannedWorkout(userId: string, args: any): Promise<a
     
     // Check if it's a specific hour (e.g., "6am", "14", "2pm")
     const hourMatch = timeStr.match(/(\d+)\s*(am|pm)?/)
-    if (hourMatch) {
+    if (hourMatch && hourMatch[1]) {
       let hour = parseInt(hourMatch[1])
       const meridiem = hourMatch[2]
       

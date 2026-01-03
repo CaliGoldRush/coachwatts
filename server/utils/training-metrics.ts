@@ -108,13 +108,13 @@ export function calculateTSS(workout: any): number {
  */
 function getZoneIndex(value: number, zones: Zone[]): number {
   for (let i = 0; i < zones.length; i++) {
-    if (value >= zones[i].min && value <= zones[i].max) {
+    if (value >= zones[i]!.min && value <= zones[i]!.max) {
       return i
     }
   }
   
   // If value is above all zones, put it in the highest zone
-  if (value > zones[zones.length - 1].max) {
+  if (value > zones[zones.length - 1]!.max) {
     return zones.length - 1
   }
   
@@ -171,7 +171,7 @@ export async function calculateZoneDistribution(
     } else if (stream.heartrate && Array.isArray(stream.heartrate)) {
       // Process HR zones from raw stream
       hasHrData = true
-      for (const hr of stream.heartrate as number[]) {
+      for (const hr of (stream.heartrate as number[] || [])) {
         if (hr === null || hr === undefined) continue
         const zoneIndex = getZoneIndex(hr, hrZones)
         if (zoneIndex >= 0) hrZoneTimes[zoneIndex]++
@@ -187,7 +187,7 @@ export async function calculateZoneDistribution(
         }
     } else if (stream.watts && Array.isArray(stream.watts)) {
       hasPowerData = true
-      for (const watts of stream.watts as number[]) {
+      for (const watts of (stream.watts as number[] || [])) {
         if (watts === null || watts === undefined) continue
         const zoneIndex = getZoneIndex(watts, powerZones)
         if (zoneIndex >= 0) powerZoneTimes[zoneIndex]++
@@ -258,7 +258,7 @@ export async function calculateLoadTrends(
   const trendMap = new Map<string, LoadTrend>()
   
   for (const w of wellness) {
-    const dateKey = w.date.toISOString().split('T')[0]
+    const dateKey = w.date.toISOString().split('T')[0] ?? ''
     trendMap.set(dateKey, {
       date: w.date,
       ctl: w.ctl,
@@ -268,7 +268,7 @@ export async function calculateLoadTrends(
   }
   
   for (const w of workouts) {
-    const dateKey = w.date.toISOString().split('T')[0]
+    const dateKey = w.date.toISOString().split('T')[0] ?? ''
     trendMap.set(dateKey, {
       date: w.date,
       ctl: w.ctl,
@@ -526,7 +526,7 @@ export async function generateTrainingContext(
   // Determine trend
   let trend: 'increasing' | 'stable' | 'decreasing' | 'unknown' = 'unknown'
   if (workouts.length >= 2) {
-    const oldCTL = workouts[workouts.length - 1].ctl
+    const oldCTL = workouts[workouts.length - 1]!.ctl
     if (currentCTL !== null && oldCTL !== null) {
       const diff = currentCTL - oldCTL
       if (diff > 5) trend = 'increasing'
@@ -618,11 +618,13 @@ export function formatTrainingContextForPrompt(context: TrainingContext): string
   
   // Intensity Distribution
   lines.push('### Intensity Distribution (by time)')
-  lines.push(`- Recovery (<70% IF): ${context.intensityDistribution.recovery.toFixed(1)}%`)
-  lines.push(`- Endurance (70-85% IF): ${context.intensityDistribution.endurance.toFixed(1)}%`)
-  lines.push(`- Tempo (85-95% IF): ${context.intensityDistribution.tempo.toFixed(1)}%`)
-  lines.push(`- Threshold (95-105% IF): ${context.intensityDistribution.threshold.toFixed(1)}%`)
-  lines.push(`- VO2 Max (>105% IF): ${context.intensityDistribution.vo2max.toFixed(1)}%`)
+  if (context.intensityDistribution) {
+    lines.push(`- Recovery (<70% IF): ${context.intensityDistribution.recovery.toFixed(1)}%`)
+    lines.push(`- Endurance (70-85% IF): ${context.intensityDistribution.endurance.toFixed(1)}%`)
+    lines.push(`- Tempo (85-95% IF): ${context.intensityDistribution.tempo.toFixed(1)}%`)
+    lines.push(`- Threshold (95-105% IF): ${context.intensityDistribution.threshold.toFixed(1)}%`)
+    lines.push(`- VO2 Max (>105% IF): ${context.intensityDistribution.vo2max.toFixed(1)}%`)
+  }
   lines.push('')
   
   // Zone Distribution (if available)
