@@ -161,10 +161,52 @@ export const generateStructuredWorkoutTask = task({
       }
     );
     
-    // Calculate total distance if available
+    // Calculate total metrics from steps
     let totalDistance = 0;
+    let totalDuration = 0;
+    let totalTSS = 0;
+
     if (structure.steps && Array.isArray(structure.steps)) {
-      totalDistance = structure.steps.reduce((sum: number, step: any) => sum + (step.distance || 0), 0);
+      structure.steps.forEach((step: any) => {
+        // Distance
+        totalDistance += (step.distance || 0);
+        
+        // Duration
+        const duration = step.durationSeconds || 0;
+        totalDuration += duration;
+        
+        // Estimate TSS
+        // TSS = (sec * IF^2) / 3600 * 100
+        let intensity = 0.5; // Default fallback
+        
+        if (step.power) {
+          if (typeof step.power.value === 'number') {
+            intensity = step.power.value;
+          } else if (step.power.range) {
+            intensity = (step.power.range.start + step.power.range.end) / 2;
+          }
+        } else if (step.heartRate) {
+          // HR intensity roughly proxies power intensity for TSS estimation
+          if (typeof step.heartRate.value === 'number') {
+            intensity = step.heartRate.value;
+          } else if (step.heartRate.range) {
+            intensity = (step.heartRate.range.start + step.heartRate.range.end) / 2;
+          }
+        } else {
+          // Infer from type
+          switch (step.type) {
+            case 'Warmup': intensity = 0.5; break;
+            case 'Cooldown': intensity = 0.4; break;
+            case 'Rest': intensity = 0.4; break;
+            case 'Active': intensity = 0.75; break; // Moderate default
+          }
+        }
+        
+        // Add step TSS
+        if (duration > 0) {
+          totalTSS += (duration * intensity * intensity) / 3600 * 100;
+        }
+      });
     }
 
     const updateData: any = {
@@ -173,6 +215,24 @@ export const generateStructuredWorkoutTask = task({
 
     if (totalDistance > 0) {
       updateData.distanceMeters = totalDistance;
+    }
+    
+    if (totalDuration > 0) {
+      updateData.durationSec = totalDuration;
+    }
+    
+    if (totalTSS > 0) {
+      updateData.tss = Math.round(totalTSS);
+    }
+    
+    // Calculate Intensity Factor (IF)
+    // IF = sqrt((36 * TSS) / duration)
+    if (totalTSS > 0 && totalDuration > 0) {
+      const calculatedIntensity = Math.sqrt((36 * totalTSS) / totalDuration);
+      // Ensure it's a reasonable number (e.g. 0.0 to 1.5)
+      if (!isNaN(calculatedIntensity) && calculatedIntensity > 0) {
+        updateData.workIntensity = parseFloat(calculatedIntensity.toFixed(2));
+      }
     }
 
     await (prisma as any).plannedWorkout.update({

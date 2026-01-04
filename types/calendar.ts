@@ -35,6 +35,13 @@ export interface CalendarActivity {
   plannedDuration?: number
   plannedDistance?: number
   plannedTss?: number
+  linkedPlannedWorkout?: {
+    id: string
+    title: string
+    duration?: number
+    tss?: number
+    type?: string
+  } | null
   
   // Training Load
   ctl?: number | null // Chronic Training Load (Fitness)
