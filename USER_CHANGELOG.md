@@ -1,3 +1,58 @@
+# 🚀 Coach Watts Update: v0.5.5 is Here!
+
+Hello Athletes and Coaches!
+
+We're thrilled to release our latest update, packed with powerful new features that bring unprecedented clarity to your training execution and data management. This release is all about making the connection between what you *plan* and what you *do* seamless and insightful!
+
+---
+
+## 🎯 Plan Your Success: New Coaching Insights
+
+We’ve introduced major features designed to help you analyze execution and keep your training on track:
+
+### 🌟 New Feature: Plan Adherence
+
+You can now instantly measure how well you followed your training prescription!
+
+*   **Execution Score:** See a clear percentage score showing how closely your completed workout matched the structure, duration, and intensity of your planned session.
+*   **Detailed Analysis:** Plan adherence scores are now visible in workout details and share pages, giving you and your coach deeper insights into your execution.
+
+### 🔗 Better Workout Linking
+
+We've made connecting your completed activity to your planned workout smoother than ever:
+
+*   **Drag-and-Drop Linking:** Associate a completed workout with your scheduled plan directly on the calendar using simple drag-and-drop. No more digging through menus!
+*   **Clear Calendar View:** Calendar entries and quick views now clearly display which planned workout a completed activity is linked to.
+*   **Unlink Option:** Made a mistake? You can now easily unlink a planned workout from its completed activity.
+
+### 📊 Data Management & Flexibility
+
+*   **Promote Primary Workout:** If you have duplicate activity data synced from different sources, you can now easily select and promote the best version to be your primary workout record.
+*   **Expanded Training Zones:** We now support up to Z7/Z8 zones, offering greater detail and flexibility for high-end intensity and interval analysis.
+
+---
+
+## ✅ Accuracy & Performance Improvements
+
+We’ve refined core calculations and processes to ensure your data is always reliable:
+
+*   **Smarter Stress Calculation:** We've made crucial improvements to the Training Stress Score (TSS) and training load estimation formulas for greater accuracy and reliability across all activities.
+*   **Enhanced Weekly Reports:** Your weekly reports now include more comprehensive data, including information about your active goals.
+*   **Robust Sharing:** Workout sharing links are now more secure and reliable thanks to backend refactoring.
+
+---
+
+## 🛠 Stability and Polish
+
+We squashed several small bugs and improved component stability for a better user experience:
+
+*   **UI Polish:** We resolved several visual glitches, color inconsistencies, and layout issues in workout quick views, modals, and badge displays across the app.
+*   **Better Data Tracking:** We improved internal tracking for missing important fields, like Heart Rate and Custom Zones, helping ensure better data completeness over time.
+
+Happy riding!
+
+— The Coach Watts Team 🚴‍♀️💨
+
 👋 Hello Athletes and Coaches!
 
 We've just pushed **v0.5.4**, bringing some powerful new visualizations and important data accuracy improvements to your training analysis. Dive into the details below!
