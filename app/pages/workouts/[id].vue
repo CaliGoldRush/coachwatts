@@ -645,7 +645,7 @@
 
           <!-- Duplicate Workout Section -->
           <div id="duplicates" class="scroll-mt-20"></div>
-          <div v-if="workout.isDuplicate || (workout.duplicates && workout.duplicates.length > 0)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div v-if="workout.isDuplicate || (workout.duplicates && workout.duplicates.length > 0) || workout.plannedWorkout" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Duplicate Management</h2>
             
             <!-- Case 1: This is a duplicate -->
@@ -732,6 +732,40 @@
                   </div>
                 </NuxtLink>
               </div>
+            </div>
+
+            <!-- Linked Planned Workout -->
+            <div v-if="workout.plannedWorkout" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+               <div class="flex items-start gap-3 mb-4">
+                <UIcon name="i-heroicons-calendar" class="w-6 h-6 text-primary-600 dark:text-primary-400 flex-shrink-0" />
+                <div>
+                  <h3 class="font-semibold text-gray-900 dark:text-white">Linked Planned Workout</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    This activity completed the following planned workout.
+                  </p>
+                </div>
+              </div>
+              
+              <NuxtLink
+                :to="`/workouts/planned/${workout.plannedWorkout.id}`"
+                class="block p-3 bg-primary-50 dark:bg-primary-900/10 rounded border border-primary-200 dark:border-primary-800 hover:border-primary-500 dark:hover:border-primary-500 transition-colors"
+              >
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-medium text-gray-900 dark:text-white">{{ workout.plannedWorkout.title }}</div>
+                    <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                      {{ formatDate(workout.plannedWorkout.date) }}
+                      <span v-if="workout.plannedWorkout.type" class="px-1.5 py-0 rounded bg-gray-100 dark:bg-gray-700 text-[10px]">
+                        {{ workout.plannedWorkout.type }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UBadge color="primary" variant="subtle" size="xs">Plan</UBadge>
+                    <UIcon name="i-heroicons-arrow-right" class="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              </NuxtLink>
             </div>
           </div>
        </div>

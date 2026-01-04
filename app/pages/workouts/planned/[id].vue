@@ -77,12 +77,12 @@
                   <span class="hidden sm:inline">•</span>
                   <div class="flex items-center gap-1 flex-shrink-0">
                     <UIcon name="i-heroicons-clock" class="w-4 h-4" />
-                    <span class="whitespace-nowrap">{{ formatDuration(workout.durationSec) }}</span>
+                    <span class="whitespace-nowrap">{{ formatDuration(displayDuration) }}</span>
                   </div>
                   <span class="hidden sm:inline">•</span>
                   <div class="flex items-center gap-1 flex-shrink-0">
                     <UIcon name="i-heroicons-bolt" class="w-4 h-4" />
-                    <span class="whitespace-nowrap">{{ Math.round(workout.tss) }} TSS</span>
+                    <span class="whitespace-nowrap">{{ Math.round(displayTss) }} TSS</span>
                   </div>
                   <span class="hidden sm:inline">•</span>
                   <UBadge :color="workout.completed ? 'success' : 'warning'" size="sm" class="whitespace-nowrap">
@@ -245,7 +245,7 @@
               <NuxtLink
                 v-for="completed in workout.completedWorkouts"
                 :key="completed.id"
-                :to="`/activities/${completed.id}`"
+                :to="`/workouts/${completed.id}`"
                 class="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary transition-colors"
               >
                 <div class="flex items-center justify-between">
@@ -283,7 +283,7 @@
                 </div>
                 <div>
                   <div class="text-xs text-muted">Planned Duration</div>
-                  <div class="text-2xl font-bold">{{ formatDuration(workout.durationSec) }}</div>
+                  <div class="text-2xl font-bold">{{ formatDuration(displayDuration) }}</div>
                 </div>
               </div>
             </div>
@@ -295,7 +295,7 @@
                 </div>
                 <div>
                   <div class="text-xs text-muted">Training Stress</div>
-                  <div class="text-2xl font-bold">{{ Math.round(workout.tss) }}</div>
+                  <div class="text-2xl font-bold">{{ Math.round(displayTss) }}</div>
                 </div>
               </div>
             </div>
@@ -586,6 +586,22 @@ const isLocalWorkout = computed(() => {
          (workout.value.externalId && (workout.value.externalId.startsWith('ai_gen_') || workout.value.externalId.startsWith('ai-gen-')))
 })
 
+const displayDuration = computed(() => {
+  if (workout.value?.durationSec) return workout.value.durationSec
+  // Fallback to structured workout total duration if available
+  if (workout.value?.structuredWorkout?.steps) {
+    return workout.value.structuredWorkout.steps.reduce((sum: number, step: any) => sum + (step.durationSeconds || 0), 0)
+  }
+  return 0
+})
+
+const displayTss = computed(() => {
+  if (workout.value?.tss) return workout.value.tss
+  // TSS calculation from structure is complex without user FTP, so we might just leave it 0 or try to estimate
+  // For now, just return 0 if null
+  return 0
+})
+
 async function publishWorkout() {
   if (!workout.value?.id) return
   
@@ -870,7 +886,8 @@ function formatDate(d: string | Date) {
   })
 }
 
-function formatDuration(seconds: number) {
+function formatDuration(seconds: number | null | undefined) {
+  if (!seconds) return '0m'
   const hours = Math.floor(seconds / 3600)
   const mins = Math.floor((seconds % 3600) / 60)
 
