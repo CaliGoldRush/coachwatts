@@ -156,6 +156,20 @@
                 <span class="ml-0.5">Planned</span>
               </UBadge>
             </div>
+
+            <!-- Linked Planned Workout Details -->
+            <div v-if="activity.linkedPlannedWorkout" class="mt-1.5 ml-2 pl-2 border-l-2 border-primary-200 dark:border-primary-800 space-y-0.5 opacity-80">
+              <div class="flex items-center gap-1">
+                <UIcon name="i-heroicons-link" class="w-2.5 h-2.5 text-primary-500 shrink-0" />
+                <div class="text-[10px] text-primary-700 dark:text-primary-300 truncate italic font-medium">
+                  {{ activity.linkedPlannedWorkout?.title }}
+                </div>
+              </div>
+              <div class="text-[9px] text-gray-400 dark:text-gray-500 pl-3.5">
+                <span v-if="activity.linkedPlannedWorkout?.duration">{{ formatDuration(activity.linkedPlannedWorkout?.duration) }}</span>
+                <span v-if="activity.linkedPlannedWorkout?.tss"> • {{ Math.round(activity.linkedPlannedWorkout?.tss || 0) }} TSS</span>
+              </div>
+            </div>
             
             <!-- Mini Zone Chart -->
             <div v-if="activity.source === 'completed'" class="mt-1.5">
@@ -292,7 +306,9 @@ const dayWellness = computed(() => {
   return activityWithWellness?.wellness || null
 })
 
-function formatDuration(seconds: number): string {
+function formatDuration(seconds: number | undefined | null): string {
+  if (typeof seconds !== 'number' || isNaN(seconds)) return ''
+  
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   

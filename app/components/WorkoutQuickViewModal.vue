@@ -42,12 +42,84 @@
           </p>
         </div>
 
-        <!-- Planned Workout Badge -->
-        <div v-if="workout.plannedWorkoutId" class="flex items-center gap-2">
-          <UBadge color="primary" variant="subtle">
-            <UIcon name="i-heroicons-calendar" class="w-4 h-4" />
-            <span class="ml-1">Completed from Plan</span>
-          </UBadge>
+        <!-- Planned Workout Badge & Details -->
+        <div v-if="workout.plannedWorkout" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-100 dark:border-blue-800 relative group">
+          <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <UButton
+              color="gray"
+              variant="ghost"
+              size="xs"
+              icon="i-heroicons-link-slash"
+              :loading="isUnlinking"
+              @click="unlinkWorkout"
+              title="Unlink from Plan"
+            />
+          </div>
+
+          <div class="flex items-center justify-between mb-3 pr-8">
+            <div class="flex items-center gap-2">
+              <UBadge color="primary" variant="subtle" size="xs">
+                <UIcon name="i-heroicons-calendar" class="w-3.5 h-3.5" />
+                <span class="ml-1">Completed from Plan</span>
+              </UBadge>
+              <div class="flex flex-col">
+                <NuxtLink 
+                  :to="`/workouts/planned/${workout.plannedWorkout.id}`"
+                  class="text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline flex items-center gap-1 group/link"
+                >
+                  {{ workout.plannedWorkout.title }}
+                  <UIcon name="i-heroicons-arrow-top-right-on-square" class="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                </NuxtLink>
+                <div class="flex gap-2 text-[10px] text-gray-500">
+                  <span>{{ formatDate(workout.plannedWorkout.date) }}</span>
+                  <span>•</span>
+                  <span>{{ workout.plannedWorkout.type || 'Workout' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Planned vs Actual Grid -->
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <!-- Headers -->
+            <div class="text-gray-500 font-medium">Metric</div>
+            <div class="text-gray-500 font-medium">Planned</div>
+            <div class="text-gray-500 font-medium">Actual</div>
+
+            <!-- Duration -->
+            <div class="text-gray-600 dark:text-gray-400">Duration</div>
+            <div>{{ workout.plannedWorkout.durationSec ? formatDuration(workout.plannedWorkout.durationSec) : '-' }}</div>
+            <div :class="getComplianceColor(workout.durationSec, workout.plannedWorkout.durationSec)">
+              {{ formatDuration(workout.durationSec) }}
+            </div>
+
+            <!-- Distance (if applicable) -->
+            <template v-if="workout.plannedWorkout.distanceMeters || workout.distanceMeters">
+              <div class="text-gray-600 dark:text-gray-400">Distance</div>
+              <div>{{ workout.plannedWorkout.distanceMeters ? `${(workout.plannedWorkout.distanceMeters / 1000).toFixed(1)} km` : '-' }}</div>
+              <div :class="getComplianceColor(workout.distanceMeters, workout.plannedWorkout.distanceMeters)">
+                {{ workout.distanceMeters ? `${(workout.distanceMeters / 1000).toFixed(1)} km` : '-' }}
+              </div>
+            </template>
+
+            <!-- TSS (if applicable) -->
+            <template v-if="workout.plannedWorkout.tss || workout.tss">
+              <div class="text-gray-600 dark:text-gray-400">TSS</div>
+              <div>{{ workout.plannedWorkout.tss ? Math.round(workout.plannedWorkout.tss) : '-' }}</div>
+              <div :class="getComplianceColor(workout.tss, workout.plannedWorkout.tss)">
+                {{ workout.tss ? Math.round(workout.tss) : '-' }}
+              </div>
+            </template>
+          </div>
+
+          <!-- Description & Structure (from Plan) -->
+          <div v-if="workout.plannedWorkout.description" class="mt-4 pt-4 border-t border-blue-100 dark:border-blue-800 space-y-4">
+            <!-- Description -->
+            <div>
+              <h4 class="font-semibold text-[10px] text-gray-500 dark:text-gray-400 uppercase mb-1">Plan Description</h4>
+              <p class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ workout.plannedWorkout.description }}</p>
+            </div>
+          </div>
         </div>
 
         <!-- Quick Stats -->
@@ -165,6 +237,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
   'deleted': [workoutId: string]
+  'updated': [workoutId: string]
 }>()
 
 const isOpen = computed({
@@ -173,11 +246,45 @@ const isOpen = computed({
 })
 
 const isDeleting = ref(false)
+const isUnlinking = ref(false)
 const showDeleteConfirm = ref(false)
 const toast = useToast()
 
 function closeModal() {
   isOpen.value = false
+}
+
+async function unlinkWorkout() {
+  if (!props.workout?.id) return
+  
+  if (!confirm('Are you sure you want to unlink this workout from the plan? The planned workout will be marked as pending.')) {
+    return
+  }
+
+  isUnlinking.value = true
+  try {
+    await $fetch(`/api/workouts/${props.workout.id}/unlink`, {
+      method: 'POST'
+    })
+    
+    toast.add({
+      title: 'Unlinked',
+      description: 'Workout unlinked from plan',
+      color: 'success'
+    })
+    
+    emit('updated', props.workout.id)
+    closeModal()
+  } catch (error) {
+    console.error('Failed to unlink workout:', error)
+    toast.add({
+      title: 'Error',
+      description: 'Failed to unlink workout',
+      color: 'error'
+    })
+  } finally {
+    isUnlinking.value = false
+  }
 }
 
 async function deleteWorkout() {
@@ -240,5 +347,13 @@ function getActivityIcon(type: string) {
   if (t.includes('swim')) return 'i-heroicons-beaker'
   if (t.includes('weight') || t.includes('strength')) return 'i-heroicons-trophy'
   return 'i-heroicons-check-circle'
+}
+
+function getComplianceColor(actual: number | null | undefined, planned: number | null | undefined) {
+  if (!actual || !planned) return ''
+  const ratio = actual / planned
+  if (ratio >= 0.9 && ratio <= 1.1) return 'text-green-600 dark:text-green-400 font-medium'
+  if (ratio >= 0.8 && ratio <= 1.2) return 'text-amber-600 dark:text-amber-400'
+  return 'text-red-600 dark:text-red-400'
 }
 </script>
