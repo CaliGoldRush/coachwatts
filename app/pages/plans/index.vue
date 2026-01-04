@@ -297,6 +297,10 @@ definePageMeta({
   middleware: 'auth'
 })
 
+useHead({
+  title: 'My Plans'
+})
+
 const { data: plans, refresh } = await useFetch<any[]>('/api/plans')
 const toast = useToast()
 
