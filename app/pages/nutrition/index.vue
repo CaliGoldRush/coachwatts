@@ -16,7 +16,8 @@
               size="sm"
               class="font-bold"
             >
-              Insights
+              <span class="hidden sm:inline">Insights</span>
+              <span class="sm:hidden">AI</span>
             </UButton>
             <UButton
               @click="analyzeAllNutrition"
@@ -27,7 +28,8 @@
               icon="i-heroicons-cpu-chip"
               class="font-bold"
             >
-              Analyze
+              <span class="hidden sm:inline">Analyze</span>
+              <span class="sm:hidden">Sync</span>
             </UButton>
           </div>
         </template>
@@ -49,7 +51,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {{ totalNutrition }}
+                <USkeleton v-if="loading" class="h-9 w-12 mx-auto" />
+                <template v-else>{{ totalNutrition }}</template>
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Days</div>
             </div>
@@ -58,7 +61,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-green-600 dark:text-green-400">
-                {{ analyzedNutrition }}
+                <USkeleton v-if="loading" class="h-9 w-12 mx-auto" />
+                <template v-else>{{ analyzedNutrition }}</template>
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Analyzed</div>
             </div>
@@ -67,7 +71,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                {{ avgScore !== null ? avgScore.toFixed(1) : '-' }}
+                <USkeleton v-if="loading" class="h-9 w-12 mx-auto" />
+                <template v-else>{{ avgScore !== null ? avgScore.toFixed(1) : '-' }}</template>
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Avg Score</div>
             </div>
@@ -76,7 +81,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                {{ avgCalories ? Math.round(avgCalories) : '-' }}
+                <USkeleton v-if="loading" class="h-9 w-20 mx-auto" />
+                <template v-else>{{ avgCalories ? Math.round(avgCalories) : '-' }}</template>
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Avg Calories</div>
             </div>
@@ -93,8 +99,25 @@
             />
           </div>
           
-          <div v-if="nutritionScoresLoading" class="flex justify-center py-12">
-            <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
+          <div v-if="nutritionScoresLoading" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <UCard v-for="i in 5" :key="i">
+                <div class="space-y-2">
+                  <USkeleton class="h-4 w-20" />
+                  <USkeleton class="h-8 w-12" />
+                </div>
+              </UCard>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div class="lg:col-span-2 space-y-4">
+                <USkeleton class="h-8 w-48" />
+                <USkeleton class="h-64 w-full" />
+              </div>
+              <div class="lg:col-span-1 space-y-4">
+                <USkeleton class="h-8 w-48" />
+                <USkeleton class="h-64 w-full" />
+              </div>
+            </div>
           </div>
           
           <div v-else-if="nutritionTrendsData" class="space-y-6">
@@ -249,15 +272,7 @@
 
         <!-- Nutrition Table -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div v-if="loading" class="p-8 text-center text-gray-600 dark:text-gray-400">
-            Loading nutrition data...
-          </div>
-          
-          <div v-else-if="filteredNutrition.length === 0" class="p-8 text-center text-gray-600 dark:text-gray-400">
-            No nutrition data found. Connect Yazio and sync data to get started.
-          </div>
-          
-          <div v-else class="overflow-x-auto">
+          <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead class="bg-gray-50 dark:bg-gray-900">
                 <tr>
@@ -287,7 +302,21 @@
                   </th>
                 </tr>
               </thead>
-              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody v-if="loading" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="i in 10" :key="i">
+                  <td v-for="j in 8" :key="j" class="px-6 py-4">
+                    <USkeleton class="h-4 w-full" />
+                  </td>
+                </tr>
+              </tbody>
+              <tbody v-else-if="filteredNutrition.length === 0" class="bg-white dark:bg-gray-800">
+                <tr>
+                  <td colspan="8" class="p-8 text-center text-gray-600 dark:text-gray-400">
+                    No nutrition data found. Connect Yazio and sync data to get started.
+                  </td>
+                </tr>
+              </tbody>
+              <tbody v-else class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 <tr
                   v-for="nutrition in paginatedNutrition"
                   :key="nutrition.id"

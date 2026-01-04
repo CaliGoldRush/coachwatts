@@ -23,7 +23,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {{ totalDays }}
+                <USkeleton v-if="loading" class="h-9 w-12 mx-auto" />
+                <template v-else>{{ totalDays }}</template>
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Days</div>
             </div>
@@ -32,7 +33,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-green-600 dark:text-green-400">
-                {{ avgRecovery !== null ? avgRecovery.toFixed(0) : '-' }}
+                <USkeleton v-if="loading" class="h-9 w-12 mx-auto" />
+                <template v-else>{{ avgRecovery !== null ? avgRecovery.toFixed(0) : '-' }}</template>
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Avg Recovery</div>
             </div>
@@ -41,7 +43,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                {{ avgSleep !== null ? avgSleep.toFixed(1) : '-' }}h
+                <USkeleton v-if="loading" class="h-9 w-12 mx-auto" />
+                <template v-else>{{ avgSleep !== null ? avgSleep.toFixed(1) : '-' }}h</template>
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Avg Sleep</div>
             </div>
@@ -50,7 +53,8 @@
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                {{ avgHRV !== null ? avgHRV.toFixed(0) : '-' }}
+                <USkeleton v-if="loading" class="h-9 w-12 mx-auto" />
+                <template v-else>{{ avgHRV !== null ? avgHRV.toFixed(0) : '-' }}</template>
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Avg HRV (ms)</div>
             </div>
@@ -58,13 +62,16 @@
         </div>
 
         <!-- Charts Section -->
-        <div v-if="!loading && allWellness.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div v-if="loading || allWellness.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Recovery Score Trend -->
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Recovery Score (Last 30 Days)
             </h3>
-            <div style="height: 300px;">
+            <div v-if="loading" class="h-[300px]">
+              <USkeleton class="h-full w-full" />
+            </div>
+            <div v-else style="height: 300px;">
               <ClientOnly>
                 <Line :data="recoveryTrendData" :options="lineChartOptions" />
               </ClientOnly>
@@ -76,7 +83,10 @@
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Sleep Duration (Last 30 Days)
             </h3>
-            <div style="height: 300px;">
+            <div v-if="loading" class="h-[300px]">
+              <USkeleton class="h-full w-full" />
+            </div>
+            <div v-else style="height: 300px;">
               <ClientOnly>
                 <Bar :data="sleepTrendData" :options="barChartOptions" />
               </ClientOnly>
@@ -88,7 +98,10 @@
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Heart Rate Variability (Last 30 Days)
             </h3>
-            <div style="height: 300px;">
+            <div v-if="loading" class="h-[300px]">
+              <USkeleton class="h-full w-full" />
+            </div>
+            <div v-else style="height: 300px;">
               <ClientOnly>
                 <Line :data="hrvTrendData" :options="hrvLineChartOptions" />
               </ClientOnly>
@@ -100,7 +113,10 @@
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Resting Heart Rate (Last 30 Days)
             </h3>
-            <div style="height: 300px;">
+            <div v-if="loading" class="h-[300px]">
+              <USkeleton class="h-full w-full" />
+            </div>
+            <div v-else style="height: 300px;">
               <ClientOnly>
                 <Line :data="restingHrTrendData" :options="hrLineChartOptions" />
               </ClientOnly>
@@ -139,15 +155,7 @@
 
         <!-- Wellness Table -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div v-if="loading" class="p-8 text-center text-gray-600 dark:text-gray-400">
-            Loading wellness data...
-          </div>
-          
-          <div v-else-if="filteredWellness.length === 0" class="p-8 text-center text-gray-600 dark:text-gray-400">
-            No wellness data found. Connect Intervals.icu and sync data to get started.
-          </div>
-          
-          <div v-else class="overflow-x-auto">
+          <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead class="bg-gray-50 dark:bg-gray-900">
                 <tr>
@@ -177,7 +185,21 @@
                   </th>
                 </tr>
               </thead>
-              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody v-if="loading" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="i in 10" :key="i">
+                  <td v-for="j in 8" :key="j" class="px-6 py-4">
+                    <USkeleton class="h-4 w-full" />
+                  </td>
+                </tr>
+              </tbody>
+              <tbody v-else-if="filteredWellness.length === 0" class="bg-white dark:bg-gray-800">
+                <tr>
+                  <td colspan="8" class="p-8 text-center text-gray-600 dark:text-gray-400">
+                    No wellness data found. Connect Intervals.icu and sync data to get started.
+                  </td>
+                </tr>
+              </tbody>
+              <tbody v-else class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 <tr
                   v-for="wellness in paginatedWellness"
                   :key="wellness.id"
