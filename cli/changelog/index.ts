@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 import 'dotenv/config';
 import { generateCoachAnalysis } from '../../server/utils/gemini';
 
@@ -13,50 +14,76 @@ changelogCommand
   .option('-i, --input <file>', 'Input changelog file', 'CHANGELOG.md')
   .option('-o, --output <file>', 'Output file', 'USER_CHANGELOG.md')
   .option('-w, --write', 'Write to output file instead of stdout', false)
+  .option('-v, --version <version>', 'Release version (overrides extraction from file)')
+  .option('-f, --from <tag>', 'Git tag to start from (e.g. v0.5.5) - uses git log instead of input file')
   .action(async (options) => {
     console.log(chalk.blue('=== Generating User Changelog ==='));
 
     const projectRoot = process.cwd();
-    const inputFile = path.resolve(projectRoot, options.input);
     const outputFile = path.resolve(projectRoot, options.output);
 
-    if (!fs.existsSync(inputFile)) {
-      console.error(chalk.red(`Error: Input file '${options.input}' not found.`));
-      process.exit(1);
-    }
-
-    const content = fs.readFileSync(inputFile, 'utf-8');
-
-    // Extract the latest version block
-    // Assuming format:
-    // ## [version] (date)
-    // ... content ...
-    // ## [previous version] ...
-    
-    const lines = content.split('\n');
     let latestVersionBlock = '';
-    let foundFirstHeader = false;
     let version = '';
 
-    for (const line of lines) {
-      // Changed regex to match single # for version header (standard-version/release-it default)
-      // Matches both # [1.0.0] and ## [1.0.0]
-      const match = line.match(/^#{1,2}\s+\[(\d+\.\d+\.\d+)\]/);
-      if (match) {
-        if (foundFirstHeader) {
-          break; // Stop when we hit the second header
-        }
-        foundFirstHeader = true;
-        version = match[1];
+    if (options.version && options.from) {
+      // Mode 1: Use Git Log
+      console.log(chalk.gray(`Using git log from ${options.from} to HEAD`));
+      try {
+        version = options.version;
+        // Get commits: subject, hash
+        latestVersionBlock = execSync(
+          `git log ${options.from}..HEAD --pretty=format:"- %s (%h)" --no-merges`,
+          { encoding: 'utf-8' }
+        );
+      } catch (error) {
+        console.error(chalk.red('Error reading git log:'), error);
+        process.exit(1);
       }
+    } else {
+      // Mode 2: Read Input File
+      const inputFile = path.resolve(projectRoot, options.input);
+
+      if (!fs.existsSync(inputFile)) {
+        console.error(chalk.red(`Error: Input file '${options.input}' not found.`));
+        process.exit(1);
+      }
+
+      const content = fs.readFileSync(inputFile, 'utf-8');
+
+      // Extract the latest version block
+      // Assuming format:
+      // ## [version] (date)
+      // ... content ...
+      // ## [previous version] ...
       
-      if (foundFirstHeader) {
-        latestVersionBlock += line + '\n';
+      const lines = content.split('\n');
+      let foundFirstHeader = false;
+
+      for (const line of lines) {
+        // Changed regex to match single # for version header (standard-version/release-it default)
+        // Matches both # [1.0.0] and ## [1.0.0]
+        const match = line.match(/^#{1,2}\s+\[(\d+\.\d+\.\d+)\]/);
+        if (match) {
+          if (foundFirstHeader) {
+            break; // Stop when we hit the second header
+          }
+          foundFirstHeader = true;
+          version = match[1];
+        }
+        
+        if (foundFirstHeader) {
+          latestVersionBlock += line + '\n';
+        }
+      }
+
+      // If version was explicitly provided, check if it matches
+      if (options.version && version !== options.version) {
+        console.warn(chalk.yellow(`Warning: Extracted version (${version}) does not match provided version (${options.version}). Using extracted version.`));
       }
     }
 
     if (!latestVersionBlock.trim()) {
-      console.error(chalk.red('Error: Could not find latest version in changelog.'));
+      console.error(chalk.red('Error: Could not find changelog content.'));
       process.exit(1);
     }
     
@@ -65,7 +92,7 @@ changelogCommand
 
     const prompt = `
 You are a helpful assistant for Coach Watts, a cycling coaching app.
-Here is the technical changelog for the latest release (v${version}):
+Here is the technical changelog/commits for the latest release (v${version}):
 
 ${latestVersionBlock}
 
