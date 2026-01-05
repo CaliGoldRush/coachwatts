@@ -3,13 +3,24 @@ import GoogleProvider from 'next-auth/providers/google'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from '../../utils/db'
 
+const adapter = PrismaAdapter(prisma)
+const originalLinkAccount = adapter.linkAccount
+adapter.linkAccount = (account: any) => {
+  const sanitizedAccount = { ...account }
+  if (sanitizedAccount.athlete) {
+    delete sanitizedAccount.athlete
+  }
+  return originalLinkAccount!(sanitizedAccount)
+}
+
 export default NuxtAuthHandler({
-  adapter: PrismaAdapter(prisma),
+  adapter,
   providers: [
     // @ts-expect-error - Types mismatch between next-auth versions
     GoogleProvider.default({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     {
       id: 'intervals',
@@ -17,12 +28,16 @@ export default NuxtAuthHandler({
       type: 'oauth',
       authorization: {
         url: 'https://intervals.icu/oauth/authorize',
-        params: { scope: 'ACTIVITY:READ,ACTIVITY:WRITE,CALENDAR:READ,CALENDAR:WRITE,WELLNESS:READ,WELLNESS:WRITE' }
+        params: { scope: 'ACTIVITY:WRITE,CALENDAR:WRITE,WELLNESS:WRITE,SETTINGS:WRITE' }
       },
-      token: 'https://intervals.icu/api/v1/oauth/access_token',
-      userinfo: 'https://intervals.icu/api/v1/athlete/current',
+      token: 'https://intervals.icu/api/oauth/token',
+      userinfo: 'https://intervals.icu/api/v1/athlete/0',
       clientId: process.env.INTERVALS_CLIENT_ID,
       clientSecret: process.env.INTERVALS_CLIENT_SECRET,
+      client: {
+        token_endpoint_auth_method: 'client_secret_post'
+      },
+      allowDangerousEmailAccountLinking: true,
       profile(profile: any) {
         return {
           id: profile.id,

@@ -1,5 +1,26 @@
 import type { Integration } from '@prisma/client'
 
+function getIntervalsHeaders(integration: Integration): Record<string, string> {
+  // If we have a scope or refresh token, it's an OAuth integration
+  if (integration.scope || integration.refreshToken) {
+    console.log(`[Intervals Auth] Using OAuth Bearer token (hasScope: ${!!integration.scope}, hasRefreshToken: ${!!integration.refreshToken})`)
+    return { 'Authorization': `Bearer ${integration.accessToken}` }
+  }
+  
+  // Otherwise, assume it's a legacy API Key integration
+  console.log('[Intervals Auth] Using Legacy API Key Basic auth')
+  const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+  return { 'Authorization': `Basic ${auth}` }
+}
+
+function getIntervalsAthleteId(integration: Integration): string {
+  // Use '0' for OAuth integrations as recommended by Intervals.icu docs for Bearer tokens
+  if (integration.scope || integration.refreshToken) {
+    return '0'
+  }
+  return integration.externalUserId || 'i0'
+}
+
 interface IntervalsActivity {
   id: string
   start_date: string // UTC timestamp
@@ -122,7 +143,7 @@ export async function createIntervalsPlannedWorkout(
     workout_doc?: string
   }
 ): Promise<IntervalsPlannedWorkout> {
-  const athleteId = integration.externalUserId || 'i0'
+  const athleteId = getIntervalsAthleteId(integration)
   
   // Map workout types to Intervals.icu format
   let category = 'WORKOUT'
@@ -175,13 +196,13 @@ export async function createIntervalsPlannedWorkout(
   })
   
   const url = `https://intervals.icu/api/v1/athlete/${athleteId}/events`
-  const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+  const headers = getIntervalsHeaders(integration)
   const bodyStr = JSON.stringify(eventData)
     
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${auth}`,
+      ...headers,
       'Content-Type': 'application/json'
     },
     body: bodyStr
@@ -211,16 +232,14 @@ export async function deleteIntervalsPlannedWorkout(
   integration: Integration,
   eventId: string
 ): Promise<void> {
-  const athleteId = integration.externalUserId || 'i0'
+  const athleteId = getIntervalsAthleteId(integration)
   
   const url = `https://intervals.icu/api/v1/athlete/${athleteId}/events/${eventId}`
-  const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+  const headers = getIntervalsHeaders(integration)
     
   const response = await fetch(url, {
     method: 'DELETE',
-    headers: {
-      'Authorization': `Basic ${auth}`
-    }
+    headers
   })
   
   if (!response.ok && response.status !== 404) {
@@ -242,7 +261,7 @@ export async function updateIntervalsPlannedWorkout(
     workout_doc?: string
   }
 ): Promise<IntervalsPlannedWorkout> {
-  const athleteId = integration.externalUserId || 'i0'
+  const athleteId = getIntervalsAthleteId(integration)
   
   // Map workout types to Intervals.icu format
   let sport = data.type
@@ -286,12 +305,12 @@ export async function updateIntervalsPlannedWorkout(
   })
   
   const url = `https://intervals.icu/api/v1/athlete/${athleteId}/events/${eventId}`
-  const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+  const headers = getIntervalsHeaders(integration)
     
   const response = await fetch(url, {
     method: 'PUT',
     headers: {
-      'Authorization': `Basic ${auth}`,
+      ...headers,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(eventData)
@@ -310,7 +329,7 @@ export async function fetchIntervalsPlannedWorkouts(
   startDate: Date,
   endDate: Date
 ): Promise<IntervalsPlannedWorkout[]> {
-  const athleteId = integration.externalUserId || 'i0'
+  const athleteId = getIntervalsAthleteId(integration)
   
   const url = new URL(`https://intervals.icu/api/v1/athlete/${athleteId}/events`)
   const oldestStr = startDate.toISOString().split('T')[0]
@@ -319,12 +338,10 @@ export async function fetchIntervalsPlannedWorkouts(
   if (oldestStr) url.searchParams.set('oldest', oldestStr)
   if (newestStr) url.searchParams.set('newest', newestStr)
   
-  const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+  const headers = getIntervalsHeaders(integration)
     
   const response = await fetch(url.toString(), {
-    headers: {
-      'Authorization': `Basic ${auth}`
-    }
+    headers
   })
   
   if (!response.ok) {
@@ -339,7 +356,7 @@ export async function fetchIntervalsWorkouts(
   startDate: Date,
   endDate: Date
 ): Promise<IntervalsActivity[]> {
-  const athleteId = integration.externalUserId || 'i0' // i0 means "current authenticated user"
+  const athleteId = getIntervalsAthleteId(integration)
   
   const url = new URL(`https://intervals.icu/api/v1/athlete/${athleteId}/activities`)
   const oldestStr = startDate.toISOString().split('T')[0]
@@ -348,16 +365,17 @@ export async function fetchIntervalsWorkouts(
   if (oldestStr) url.searchParams.set('oldest', oldestStr)
   if (newestStr) url.searchParams.set('newest', newestStr)
   
-  // Intervals.icu API expects Basic Auth with "API_KEY" as username and the API key as password
-  const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+  const headers = getIntervalsHeaders(integration)
+  
+  console.log(`[Intervals Sync] Fetching workouts from: ${url.toString()}`)
     
   const response = await fetch(url.toString(), {
-    headers: {
-      'Authorization': `Basic ${auth}`
-    }
+    headers
   })
   
   if (!response.ok) {
+    const errorText = await response.text()
+    console.error(`[Intervals Sync] ❌ Error ${response.status}: ${errorText}`)
     throw new Error(`Intervals API error: ${response.status} ${response.statusText}`)
   }
   
@@ -390,14 +408,14 @@ export async function fetchIntervalsAthlete(accessToken: string, athleteId?: str
 }
 
 export async function fetchIntervalsAthleteProfile(integration: Integration) {
-  const athleteId = integration.externalUserId || 'i0'
-  const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+  const athleteId = getIntervalsAthleteId(integration)
+  const headers = getIntervalsHeaders(integration)
+  
+  console.log(`[Intervals Sync] Fetching athlete profile from: https://intervals.icu/api/v1/athlete/${athleteId}`)
   
   // Fetch athlete data
   const athleteResponse = await fetch(`https://intervals.icu/api/v1/athlete/${athleteId}`, {
-    headers: {
-      'Authorization': `Basic ${auth}`
-    }
+    headers
   })
   
   if (!athleteResponse.ok) {
@@ -421,9 +439,7 @@ export async function fetchIntervalsAthleteProfile(integration: Integration) {
       const wellnessResponse = await fetch(
         `https://intervals.icu/api/v1/athlete/${athleteId}/wellness/${dateStr}`,
         {
-          headers: {
-            'Authorization': `Basic ${auth}`
-          }
+          headers
         }
       )
       
@@ -607,7 +623,7 @@ export async function fetchIntervalsWellness(
   startDate: Date,
   endDate: Date
 ): Promise<IntervalsWellness[]> {
-  const athleteId = integration.externalUserId || 'i0'
+  const athleteId = getIntervalsAthleteId(integration)
   
   const wellness: IntervalsWellness[] = []
   
@@ -617,13 +633,11 @@ export async function fetchIntervalsWellness(
     const dateStr = currentDate.toISOString().split('T')[0]
     const url = `https://intervals.icu/api/v1/athlete/${athleteId}/wellness/${dateStr}`
     
-    const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+    const headers = getIntervalsHeaders(integration)
     
     try {
       const response = await fetch(url, {
-        headers: {
-          'Authorization': `Basic ${auth}`
-        }
+        headers
       })
       
       if (response.ok) {
@@ -800,15 +814,13 @@ export async function fetchIntervalsActivityStreams(
   integration: Integration,
   activityId: string
 ): Promise<Record<string, IntervalsStream>> {
-  const athleteId = integration.externalUserId || 'i0'
-  const auth = Buffer.from(`API_KEY:${integration.accessToken}`).toString('base64')
+  const athleteId = getIntervalsAthleteId(integration)
+  const headers = getIntervalsHeaders(integration)
   
   const url = `https://intervals.icu/api/v1/activity/${activityId}/streams`
   
   const response = await fetch(url, {
-    headers: {
-      'Authorization': `Basic ${auth}`
-    }
+    headers
   })
   
   if (!response.ok) {
