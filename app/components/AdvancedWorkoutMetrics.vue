@@ -29,10 +29,10 @@
 
           <div v-if="data.advanced.decoupling !== null">
             <div class="text-3xl font-bold text-gray-900 dark:text-white">
-              {{ (data.advanced.decoupling * 100).toFixed(1) }}%
+              {{ data.advanced.decoupling.toFixed(1) }}%
             </div>
             <div class="text-xs text-gray-500 mt-2">
-              <span v-if="data.advanced.decoupling < 0.05" class="text-green-600 dark:text-green-400 font-medium">Good Endurance</span>
+              <span v-if="data.advanced.decoupling < 5" class="text-green-600 dark:text-green-400 font-medium">Good Endurance</span>
               <span v-else class="text-amber-600 dark:text-amber-400 font-medium">High Drift</span>
             </div>
             
@@ -411,8 +411,8 @@ async function fetchData() {
 
 function getDriftColor(val: number | null) {
   if (val === null) return 'border-gray-200 dark:border-gray-700'
-  if (val < 0.05) return 'border-green-500' // Good
-  if (val < 0.10) return 'border-yellow-500' // Moderate
+  if (val < 5) return 'border-green-500' // Good
+  if (val < 10) return 'border-yellow-500' // Moderate
   return 'border-red-500' // High
 }
 

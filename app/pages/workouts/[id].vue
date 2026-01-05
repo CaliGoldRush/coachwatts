@@ -1033,7 +1033,7 @@ const availableMetrics = computed(() => {
   if (workout.value.variabilityIndex) metrics.push({ key: 'vi', label: 'Variability Index', value: workout.value.variabilityIndex.toFixed(3) })
   if (workout.value.powerHrRatio) metrics.push({ key: 'phr', label: 'Power/HR Ratio', value: workout.value.powerHrRatio.toFixed(2) })
   if (workout.value.efficiencyFactor) metrics.push({ key: 'ef', label: 'Efficiency Factor', value: workout.value.efficiencyFactor.toFixed(2) })
-  if (workout.value.decoupling) metrics.push({ key: 'dec', label: 'Decoupling', value: `${(workout.value.decoupling * 100).toFixed(1)}%` })
+  if (workout.value.decoupling) metrics.push({ key: 'dec', label: 'Decoupling', value: `${workout.value.decoupling.toFixed(1)}%` })
   if (workout.value.polarizationIndex) metrics.push({ key: 'pi', label: 'Polarization Index', value: workout.value.polarizationIndex.toFixed(2) })
   if (workout.value.lrBalance) metrics.push({ key: 'lr', label: 'L/R Balance', value: `${workout.value.lrBalance.toFixed(1)}%` })
   

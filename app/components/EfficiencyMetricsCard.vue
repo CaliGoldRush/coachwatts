@@ -47,7 +47,7 @@
           </UBadge>
         </div>
         <div class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ (metrics.decoupling * 100).toFixed(1) }}%
+          {{ metrics.decoupling.toFixed(1) }}%
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Aerobic efficiency drift. Lower is better.
@@ -169,15 +169,15 @@ function getEFRating(ef: number | null | undefined): string {
 // Decoupling ratings
 function getDecouplingColor(dec: number | null | undefined): 'success' | 'warning' | 'error' | 'neutral' {
   if (dec == null) return 'neutral'
-  if (dec <= 0.05) return 'success'
-  if (dec <= 0.10) return 'warning'
+  if (dec <= 5) return 'success'
+  if (dec <= 10) return 'warning'
   return 'error'
 }
 
 function getDecouplingRating(dec: number | null | undefined): string {
   if (dec == null) return 'N/A'
-  if (dec <= 0.05) return 'Excellent'
-  if (dec <= 0.10) return 'Good'
+  if (dec <= 5) return 'Excellent'
+  if (dec <= 10) return 'Good'
   return 'High'
 }
 

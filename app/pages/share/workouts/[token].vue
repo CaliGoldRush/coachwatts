@@ -480,7 +480,7 @@ const availableMetrics = computed(() => {
   if (w.variabilityIndex) metrics.push({ key: 'vi', label: 'Variability Index', value: w.variabilityIndex.toFixed(3) })
   if (w.powerHrRatio) metrics.push({ key: 'phr', label: 'Power/HR Ratio', value: w.powerHrRatio.toFixed(2) })
   if (w.efficiencyFactor) metrics.push({ key: 'ef', label: 'Efficiency Factor', value: w.efficiencyFactor.toFixed(2) })
-  if (w.decoupling) metrics.push({ key: 'dec', label: 'Decoupling', value: `${(w.decoupling * 100).toFixed(1)}%` })
+  if (w.decoupling) metrics.push({ key: 'dec', label: 'Decoupling', value: `${w.decoupling.toFixed(1)}%` })
   if (w.polarizationIndex) metrics.push({ key: 'pi', label: 'Polarization Index', value: w.polarizationIndex.toFixed(2) })
   if (w.lrBalance) metrics.push({ key: 'lr', label: 'L/R Balance', value: `${w.lrBalance.toFixed(1)}%` })
   
