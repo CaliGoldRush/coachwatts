@@ -491,7 +491,7 @@ const availableMetrics = computed(() => {
   
   // Subjective metrics
   if (w.rpe) metrics.push({ key: 'rpe', label: 'RPE', value: `${w.rpe}/10` })
-  if (w.sessionRpe) metrics.push({ key: 'srpe', label: 'Session RPE', value: `${w.sessionRpe}/10` })
+  if (w.sessionRpe) metrics.push({ key: 'srpe', label: 'Session RPE', value: `${w.sessionRpe}` })
   if (w.feel) metrics.push({ key: 'feel', label: 'Feel', value: `${w.feel}/10` })
   if (w.trimp) metrics.push({ key: 'trimp', label: 'TRIMP', value: `${w.trimp}` })
   
