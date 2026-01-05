@@ -1338,3 +1338,29 @@ model PlanAdherence {
   @@index([workoutId])
   @@index([plannedWorkoutId])
 }
+
+// --------------------------------------
+// System Logs & Webhook Auditing
+// --------------------------------------
+
+model WebhookLog {
+  id          String   @id @default(uuid())
+  provider    String   // "intervals", "withings", "stripe", etc.
+  eventType   String?  // "ACTIVITY_UPLOADED", "payment.succeeded", etc.
+  
+  // Request Data
+  payload     Json?
+  headers     Json?
+  query       Json?
+  
+  // Processing Status
+  status      String   @default("PENDING") // PENDING, PROCESSED, FAILED, IGNORED
+  error       String?  @db.Text
+  
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([provider, eventType])
+  @@index([createdAt])
+  @@index([status])
+}

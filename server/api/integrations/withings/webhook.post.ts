@@ -1,4 +1,5 @@
 import { tasks } from '@trigger.dev/sdk/v3'
+import { logWebhookRequest, updateWebhookStatus } from '../../../utils/webhook-logger'
 // prisma is auto-imported in server routes
 
 defineRouteMeta({
@@ -50,6 +51,7 @@ export default defineEventHandler(async (event) => {
   // The notification payload is sent as form-data or urlencoded
   const body = await readBody(event)
   const query = getQuery(event)
+  const headers = getRequestHeaders(event)
   
   // Combine body and query (Withings can send params in either depending on setup)
   // Usually notifications are POST with body params
@@ -57,9 +59,18 @@ export default defineEventHandler(async (event) => {
   
   const { userid, appli, startdate, enddate } = params
   
+  const log = await logWebhookRequest({
+    provider: 'withings',
+    eventType: 'NOTIFICATION', // Withings sends generic notifications
+    payload: params,
+    headers,
+    status: 'PENDING'
+  })
+  
   console.log('[Withings Webhook] Received notification:', params)
   
   if (!userid) {
+    if (log) await updateWebhookStatus(log.id, 'FAILED', 'Missing userid')
     throw createError({
       statusCode: 400,
       message: 'Missing userid'
@@ -77,6 +88,7 @@ export default defineEventHandler(async (event) => {
 
   if (!integration) {
     console.warn(`[Withings Webhook] Integration not found for external user ${userid}`)
+    if (log) await updateWebhookStatus(log.id, 'IGNORED', `Integration not found for external user ${userid}`)
     // Return 200 to acknowledge receipt even if we can't process it (to prevent retries)
     return 'OK'
   }
@@ -101,8 +113,10 @@ export default defineEventHandler(async (event) => {
     })
     
     console.log(`[Withings Webhook] Triggered ingestion for user ${integration.userId}`)
-  } catch (error) {
+    if (log) await updateWebhookStatus(log.id, 'PROCESSED')
+  } catch (error: any) {
     console.error('[Withings Webhook] Failed to trigger ingestion:', error)
+    if (log) await updateWebhookStatus(log.id, 'FAILED', error.message || 'Failed to trigger ingestion')
     // Still return 200 so Withings doesn't retry indefinitely
   }
 
