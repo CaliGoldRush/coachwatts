@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.5.7](https://github.com/newpush/coach/compare/v0.5.6...v0.5.7) (2026-01-06)
+
+
+### Bug Fixes
+
+* align modal implementation with Nuxt UI project guidelines ([ba3b807](https://github.com/newpush/coach/commit/ba3b80780ce6753125a9914d4206965223d48746))
+* **api:** resolve typescript error in admin stats mapping ([321b3a3](https://github.com/newpush/coach/commit/321b3a3750f3a587c9eb6cd979deaba9d594075e))
+* **api:** update accept recommendation logic to replace description ([dbb5148](https://github.com/newpush/coach/commit/dbb5148571b3f6d06772233892e2684ca7287f1b))
+* **chat:** update coach watts avatar asset path to webp ([1448c66](https://github.com/newpush/coach/commit/1448c663b6d8eea162a497bdedbd795b03cf3f3b))
+* **ci:** use env var for secret check in reusable workflow ([934e1a0](https://github.com/newpush/coach/commit/934e1a0860f508f3286f6d4de4951d52f026323d))
+* **dashboard:** improve analyze button state and data syncing logic ([dffe6b6](https://github.com/newpush/coach/commit/dffe6b67350bb84e06fb6e31d4081a0b9088df83))
+* **frontend:** correct aerobic decoupling display and rating logic ([668dba5](https://github.com/newpush/coach/commit/668dba5157d2383ac44277f695d4f6a54701ff72))
+* **ingestion:** calculate pacing metrics for FIT file uploads ([df9f51f](https://github.com/newpush/coach/commit/df9f51f51be4085794eb539d7d7db56b7d6d890c))
+* **intervals:** handle icu_rpe fallback during activity normalization ([4d5c4f1](https://github.com/newpush/coach/commit/4d5c4f140cfdd4310967ef3d53be42a435f04f08))
+* **pages:** remove incorrect unit suffix from session rpe display ([930e521](https://github.com/newpush/coach/commit/930e521d3eef24626c1a65398381520e3498e497))
+* **ui:** remove duplicate tooltip definitions ([18bca42](https://github.com/newpush/coach/commit/18bca425778c2b3e169f8f581d1bd5ef94610247))
+* update UTable usage for Nuxt UI v3 compatibility ([003dd5e](https://github.com/newpush/coach/commit/003dd5e94fddb9b6c1a32e6fc47d82f60f40f963))
+
+
+### Features
+
+* add admin webhooks page with pagination ([80d320a](https://github.com/newpush/coach/commit/80d320a34a99c3195a8c05d38d54db620a287518))
+* **api:** add activity and fitness update handling to intervals webhook ([7370ecf](https://github.com/newpush/coach/commit/7370ecfdec424961b8677dcb8cb1a0943868f0c2))
+* **api:** add ad-hoc workout generation endpoints and trigger ([d09c3a5](https://github.com/newpush/coach/commit/d09c3a5579e54823fe3bf4a75327c3b65b1510cd))
+* **api:** update recommendation endpoints and trigger with feedback support ([6703ac1](https://github.com/newpush/coach/commit/6703ac160d03979b45c5f32a571d40048575ebbb))
+* **cli:** add changelog generation and publishing commands ([1d32e01](https://github.com/newpush/coach/commit/1d32e014d735457a07ffd1a4da5883abc526487a))
+* **cli:** add debug workout command for data troubleshooting ([450ceb1](https://github.com/newpush/coach/commit/450ceb12678d50b87571531108f3551ab222da4c))
+* **cli:** add git log support and version flags to changelog generator ([7b7d384](https://github.com/newpush/coach/commit/7b7d384637e1093c9b3442ba44f1c6fb8bdc8680))
+* **cli:** add webhook log debugging command ([fee3655](https://github.com/newpush/coach/commit/fee36558bb92ec790ad5cb65cb620c22a9053548))
+* **components:** add accept button and improve recommendation card ui ([23c5364](https://github.com/newpush/coach/commit/23c536426c5e931e5282065454a1791cd1956f2e))
+* **components:** update dashboard recommendation cards and modals ([06c3767](https://github.com/newpush/coach/commit/06c3767888787d4c6c726a6ed2bfa46784030eec))
+* **trigger:** include active goals in workout generation context ([ce55453](https://github.com/newpush/coach/commit/ce55453e3162de1fdbe12c23be4fa50bce7400f3))
+* **ui:** temporarily disable strava integration on production domain ([93228bb](https://github.com/newpush/coach/commit/93228bb6214f169203e18bb5e6e842d5629a2007))
+* **workouts:** add metric tooltips to share page and efficiency card ([f701656](https://github.com/newpush/coach/commit/f7016561cdb9c463c7473da55338da6f1f44fc5d))
+
 ## [0.5.6](https://github.com/newpush/coach/compare/v0.5.5...v0.5.6) (2026-01-05)
 
 
