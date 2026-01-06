@@ -119,6 +119,37 @@ This file aggregates all critical development rules and guidelines for the Coach
 
 ---
 
+## 9. Date & Timezone Handling
+
+### Core Principle
+- **Database**: Store all dates in **UTC** (`DateTime` columns) or **UTC Midnight** (`@db.Date` columns).
+- **Backend (API)**: Always perform queries relative to the **User's Timezone**.
+- **Frontend**: Display all dates in the user's local time.
+
+### Server Utilities
+- Use `server/utils/date.ts` for all date operations.
+- **getUserTimezone(userId)**: Fetch user's preferred timezone (default 'UTC').
+- **getUserLocalDate(timezone)**: Get a Date object representing the user's local "today" at UTC midnight (for querying `@db.Date`).
+- **getStartOfDayUTC(timezone)**: Get start of user's day in UTC (for querying `DateTime` ranges).
+
+### API Pattern
+```typescript
+// Correct way to query "today's" data
+const timezone = await getUserTimezone(userId)
+const localDate = getUserLocalDate(timezone)
+
+const data = await prisma.model.findUnique({
+  where: { userId_date: { userId, date: localDate } }
+})
+```
+
+### Ingestion Guidelines
+- **Workouts**: Always prefer **UTC timestamps** from external APIs (e.g., Strava `start_date`, Whoop `start`). Store directly in `DateTime` columns.
+- **Deduplication**: Match activities using UTC timestamps, not local time strings, to ensure consistency across different source providers.
+- **Wellness/Nutrition**: Force dates to **UTC Midnight** (e.g., `new Date(Date.UTC(year, month, day))`) when saving to `@db.Date` columns. This prevents calendar days from shifting based on server timezone.
+
+---
+
 ## 10. TypeScript & Code Quality
 
 -   **Follow Guidelines**: Strictly adhere to [.roo/rules-code/typescript-guidelines.md](.roo/rules-code/typescript-guidelines.md).
