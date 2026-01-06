@@ -1,5 +1,6 @@
 import { SchemaType, type FunctionDeclaration } from '@google/generative-ai'
 import { prisma } from './db'
+import { getUserTimezone, getStartOfDaysAgoUTC, formatUserDate, getStartOfDayUTC, getEndOfDayUTC } from './date'
 import {
   getPlannedWorkouts,
   createPlannedWorkout,
@@ -465,27 +466,29 @@ export async function executeToolCall(
   userId: string
 ): Promise<any> {
   try {
+    const timezone = await getUserTimezone(userId)
+
     switch (toolName) {
       case 'get_recent_workouts':
-        return await getRecentWorkouts(userId, args.limit, args.type, args.days)
+        return await getRecentWorkouts(userId, timezone, args.limit, args.type, args.days)
 
       case 'get_workout_details':
-        return await getWorkoutDetails(userId, args)
+        return await getWorkoutDetails(userId, timezone, args)
 
       case 'get_nutrition_log':
-        return await getNutritionLog(userId, args.start_date, args.end_date)
+        return await getNutritionLog(userId, timezone, args.start_date, args.end_date)
 
       case 'get_wellness_metrics':
-        return await getWellnessMetrics(userId, args.start_date, args.end_date)
+        return await getWellnessMetrics(userId, timezone, args.start_date, args.end_date)
 
       case 'search_workouts':
-        return await searchWorkouts(userId, args)
+        return await searchWorkouts(userId, timezone, args)
 
       case 'get_performance_metrics':
-        return await getPerformanceMetrics(userId, args)
+        return await getPerformanceMetrics(userId, timezone, args)
 
       case 'get_planned_workouts':
-        return await getPlannedWorkouts(userId, args)
+        return await getPlannedWorkouts(userId, args) // This one might need timezone too, let's check imports later
 
       case 'create_planned_workout':
         return await createPlannedWorkout(userId, args)
@@ -698,6 +701,7 @@ async function createChart(args: any): Promise<any> {
  */
 async function getRecentWorkouts(
   userId: string,
+  timezone: string,
   limit = 5,
   type?: string,
   days?: number
@@ -709,8 +713,7 @@ async function getRecentWorkouts(
   }
 
   if (days) {
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - days)
+    const cutoff = getStartOfDaysAgoUTC(timezone, days)
     where.date = { gte: cutoff }
   }
 
@@ -750,7 +753,7 @@ async function getRecentWorkouts(
     count: workouts.length,
     workouts: workouts.map((w) => ({
       id: w.id,
-      date: w.date.toISOString(), // Keep ISO format for full timestamp
+      date: formatUserDate(w.date, timezone, 'yyyy-MM-dd HH:mm'), // Keep ISO format for full timestamp
       title: w.title,
       type: w.type,
       duration_minutes: Math.round(w.durationSec / 60),
@@ -777,7 +780,7 @@ async function getRecentWorkouts(
  * Get comprehensive details for a specific workout
  * Can search by ID or by description/criteria
  */
-async function getWorkoutDetails(userId: string, args: any): Promise<any> {
+async function getWorkoutDetails(userId: string, timezone: string, args: any): Promise<any> {
   let workout = null
 
   // If workout_id is provided, use it directly
@@ -801,10 +804,14 @@ async function getWorkoutDetails(userId: string, args: any): Promise<any> {
     }
     
     if (args.date) {
-      const startOfDay = new Date(args.date)
-      const endOfDay = new Date(args.date)
-      endOfDay.setHours(23, 59, 59, 999)
-      where.date = { gte: startOfDay, lte: endOfDay }
+      // args.date is expected to be YYYY-MM-DD in local time
+      const dateParts = args.date.split('-')
+      if (dateParts.length === 3) {
+        const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+        const startOfDay = getStartOfDayUTC(timezone, localDate)
+        const endOfDay = getEndOfDayUTC(timezone, localDate)
+        where.date = { gte: startOfDay, lte: endOfDay }
+      }
     }
     
     // Determine ordering based on relative_position
@@ -840,7 +847,7 @@ async function getWorkoutDetails(userId: string, args: any): Promise<any> {
 
   return {
     id: workout.id,
-    date: workout.date.toISOString(),
+    date: formatUserDate(workout.date, timezone, 'yyyy-MM-dd HH:mm'),
     title: workout.title,
     description: workout.description,
     type: workout.type,
@@ -933,13 +940,22 @@ async function getWorkoutDetails(userId: string, args: any): Promise<any> {
  */
 async function getNutritionLog(
   userId: string,
+  timezone: string,
   startDate: string,
   endDate?: string
 ): Promise<any> {
-  const start = new Date(startDate)
-  const end = endDate ? new Date(endDate) : new Date(startDate)
-
-  end.setHours(23, 59, 59, 999)
+  const startParts = startDate.split('-')
+  const localStartDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]))
+  const start = getStartOfDayUTC(timezone, localStartDate)
+  
+  let end: Date
+  if (endDate) {
+    const endParts = endDate.split('-')
+    const localEndDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]))
+    end = getEndOfDayUTC(timezone, localEndDate)
+  } else {
+    end = getEndOfDayUTC(timezone, localStartDate)
+  }
 
   const nutritionEntries = await prisma.nutrition.findMany({
     where: {
@@ -971,12 +987,12 @@ async function getNutritionLog(
   return {
     count: nutritionEntries.length,
     date_range: {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0],
+      start: startDate, // Return what was requested/formatted
+      end: endDate || startDate,
     },
     entries: nutritionEntries.map((entry) => ({
     id: entry.id,
-    date: formatDateLocal(entry.date),
+    date: formatUserDate(entry.date, timezone),
       macros: {
         calories: entry.calories,
         protein: entry.protein ? Math.round(entry.protein) : null,
@@ -1002,13 +1018,22 @@ async function getNutritionLog(
  */
 async function getWellnessMetrics(
   userId: string,
+  timezone: string,
   startDate: string,
   endDate?: string
 ): Promise<any> {
-  const start = new Date(startDate)
-  const end = endDate ? new Date(endDate) : new Date(startDate)
-
-  end.setHours(23, 59, 59, 999)
+  const startParts = startDate.split('-')
+  const localStartDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]))
+  const start = getStartOfDayUTC(timezone, localStartDate)
+  
+  let end: Date
+  if (endDate) {
+    const endParts = endDate.split('-')
+    const localEndDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]))
+    end = getEndOfDayUTC(timezone, localEndDate)
+  } else {
+    end = getEndOfDayUTC(timezone, localStartDate)
+  }
 
   const wellness = await prisma.wellness.findMany({
     where: {
@@ -1043,11 +1068,11 @@ async function getWellnessMetrics(
   return {
     count: wellness.length,
     date_range: {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0],
+      start: startDate,
+      end: endDate || startDate,
     },
     metrics: wellness.map((w) => ({
-      date: formatDateLocal(w.date),
+      date: formatUserDate(w.date, timezone),
       recovery: {
         recovery_score: w.recoveryScore,
         hrv: w.hrv,
@@ -1071,10 +1096,9 @@ async function getWellnessMetrics(
 /**
  * Get comprehensive performance metrics and analytics
  */
-async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
+async function getPerformanceMetrics(userId: string, timezone: string, args: any): Promise<any> {
   const periodDays = args.period_days || 30
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - periodDays)
+  const cutoff = getStartOfDaysAgoUTC(timezone, periodDays)
 
   // Fetch all workouts in the period
   const workouts = await prisma.workout.findMany({
@@ -1111,8 +1135,8 @@ async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
   const response: any = {
     period: {
       days: periodDays,
-      start_date: formatDateLocal(cutoff),
-      end_date: formatDateLocal(new Date()),
+      start_date: formatUserDate(cutoff, timezone),
+      end_date: formatUserDate(new Date(), timezone),
       total_workouts: workouts.length,
     },
     summary: {
@@ -1155,7 +1179,7 @@ async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
   if (args.include_training_load !== false) {
     const dailyLoad: any = {}
     workouts.forEach((w) => {
-      const date = formatDateLocal(w.date)
+      const date = formatUserDate(w.date, timezone)
       if (!dailyLoad[date]) {
         dailyLoad[date] = { tss: 0, training_load: 0, duration_hours: 0, count: 0 }
       }
@@ -1180,9 +1204,15 @@ async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
   if (args.include_weekly_hours !== false) {
     const weeklyData: any = {}
     workouts.forEach((w) => {
-      const weekStart = new Date(w.date)
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-      const weekKey = weekStart.toISOString().split('T')[0]
+      // Need to find start of week relative to user timezone
+      // Assuming week starts on Monday
+      const localDateStr = formatUserDate(w.date, timezone, 'yyyy-MM-dd')
+      const parts = localDateStr.split('-')
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+      const day = d.getDay()
+      const diff = d.getDate() - day + (day == 0 ? -6 : 1) // adjust when day is sunday
+      d.setDate(diff)
+      const weekKey = d.toISOString().split('T')[0] // Use local date YYYY-MM-DD as key
 
       if (weekKey) {
         if (!weeklyData[weekKey]) {
@@ -1206,7 +1236,7 @@ async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
       .slice(-8) // Last 8 weeks
   }
 
-  // Intensity Analysis
+  // Intensity Analysis (no date changes needed here)
   if (args.include_intensity_analysis !== false) {
     const workoutsWithIntensity = workouts.filter((w) => w.intensity !== null)
     if (workoutsWithIntensity.length > 0) {
@@ -1272,7 +1302,7 @@ async function getPerformanceMetrics(userId: string, args: any): Promise<any> {
 /**
  * Search workouts with advanced filters
  */
-async function searchWorkouts(userId: string, args: any): Promise<any> {
+async function searchWorkouts(userId: string, timezone: string, args: any): Promise<any> {
   const where: any = { userId }
 
   if (args.query) {
@@ -1296,12 +1326,16 @@ async function searchWorkouts(userId: string, args: any): Promise<any> {
   }
 
   if (args.date_from) {
-    where.date = { gte: new Date(args.date_from) }
+    const fromParts = args.date_from.split('-')
+    const localFrom = new Date(parseInt(fromParts[0]), parseInt(fromParts[1]) - 1, parseInt(fromParts[2]))
+    where.date = { gte: getStartOfDayUTC(timezone, localFrom) }
   }
 
   if (args.date_to) {
     where.date = where.date || {}
-    where.date.lte = new Date(args.date_to)
+    const toParts = args.date_to.split('-')
+    const localTo = new Date(parseInt(toParts[0]), parseInt(toParts[1]) - 1, parseInt(toParts[2]))
+    where.date.lte = getEndOfDayUTC(timezone, localTo)
   }
 
   const workouts = await prisma.workout.findMany({
@@ -1331,7 +1365,7 @@ async function searchWorkouts(userId: string, args: any): Promise<any> {
     count: workouts.length,
     workouts: workouts.map((w) => ({
       id: w.id,
-      date: w.date.toISOString(),
+      date: formatUserDate(w.date, timezone, 'yyyy-MM-dd HH:mm'),
       title: w.title,
       type: w.type,
       duration_minutes: Math.round(w.durationSec / 60),

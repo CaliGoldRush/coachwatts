@@ -39,14 +39,15 @@ export default defineEventHandler(async (event) => {
       message: 'Unauthorized' 
     })
   }
-  
-  const today = new Date()
-  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+  const userId = (session.user as any).id
+  const timezone = await getUserTimezone(userId)
+  const todayDateOnly = getUserLocalDate(timezone)
   
   const metric = await prisma.wellness.findUnique({
     where: {
       userId_date: {
-        userId: (session.user as any).id,
+        userId,
         date: todayDateOnly
       }
     }

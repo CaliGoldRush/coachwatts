@@ -1,5 +1,6 @@
 import { getServerSession } from '../../utils/session'
 import { tasks } from "@trigger.dev/sdk/v3";
+import { getUserTimezone, getStartOfDaysAgoUTC } from '../../utils/date';
 
 defineRouteMeta({
   openAPI: {
@@ -75,6 +76,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // Determine date range based on report type or custom config
+  const timezone = await getUserTimezone(userId)
   let dateRangeStart: Date
   let dateRangeEnd = new Date()
   let reportConfig: any = null
@@ -85,28 +87,28 @@ export default defineEventHandler(async (event) => {
     
     if (customConfig.timeframeType === 'days') {
       const days = customConfig.days || 7
-      dateRangeStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+      dateRangeStart = getStartOfDaysAgoUTC(timezone, days)
     } else if (customConfig.timeframeType === 'count') {
       // For count-based, we'll use a 90-day lookback to find the items
-      dateRangeStart = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+      dateRangeStart = getStartOfDaysAgoUTC(timezone, 90)
     } else if (customConfig.timeframeType === 'range') {
       dateRangeStart = new Date(customConfig.startDate)
       dateRangeEnd = new Date(customConfig.endDate)
     } else {
-      dateRangeStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      dateRangeStart = getStartOfDaysAgoUTC(timezone, 7)
     }
   } else if (reportType === 'LAST_3_WORKOUTS') {
     // For last 3 workouts, we'll use a 30-day lookback to find them
-    dateRangeStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    dateRangeStart = getStartOfDaysAgoUTC(timezone, 30)
   } else if (reportType === 'LAST_3_NUTRITION') {
     // For last 3 nutrition days
-    dateRangeStart = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    dateRangeStart = getStartOfDaysAgoUTC(timezone, 3)
   } else if (reportType === 'LAST_7_NUTRITION') {
     // For last 7 nutrition days
-    dateRangeStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    dateRangeStart = getStartOfDaysAgoUTC(timezone, 7)
   } else {
     // WEEKLY_ANALYSIS uses 7 days (previous week)
-    dateRangeStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    dateRangeStart = getStartOfDaysAgoUTC(timezone, 7)
   }
   
   // Create report record with custom config stored in analysisJson temporarily

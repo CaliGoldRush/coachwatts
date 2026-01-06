@@ -688,7 +688,8 @@ export function normalizeIntervalsWorkout(activity: IntervalsActivity, userId: s
     userId,
     externalId: activity.id,
     source: 'intervals',
-    // Use start_date (UTC) if available, otherwise fall back to local (which might be imprecise depending on server timezone)
+    // Prefer start_date (UTC ISO string). If missing, start_date_local is used as a fallback.
+    // Standardizing on UTC for the database DateTime column.
     date: new Date(activity.start_date || activity.start_date_local),
     title: activity.name || 'Unnamed Activity',
     description: activity.description || null,

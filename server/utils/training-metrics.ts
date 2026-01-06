@@ -1,4 +1,5 @@
 import { prisma } from './db'
+import { formatUserDate } from './date'
 
 /**
  * Training Metrics Utility
@@ -223,7 +224,8 @@ export async function calculateZoneDistribution(
 export async function calculateLoadTrends(
   userId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  timezone: string = 'UTC'
 ): Promise<LoadTrend[]> {
   // Fetch workouts with CTL/ATL data
   const workouts = await prisma.workout.findMany({
@@ -258,7 +260,8 @@ export async function calculateLoadTrends(
   const trendMap = new Map<string, LoadTrend>()
   
   for (const w of wellness) {
-    const dateKey = w.date.toISOString().split('T')[0] ?? ''
+    // Wellness dates are already day-aligned (stored as UTC midnight), but best to be consistent
+    const dateKey = formatUserDate(w.date, timezone)
     trendMap.set(dateKey, {
       date: w.date,
       ctl: w.ctl,
@@ -268,7 +271,7 @@ export async function calculateLoadTrends(
   }
   
   for (const w of workouts) {
-    const dateKey = w.date.toISOString().split('T')[0] ?? ''
+    const dateKey = formatUserDate(w.date, timezone)
     trendMap.set(dateKey, {
       date: w.date,
       ctl: w.ctl,
@@ -446,9 +449,10 @@ export async function generateTrainingContext(
   options: {
     includeZones?: boolean
     period?: string
+    timezone?: string
   } = {}
 ): Promise<TrainingContext> {
-  const { includeZones = false, period = 'Recent Period' } = options
+  const { includeZones = false, period = 'Recent Period', timezone = 'UTC' } = options
   
   // Fetch workouts
   const workouts = await prisma.workout.findMany({
@@ -547,6 +551,17 @@ export async function generateTrainingContext(
     const workoutIds = workouts.map(w => w.id)
     zoneDistribution = await calculateZoneDistribution(workoutIds, userId) || undefined
   }
+  
+  // Calculate full trend history for context if needed (though not currently returned in TrainingContext interface??)
+  // Wait, TrainingContext interface doesn't have trend history array, just summary stats.
+  // But calculateLoadTrends IS exported and used elsewhere?
+  // Checking usage... it seems calculateLoadTrends is NOT used inside generateTrainingContext in the original code?
+  // Let me check the original code I read.
+  
+  // Ah, I see. generateTrainingContext constructs `loadTrend` object manually from single point values.
+  // It does NOT call calculateLoadTrends.
+  // However, I see I modified calculateLoadTrends earlier.
+  // Let's check if anyone calls calculateLoadTrends.
   
   return {
     period,
