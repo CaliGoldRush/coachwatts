@@ -281,13 +281,19 @@
 
           <div class="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
             <div v-if="!stravaConnected">
-              <UButton
-                color="neutral"
-                variant="outline"
-                @click="navigateTo('/connect-strava')"
+              <UTooltip
+                :text="isStravaDisabled ? 'Strava integration is temporarily unavailable on coachwatts.com' : ''"
+                :popper="{ placement: 'top' }"
               >
-                Connect
-              </UButton>
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  :disabled="isStravaDisabled"
+                  @click="navigateTo('/connect-strava')"
+                >
+                  Connect
+                </UButton>
+              </UTooltip>
             </div>
             <div v-else class="flex items-center gap-2">
               <UButton
@@ -366,6 +372,11 @@
 const { signIn } = useAuth()
 const advancedSyncModalOpen = ref(false)
 const selectedDays = ref<number | undefined>()
+
+const isStravaDisabled = computed(() => {
+  if (import.meta.server) return false
+  return window.location.hostname === 'coachwatts.com'
+})
 
 defineProps<{
   intervalsConnected: boolean

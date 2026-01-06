@@ -59,7 +59,13 @@
         <!-- Secondary Connections Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Strava -->
-          <UCard class="hover:ring-2 hover:ring-orange-500/20 transition-all cursor-pointer" @click="navigateTo('/connect-strava')">
+          <UCard 
+            class="transition-all" 
+            :class="[
+              isStravaDisabled ? 'opacity-60 cursor-not-allowed grayscale' : 'hover:ring-2 hover:ring-orange-500/20 cursor-pointer'
+            ]"
+            @click="!isStravaDisabled && navigateTo('/connect-strava')"
+          >
             <div class="flex items-center gap-3 mb-3">
               <div class="w-8 h-8 bg-white rounded-md flex items-center justify-center overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700">
                 <img src="/images/logos/strava.svg" alt="Strava Logo" class="w-5 h-5 object-contain" />
@@ -69,16 +75,22 @@
             <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 h-10">
               Import activities, segments, and social training data.
             </p>
-            <UButton
-              to="/connect-strava"
-              variant="soft"
-              color="warning"
-              size="xs"
-              block
-              icon="i-heroicons-plus"
+            <UTooltip
+              :text="isStravaDisabled ? 'Strava integration is temporarily unavailable on coachwatts.com' : ''"
+              :popper="{ placement: 'top' }"
             >
-              Connect
-            </UButton>
+              <UButton
+                :to="isStravaDisabled ? undefined : '/connect-strava'"
+                variant="soft"
+                color="warning"
+                size="xs"
+                block
+                icon="i-heroicons-plus"
+                :disabled="isStravaDisabled"
+              >
+                Connect
+              </UButton>
+            </UTooltip>
           </UCard>
 
           <!-- WHOOP -->
@@ -192,4 +204,9 @@
 
 <script setup lang="ts">
 const { signIn } = useAuth()
+
+const isStravaDisabled = computed(() => {
+  if (import.meta.server) return false
+  return window.location.hostname === 'coachwatts.com'
+})
 </script>

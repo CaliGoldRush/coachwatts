@@ -33,6 +33,15 @@
           </template>
 
           <div class="space-y-6">
+            <UAlert
+              v-if="isStravaDisabled"
+              color="warning"
+              variant="soft"
+              icon="i-heroicons-exclamation-triangle"
+              title="Temporarily Unavailable"
+              description="Strava integration is temporarily unavailable on coachwatts.com. We are working to restore it as soon as possible."
+              class="mb-4"
+            />
             <div class="bg-muted/50 p-4 rounded-lg">
               <h3 class="font-medium mb-2">What will be imported?</h3>
               <ul class="text-sm text-muted space-y-2">
@@ -63,13 +72,19 @@
               >
                 Cancel
               </UButton>
-              <UButton
-                @click="connect"
-                :loading="connecting"
-                icon="i-heroicons-bolt"
+              <UTooltip
+                :text="isStravaDisabled ? 'Strava integration is temporarily unavailable on coachwatts.com' : ''"
+                :popper="{ placement: 'top' }"
               >
-                Connect with Strava
-              </UButton>
+                <UButton
+                  @click="connect"
+                  :loading="connecting"
+                  icon="i-heroicons-bolt"
+                  :disabled="isStravaDisabled"
+                >
+                  Connect with Strava
+                </UButton>
+              </UTooltip>
             </div>
           </template>
         </UCard>
@@ -81,6 +96,11 @@
 <script setup lang="ts">
 const toast = useToast()
 const router = useRouter()
+
+const isStravaDisabled = computed(() => {
+  if (import.meta.server) return false
+  return window.location.hostname === 'coachwatts.com'
+})
 
 definePageMeta({
   middleware: 'auth'

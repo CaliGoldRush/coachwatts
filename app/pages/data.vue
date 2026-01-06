@@ -274,15 +274,22 @@
             >
               Configure
             </UButton>
-            <button
+            <UTooltip
               v-else
-              @click="syncIntegration('strava')"
-              :disabled="syncing === 'strava'"
-              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+              :text="isStravaDisabled ? 'Strava integration is temporarily unavailable on coachwatts.com' : ''"
+              :disabled="!isStravaDisabled"
+              class="w-full"
             >
-              <span v-if="syncing === 'strava'">Syncing...</span>
-              <span v-else>Sync Now</span>
-            </button>
+              <button
+                @click="syncIntegration('strava')"
+                :disabled="syncing === 'strava' || isStravaDisabled"
+                class="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                :class="{ 'opacity-50 cursor-not-allowed': isStravaDisabled }"
+              >
+                <span v-if="syncing === 'strava'">Syncing...</span>
+                <span v-else>Sync Now</span>
+              </button>
+            </UTooltip>
           </div>
 
           <!-- Hevy Card -->
@@ -1053,6 +1060,12 @@ const syncing = ref<string | null>(null)
 const loading = ref(true)
 const analyzingWorkouts = ref(false)
 const analyzingNutrition = ref(false)
+
+const isStravaDisabled = computed(() => {
+  if (import.meta.server) return false
+  return window.location.hostname === 'coachwatts.com'
+})
+
 const intervalsStatus = ref<any>(null)
 const whoopStatus = ref<any>(null)
 const yazioStatus = ref<any>(null)
