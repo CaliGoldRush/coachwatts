@@ -418,6 +418,18 @@ model Workout {
   sessionRpe      Int?     // Session RPE
   feel            Int?     // How the workout felt (1-10)
   
+  // Advanced Physiology
+  strainScore     Float?   // "Strain" / "Strain Score"
+  hrLoad          Float?   // Heart Rate Load (HRSS/TRIMP equivalent)
+  
+  // Advanced Power Analytics (Joules)
+  workAboveFtp    Int?     // Work done above FTP in Joules
+  wBalDepletion   Int?     // Max W' balance depletion in Joules
+  wPrime          Int?     // W' (Anaerobic Work Capacity) in Joules
+  
+  // Nutrition
+  carbsUsed       Int?     // Carbohydrates used in grams
+
   // Environmental & Equipment
   avgTemp         Float?   // Average temperature
   trainer         Boolean? // Indoor trainer workout
