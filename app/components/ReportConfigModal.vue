@@ -156,6 +156,8 @@
 </template>
 
 <script setup lang="ts">
+const { formatDate, getUserLocalDate } = useFormat()
+
 interface ReportConfig {
   dataType: 'workouts' | 'nutrition' | 'both'
   timeframeType: 'days' | 'count' | 'range'
@@ -173,7 +175,7 @@ const emit = defineEmits<{
 }>()
 
 const todayDate = computed(() => {
-  return new Date().toISOString().split('T')[0]
+  return getUserLocalDate().toISOString().split('T')[0]
 })
 
 // Default configuration
@@ -248,7 +250,7 @@ const configSummary = computed(() => {
   } else if (config.value.timeframeType === 'count' && config.value.count) {
     summary += `for the last ${config.value.count} ${config.value.dataType === 'workouts' ? 'workouts' : 'nutrition days'}`
   } else if (config.value.timeframeType === 'range' && config.value.startDate && config.value.endDate) {
-    summary += `from ${new Date(config.value.startDate).toLocaleDateString()} to ${new Date(config.value.endDate).toLocaleDateString()}`
+    summary += `from ${formatDate(config.value.startDate)} to ${formatDate(config.value.endDate)}`
   }
   
   // Workout types

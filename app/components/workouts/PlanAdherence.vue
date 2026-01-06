@@ -117,7 +117,7 @@
       </div>
       
       <div v-if="adherence.analyzedAt" class="text-xs text-gray-400 text-center pt-2">
-        Analyzed on {{ new Date(adherence.analyzedAt).toLocaleDateString() }}
+        Analyzed on {{ formatShortDate(adherence.analyzedAt) }}
       </div>
     </div>
 
@@ -159,6 +159,7 @@ const props = defineProps<{
 defineEmits(['regenerate'])
 
 const { formatDuration } = useFormatters()
+const { formatShortDate } = useFormat()
 
 function getScoreBorderColor(score: number) {
   if (score >= 90) return 'border-green-500'

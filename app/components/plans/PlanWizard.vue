@@ -239,7 +239,7 @@
               <div class="flex-1 w-full">
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 gap-1">
                   <h4 class="font-bold">{{ block.name.split('[')[0].trim() }}</h4>
-                  <span class="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 w-fit">{{ formatDate(block.startDate) }}</span>
+                  <span class="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 w-fit">{{ formatDate(block.startDate, 'MMM d') }}</span>
                 </div>
                 <div class="text-sm text-muted mb-2">{{ getBlockDescription(block.type) }}</div>
                 <div class="flex flex-wrap gap-2">
@@ -315,6 +315,7 @@ import EventGoalWizard from '~/components/goals/EventGoalWizard.vue'
 
 const emit = defineEmits(['close', 'plan-created'])
 const toast = useToast()
+const { formatDate, getUserLocalDate, timezone } = useFormat()
 
 // State
 const step = ref(1)
@@ -326,7 +327,8 @@ const selectedGoal = ref<any>(null)
 // Step 2 State
 const volumeHours = ref(6) // Default 6 hours
 const strategy = ref('LINEAR')
-const startDate = ref(new Date().toISOString().split('T')[0])
+// Initialize with local today
+const startDate = ref(getUserLocalDate().toISOString().split('T')[0])
 const endDate = ref('')
 const isEventBased = ref(true)
 const durationWeeks = ref(12)
@@ -387,7 +389,7 @@ function selectGoal(goal: any) {
     isEventBased.value = true
   } else {
     // Default to 12 weeks if no event date
-    const d = new Date()
+    const d = getUserLocalDate()
     d.setDate(d.getDate() + 84) 
     endDate.value = d.toISOString().split('T')[0] || ''
     isEventBased.value = false
@@ -404,10 +406,6 @@ function getPriorityColor(p: string) {
   if (p === 'HIGH') return 'error'
   if (p === 'MEDIUM') return 'warning'
   return 'success'
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function getBlockDescription(type: string) {
@@ -443,7 +441,7 @@ function recommendStrategy() {
         strategy.value = 'POLARIZED'
     } else if (isEventBased.value && selectedGoal.value?.eventDate) {
          // Check time to event
-         const weeks = (new Date(selectedGoal.value.eventDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24 * 7)
+         const weeks = (new Date(selectedGoal.value.eventDate).getTime() - getUserLocalDate().getTime()) / (1000 * 60 * 60 * 24 * 7)
          if (weeks < 8) {
              aiRecommendation.value = "With limited time (<8 weeks), Block periodization can provide a rapid fitness boost."
              strategy.value = 'BLOCK'
@@ -469,9 +467,12 @@ async function initializePlan() {
   // Calculate end date if duration mode
   let finalEndDate = endDate.value
   if (!isEventBased.value) {
-      const d = new Date(startDate.value)
+      const d = new Date(startDate.value + 'T00:00:00')
       d.setDate(d.getDate() + (durationWeeks.value * 7))
-      finalEndDate = d.toISOString()
+      // Adjust to end of that day
+      finalEndDate = d.toISOString().split('T')[0] + 'T23:59:59'
+  } else if (finalEndDate) {
+      finalEndDate = finalEndDate.split('T')[0] + 'T23:59:59'
   }
 
   // Map volume hours to bucket for backend (temporary until backend supports direct hours)
@@ -484,7 +485,7 @@ async function initializePlan() {
       method: 'POST',
       body: {
         goalId: selectedGoal.value.id,
-        startDate: new Date(startDate.value).toISOString(),
+        startDate: new Date(startDate.value + 'T00:00:00').toISOString(),
         endDate: finalEndDate ? new Date(finalEndDate).toISOString() : undefined,
         volumePreference: volumeBucket, // Keeping for backward compat if needed
         volumeHours: volumeHours.value, // New precise value

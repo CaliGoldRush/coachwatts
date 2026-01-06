@@ -91,6 +91,8 @@
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 
+const { formatDateTime } = useFormat()
+
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UIcon = resolveComponent('UIcon')
@@ -149,7 +151,7 @@ const columns: TableColumn<UsageItem>[] = [{
     })
   },
   cell: ({ row }) => {
-    return h('div', { class: 'text-muted' }, formatDate(row.getValue('createdAt')))
+    return h('div', { class: 'text-muted' }, formatDateTime(row.getValue('createdAt')))
   }
 }, {
   accessorKey: 'operation',
@@ -289,23 +291,5 @@ function formatOperation(op: string): string {
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
-}
-
-function formatDate(date: string): string {
-  const d = new Date(date)
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`
-  
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }
 </script>

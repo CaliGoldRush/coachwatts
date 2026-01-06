@@ -272,11 +272,11 @@
           </button>
         </div>
           <div v-if="editingField === 'dob'" class="flex gap-2">
-          <UInput :model-value="editValue ? new Date(editValue).toISOString().split('T')[0] : ''" @update:model-value="val => editValue = val" type="date" size="sm" class="w-full" autofocus @keyup.enter="saveField" @keyup.esc="cancelEdit" />
+          <UInput :model-value="editValue ? formatUserDate(editValue, timezone, 'yyyy-MM-dd') : ''" @update:model-value="val => editValue = val" type="date" size="sm" class="w-full" autofocus @keyup.enter="saveField" @keyup.esc="cancelEdit" />
           <UButton size="xs" color="primary" variant="ghost" icon="i-heroicons-check" @click="saveField" />
           <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="cancelEdit" />
         </div>
-        <p v-else class="font-medium text-lg">{{ modelValue.dob ? new Date(modelValue.dob).toLocaleDateString() : 'Not set' }}</p>
+        <p v-else class="font-medium text-lg">{{ modelValue.dob ? formatDate(modelValue.dob) : 'Not set' }}</p>
       </div>
       
         <!-- City -->
@@ -382,6 +382,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['update:modelValue', 'autodetect'])
+const { formatDate, formatUserDate, timezone } = useFormat()
 
 const editingField = ref<string | null>(null)
 const editValue = ref<any>(null)

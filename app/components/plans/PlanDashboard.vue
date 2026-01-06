@@ -125,7 +125,7 @@
     <PlanAIModal 
       v-model="showAIPlanModal" 
       :loading="generatingWorkouts"
-      :week-label="selectedWeek ? `Week ${selectedWeek.weekNumber}: ${formatDate(selectedWeek.startDate)} - ${formatDate(selectedWeek.endDate)}` : undefined"
+      :week-label="selectedWeek ? `Week ${selectedWeek.weekNumber}: ${formatDate(selectedWeek.startDate, 'MMM d')} - ${formatDate(selectedWeek.endDate, 'MMM d')}` : undefined"
       @generate="generatePlanWithAI" 
     />
 
@@ -417,6 +417,8 @@ import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
 import WeeklyZoneSummary from '~/components/ui/WeeklyZoneSummary.vue'
 import PlanAIModal from '~/components/plans/PlanAIModal.vue'
 
+const { formatDate, formatUserDate, getUserLocalDate, timezone } = useFormat()
+
 const props = defineProps<{
   plan: any
   userFtp?: number
@@ -446,21 +448,23 @@ const toast = useToast()
 
 // Computed
 const currentBlock = computed(() => {
-  // Find block encompassing "today"
-  const now = new Date()
-  return props.plan.blocks.find((b: any) => new Date(b.startDate) <= now && new Date(b.startDate).getTime() + (b.durationWeeks * 7 * 24 * 3600 * 1000) > now.getTime()) || props.plan.blocks[0]
+  // Find block encompassing "today" in user's timezone
+  const today = getUserLocalDate()
+  const todayTime = today.getTime()
+
+  return props.plan.blocks.find((b: any) => {
+    const start = new Date(b.startDate).getTime()
+    const end = start + (b.durationWeeks * 7 * 24 * 3600 * 1000) - 1
+    return todayTime >= start && todayTime <= end
+  }) || props.plan.blocks[0]
 })
 
 const selectedBlock = computed(() => props.plan.blocks.find((b: any) => b.id === selectedBlockId.value))
 const selectedWeek = computed(() => selectedBlock.value?.weeks.find((w: any) => w.id === selectedWeekId.value))
 
 // Helpers
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
 function formatDay(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })
+  return formatDate(d, 'EEE, MMM d')
 }
 
 function getBlockStatusColor(block: any) {
@@ -877,11 +881,13 @@ async function generateWorkoutsForBlock() {
       }
 
       // 1. Determine Active Block
-      const now = new Date().getTime()
+      const today = getUserLocalDate()
+      const todayTime = today.getTime()
+
       const activeBlock = newPlan.blocks.find((b: any) => {
         const start = new Date(b.startDate).getTime()
-        const end = start + (b.durationWeeks * 7 * 24 * 3600 * 1000)
-        return now >= start && now <= end
+        const end = start + (b.durationWeeks * 7 * 24 * 3600 * 1000) - 1
+        return todayTime >= start && todayTime <= end
       }) || newPlan.blocks[0]
       
       selectedBlockId.value = activeBlock.id
@@ -889,7 +895,9 @@ async function generateWorkoutsForBlock() {
       // 2. Determine Active Week within that block
       if (activeBlock.weeks.length > 0) {
         const currentWeek = activeBlock.weeks.find((w: any) => {
-          return new Date(w.startDate).getTime() <= now && new Date(w.endDate).getTime() >= now
+          const start = new Date(w.startDate).getTime()
+          const end = new Date(w.endDate).getTime()
+          return todayTime >= start && todayTime <= end
         })
         selectedWeekId.value = currentWeek ? currentWeek.id : activeBlock.weeks[0].id
       }
@@ -923,9 +931,10 @@ async function generateWorkoutsForBlock() {
         // Only reset if the current selected week is NOT in this block
         const weekInBlock = block.weeks.find((w: any) => w.id === selectedWeekId.value)
         if (!weekInBlock) {
-           const now = new Date().getTime()
+           const today = getUserLocalDate()
+           const todayTime = today.getTime()
            const currentWeek = block.weeks.find((w: any) => {
-             return new Date(w.startDate).getTime() <= now && new Date(w.endDate).getTime() >= now
+             return new Date(w.startDate).getTime() <= todayTime && new Date(w.endDate).getTime() >= todayTime
            })
            selectedWeekId.value = currentWeek ? currentWeek.id : block.weeks[0].id
         }

@@ -21,7 +21,7 @@
           >
             <div class="font-bold">{{ workout.title }}</div>
             <div class="text-xs text-muted flex gap-2 mt-1">
-              <span>{{ formatDate(workout.date) }}</span>
+              <span>{{ formatDateTime(workout.date, 'MMM d, h:mm a') }}</span>
               <span>•</span>
               <span>{{ Math.round(workout.tss || 0) }} TSS</span>
             </div>
@@ -47,7 +47,7 @@
           >
             <div class="font-bold">{{ planned.title }}</div>
             <div class="text-xs text-muted flex gap-2 mt-1">
-              <span>{{ formatDate(planned.date) }}</span>
+              <span>{{ formatDateTime(planned.date, 'MMM d, h:mm a') }}</span>
               <span>•</span>
               <span>{{ planned.tss }} TSS</span>
             </div>
@@ -75,6 +75,8 @@
 </template>
 
 <script setup lang="ts">
+const { formatDateTime } = useFormat()
+
 const props = defineProps<{
   completedWorkouts: any[]
   plannedWorkouts: any[]
@@ -87,10 +89,6 @@ const selectedPlanned = ref<any>(null)
 const matching = ref(false)
 
 const canMatch = computed(() => selectedCompleted.value && selectedPlanned.value)
-
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
 
 async function matchWorkouts() {
   if (!canMatch.value) return

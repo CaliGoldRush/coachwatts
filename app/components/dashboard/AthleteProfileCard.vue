@@ -235,6 +235,7 @@
 <script setup lang="ts">
 const userStore = useUserStore()
 const integrationStore = useIntegrationStore()
+const { formatDate, getUserLocalDate } = useFormat()
 
 defineEmits(['open-wellness'])
 
@@ -283,13 +284,19 @@ watch(() => integrationStore.intervalsConnected, (connected) => {
 
 function formatWellnessDate(dateStr: string): string {
   const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const today = getUserLocalDate()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
   
-  if (diffDays === 0) return 'today'
-  if (diffDays === 1) return 'yesterday'
-  if (diffDays < 7) return `${diffDays} days ago`
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const dStr = formatDate(date, 'yyyy-MM-dd')
+  const tStr = formatDate(today, 'yyyy-MM-dd')
+  const yStr = formatDate(yesterday, 'yyyy-MM-dd')
+  
+  if (dStr === tStr) return 'today'
+  if (dStr === yStr) return 'yesterday'
+  
+  const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays > 1 && diffDays < 7) return `${diffDays} days ago`
+  return formatDate(date, 'MMM d')
 }
 </script>

@@ -162,15 +162,12 @@ const props = defineProps<{
 
 defineEmits(['update:currentPage', 'navigate', 'create', 'edit', 'delete'])
 
+const { formatDate: baseFormatDate } = useFormat()
+
 const itemsPerPage = 20
 
 function formatDate(date: string) {
-  return new Date(date).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
+  return baseFormatDate(date, 'EEE, MMM d, yyyy')
 }
 
 function getPriorityBadgeClass(priority: string) {

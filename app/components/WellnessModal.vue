@@ -110,7 +110,7 @@
                   :style="{ height: day.hrv ? `${Math.max((day.hrv / maxHRV) * 100, 10)}%` : '4px' }"
                 >
                   <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded shadow-xl whitespace-nowrap pointer-events-none z-10">
-                    {{ format(day.date, 'MMM d') }}: {{ day.hrv ? Math.round(day.hrv) + 'ms' : 'N/A' }}
+                    {{ formatDate(day.date, 'MMM d') }}: {{ day.hrv ? Math.round(day.hrv) + 'ms' : 'N/A' }}
                   </div>
                 </div>
               </div>
@@ -129,7 +129,7 @@
                   :style="{ height: day.hoursSlept ? `${Math.max((day.hoursSlept / 12) * 100, 10)}%` : '4px' }"
                 >
                   <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded shadow-xl whitespace-nowrap pointer-events-none z-10">
-                    {{ format(day.date, 'MMM d') }}: {{ day.hoursSlept ? day.hoursSlept.toFixed(1) + 'h' : 'N/A' }}
+                    {{ formatDate(day.date, 'MMM d') }}: {{ day.hoursSlept ? day.hoursSlept.toFixed(1) + 'h' : 'N/A' }}
                   </div>
                 </div>
               </div>
@@ -160,7 +160,8 @@
 </template>
 
 <script setup lang="ts">
-import { format, subDays } from 'date-fns'
+import { subDays } from 'date-fns'
+import { format as formatDateFns } from 'date-fns'
 
 const props = defineProps<{
   open: boolean
@@ -171,13 +172,15 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
+const { formatDate, timezone } = useFormat()
+
 const isOpen = computed({
   get: () => props.open,
   set: (value) => emit('update:open', value)
 })
 
 const formattedDate = computed(() => {
-  return props.date ? format(props.date, 'EEEE, MMMM d, yyyy') : ''
+  return props.date ? formatDate(props.date, 'EEEE, MMMM d, yyyy') : ''
 })
 
 const loading = ref(false)
@@ -200,14 +203,14 @@ watch(() => props.open, async (isOpen) => {
 async function fetchWellnessData(date: Date) {
   loading.value = true
   try {
-    const dateStr = format(date, 'yyyy-MM-dd')
+    const dateStr = formatDateFns(date, 'yyyy-MM-dd')
     
     // Fetch wellness data for the specific date
     const response = await $fetch(`/api/wellness/${dateStr}`)
     wellnessData.value = response
     
     // Fetch 7-day trend data
-    const startDate = format(subDays(date, 6), 'yyyy-MM-dd')
+    const startDate = formatDateFns(subDays(date, 6), 'yyyy-MM-dd')
     const endDate = dateStr
     const trendResponse = await $fetch<any[]>(`/api/wellness/trend?startDate=${startDate}&endDate=${endDate}`)
     trendData.value = trendResponse.map((d: any) => ({

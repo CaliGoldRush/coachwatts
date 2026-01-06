@@ -52,6 +52,7 @@ const props = defineProps<{
 }>()
 
 const theme = useTheme()
+const { formatDate: baseFormatDate } = useFormat()
 
 const metrics = computed(() => {
   if (props.type === 'workout') {
@@ -76,7 +77,7 @@ const metrics = computed(() => {
 const visibleMetrics = computed(() => metrics.value)
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return baseFormatDate(date, 'MMM d')
 }
 
 const chartData = computed(() => {

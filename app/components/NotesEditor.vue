@@ -218,6 +218,8 @@ import Placeholder from '@tiptap/extension-placeholder'
 import TurndownService from 'turndown'
 import { marked } from 'marked'
 
+const { formatDateTime } = useFormat()
+
 const props = defineProps<{
   modelValue: string | null
   notesUpdatedAt?: string | Date | null
@@ -336,13 +338,7 @@ async function saveNotes() {
 }
 
 function formatDate(date: string | Date) {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  return formatDateTime(date, 'MMMM d, yyyy h:mm a')
 }
 
 onBeforeUnmount(() => {

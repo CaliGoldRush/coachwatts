@@ -57,7 +57,7 @@
             class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-              <span class="sm:hidden">{{ formatDateMobile(workout.date) }}</span>
+              <span class="sm:hidden">{{ formatShortDate(workout.date) }}</span>
               <span class="hidden sm:inline">{{ formatDate(workout.date) }}</span>
             </td>
             <td class="px-3 sm:px-6 py-4 text-sm text-gray-900 dark:text-white max-w-[150px] sm:max-w-none truncate">
@@ -147,23 +147,10 @@ const props = defineProps<{
 
 defineEmits(['update:currentPage', 'navigate'])
 
+const { formatDate, formatShortDate } = useFormat()
+
 // Constant for items per page (used in pagination display)
 const itemsPerPage = 20
-
-function formatDate(date: string | Date) {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-function formatDateMobile(date: string | Date) {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  })
-}
 
 function formatDuration(seconds: number) {
   const hours = Math.floor(seconds / 3600)

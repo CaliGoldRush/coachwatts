@@ -118,6 +118,7 @@
 
 <script setup lang="ts">
 const loading = ref(true)
+const { formatDate } = useFormat()
 
 const { data } = await useFetch('/api/analytics/llm-usage', {
   query: {
@@ -232,15 +233,14 @@ function formatOperation(op: string): string {
 }
 
 function formatDateLabel(dateStr: string): string {
-  const date = new Date(dateStr)
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
+  const formatted = formatDate(dateStr, 'MMM d')
+  const today = formatDate(new Date(), 'MMM d')
+  const yesterday = formatDate(new Date(Date.now() - 86400000), 'MMM d')
   
-  if (date.toDateString() === today.toDateString()) return 'Today'
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
+  if (formatted === today) return 'Today'
+  if (formatted === yesterday) return 'Yesterday'
   
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return formatted
 }
 
 function formatNumber(num: number | null | undefined): string {

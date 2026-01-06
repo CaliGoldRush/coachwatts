@@ -217,6 +217,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'created', 'updated'])
+const { formatDate, formatUserDate, getUserLocalDate, timezone } = useFormat()
 
 const isEditMode = computed(() => !!props.goal)
 const step = ref(1)
@@ -267,8 +268,8 @@ watchEffect(() => {
     form.startValue = props.goal.startValue
     form.targetValue = props.goal.targetValue
     form.currentValue = props.goal.currentValue
-    form.targetDate = props.goal.targetDate ? new Date(props.goal.targetDate).toISOString().split('T')[0] : undefined
-    form.eventDate = props.goal.eventDate ? new Date(props.goal.eventDate).toISOString().split('T')[0] : undefined
+    form.targetDate = props.goal.targetDate ? formatUserDate(props.goal.targetDate, timezone.value, 'yyyy-MM-dd') : undefined
+    form.eventDate = props.goal.eventDate ? formatUserDate(props.goal.eventDate, timezone.value, 'yyyy-MM-dd') : undefined
     form.eventType = props.goal.eventType || 'Race'
     form.metric = props.goal.metric || ''
     step.value = 2
@@ -334,8 +335,8 @@ async function generateAiSuggestion() {
       form.title = "Lose 3kg in 8 weeks"
       form.startValue = 99
       form.targetValue = 96
-      // Set date 8 weeks from now
-      const d = new Date()
+      // Set date 8 weeks from now relative to user local day
+      const d = getUserLocalDate()
       d.setDate(d.getDate() + 56)
       form.targetDate = d.toISOString().split('T')[0]
       form.description = "Based on your recent activity, a moderate deficit is sustainable."
@@ -353,9 +354,17 @@ async function generateAiSuggestion() {
 async function saveGoal() {
   saving.value = true
   try {
-    const payload = {
+    const payload: any = {
       type: selectedType.value,
       ...form
+    }
+
+    // Convert local dates to absolute UTC ISO strings
+    if (form.targetDate) {
+        payload.targetDate = new Date(form.targetDate + 'T23:59:59').toISOString()
+    }
+    if (form.eventDate) {
+        payload.eventDate = new Date(form.eventDate + 'T00:00:00').toISOString()
     }
     
     // Ensure numbers are numbers

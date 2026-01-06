@@ -72,6 +72,8 @@
 </template>
 
 <script setup lang="ts">
+const { formatDate, getUserLocalDate } = useFormat()
+
 const props = defineProps<{
   goal: any
 }>()
@@ -142,15 +144,11 @@ const actions = [[{
   onSelect: () => emit('delete', props.goal.id)
 }]]
 
-function formatDate(dateString: string) {
-  if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
 function daysUntil(dateString: string) {
   if (!dateString) return 0
-  const today = new Date()
+  const today = getUserLocalDate()
   const target = new Date(dateString)
+  // Both are UTC midnight or relative.
   const diffTime = target.getTime() - today.getTime()
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 }

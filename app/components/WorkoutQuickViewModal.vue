@@ -44,7 +44,7 @@
                 <span>{{ workout.type || 'Activity' }}</span>
               </div>
               <span>•</span>
-              <span>{{ formatDate(workout.date) }}</span>
+              <span>{{ formatDateTime(workout.date) }}</span>
             </div>
           </div>
           <UBadge 
@@ -138,7 +138,7 @@
                   <UIcon name="i-heroicons-arrow-top-right-on-square" class="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity" />
                 </NuxtLink>
                 <div class="flex gap-2 text-[10px] text-gray-500">
-                  <span>{{ formatDate(workout.plannedWorkout.date) }}</span>
+                  <span>{{ formatDateTime(workout.plannedWorkout.date) }}</span>
                   <span>•</span>
                   <span>{{ workout.plannedWorkout.type || 'Workout' }}</span>
                 </div>
@@ -253,7 +253,7 @@
 </template>
 
 <script setup lang="ts">
-import { format } from 'date-fns'
+const { formatDateTime } = useFormat()
 
 const props = defineProps<{
   workout: any | null
@@ -345,14 +345,6 @@ async function deleteWorkout() {
 function viewFullWorkout() {
   if (props.workout) {
     navigateTo(`/workouts/${props.workout.id}`)
-  }
-}
-
-function formatDate(dateStr: string) {
-  try {
-    return format(new Date(dateStr), 'MMM d, yyyy h:mm a')
-  } catch {
-    return dateStr
   }
 }
 

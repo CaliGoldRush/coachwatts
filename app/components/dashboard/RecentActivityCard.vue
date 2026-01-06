@@ -55,22 +55,31 @@
 
 <script setup lang="ts">
 const activityStore = useActivityStore()
+const { formatDate, getUserLocalDate } = useFormat()
 
 // Format date for timeline display
 function formatActivityDate(date: string | Date): string {
   const activityDate = new Date(date)
-  const now = new Date()
-  const diffMs = now.getTime() - activityDate.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const today = getUserLocalDate()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
   
-  if (diffDays === 0) {
+  // Create day-only strings for comparison
+  const activityDateStr = formatDate(activityDate, 'yyyy-MM-dd')
+  const todayStr = formatDate(today, 'yyyy-MM-dd')
+  const yesterdayStr = formatDate(yesterday, 'yyyy-MM-dd')
+  
+  if (activityDateStr === todayStr) {
     return 'Today'
-  } else if (diffDays === 1) {
+  } else if (activityDateStr === yesterdayStr) {
     return 'Yesterday'
-  } else if (diffDays < 7) {
-    return `${diffDays} days ago`
   } else {
-    return activityDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    // Check if within last 7 days
+    const diffDays = Math.floor((today.getTime() - activityDate.getTime()) / (1000 * 60 * 60 * 24))
+    if (diffDays > 1 && diffDays < 7) {
+      return `${diffDays} days ago`
+    }
+    return formatDate(activityDate, 'MMM d')
   }
 }
 </script>

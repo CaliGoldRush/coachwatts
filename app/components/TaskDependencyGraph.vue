@@ -226,6 +226,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { TASK_DEPENDENCIES, type TaskExecutionState, type TaskDefinition, calculateOverallProgress } from '../../types/task-dependencies'
 
 const toast = useToast()
+const { formatDate: baseFormatDate, formatRelativeTime: baseFormatRelativeTime } = useFormat()
 
 // State
 const taskStates = ref<Record<string, TaskExecutionState>>({})
@@ -431,30 +432,11 @@ function getCategoryStatusClass(categoryId: string): string {
 }
 
 function formatTime(date: Date): string {
-  const now = new Date()
-  const diff = now.getTime() - new Date(date).getTime()
-  const seconds = Math.floor(diff / 1000)
-  const minutes = Math.floor(seconds / 60)
-  
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  
-  const hours = Math.floor(minutes / 60)
-  return `${hours}h ${minutes % 60}m ago`
+  return baseFormatRelativeTime(date)
 }
 
 function formatRelativeTime(date: Date | string): string {
-  const now = new Date()
-  const targetDate = typeof date === 'string' ? new Date(date) : date
-  const diff = now.getTime() - targetDate.getTime()
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  const days = Math.floor(hours / 24)
-  
-  if (hours < 1) return 'less than 1h ago'
-  if (hours < 24) return `${hours}h ago`
-  if (days < 7) return `${days}d ago`
-  
-  return targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return baseFormatRelativeTime(date)
 }
 
 function getTaskMetadata(taskId: string) {

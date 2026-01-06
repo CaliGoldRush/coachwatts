@@ -225,6 +225,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'created', 'updated'])
+const { formatDate, getUserLocalDate, timezone } = useFormat()
 
 const isEditMode = computed(() => !!props.goal)
 const step = ref(1)
@@ -290,7 +291,7 @@ const selectedEvents = computed(() => {
 const phaseRecommendation = computed(() => {
   if (!form.eventDate) return "We'll suggest a phase once you set an event date."
   
-  const today = new Date()
+  const today = getUserLocalDate()
   const event = new Date(form.eventDate)
   const weeksToEvent = Math.ceil((event.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 7))
   
@@ -361,10 +362,6 @@ function selectType(id: string) {
   }
 }
 
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
 async function saveGoal() {
   saving.value = true
   
@@ -391,7 +388,7 @@ async function saveGoal() {
 
   // Handle Event Specifics
   if (selectedType.value === 'EVENT') {
-    const isoDate = form.eventDate ? new Date(form.eventDate).toISOString() : undefined
+    const isoDate = form.eventDate ? new Date(form.eventDate + 'T00:00:00').toISOString() : undefined
     payload.eventDate = isoDate
     payload.eventType = form.eventType
     payload.distance = form.distance
@@ -415,7 +412,7 @@ async function saveGoal() {
       }
     }
   } else {
-    payload.targetDate = form.targetDate ? new Date(form.targetDate).toISOString() : undefined
+    payload.targetDate = form.targetDate ? new Date(form.targetDate + 'T23:59:59').toISOString() : undefined
   }
 
   try {
@@ -442,8 +439,9 @@ watchEffect(() => {
     form.priority = props.goal.priority || 'MEDIUM'
     form.startValue = props.goal.startValue
     form.targetValue = props.goal.targetValue
-    form.targetDate = props.goal.targetDate ? new Date(props.goal.targetDate).toISOString().split('T')[0] : undefined
-    form.eventDate = props.goal.eventDate ? new Date(props.goal.eventDate).toISOString().split('T')[0] : undefined
+    // Use format to get local date string YYYY-MM-DD from absolute date
+    form.targetDate = props.goal.targetDate ? formatDate(props.goal.targetDate, 'yyyy-MM-dd') : undefined
+    form.eventDate = props.goal.eventDate ? formatDate(props.goal.eventDate, 'yyyy-MM-dd') : undefined
     form.eventType = props.goal.eventType || 'Road Race'
     form.distance = props.goal.distance
     form.elevation = props.goal.elevation
