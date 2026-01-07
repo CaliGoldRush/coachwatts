@@ -1,6 +1,11 @@
 {
   "general": {
-    "vimMode": true
+    "vimMode": true,
+    "previewFeatures": true,
+    "enablePromptCompletion": true,
+    "checkpointing": {
+      "enabled": true
+    },
   },
   "tools": {
     "autoAccept": true
