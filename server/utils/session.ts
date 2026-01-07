@@ -1,4 +1,5 @@
-import { H3Event, getCookie } from 'h3'
+import type { H3Event} from 'h3';
+import { getCookie } from 'h3'
 import { getServerSession as getBaseSession } from '#auth'
 import { prisma } from './db'
 
