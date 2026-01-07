@@ -5,7 +5,8 @@ import {
   fetchIntervalsPlannedWorkouts,
   normalizeIntervalsWorkout,
   normalizeIntervalsWellness,
-  normalizeIntervalsPlannedWorkout
+  normalizeIntervalsPlannedWorkout,
+  fetchIntervalsActivityStreams
 } from "../intervals";
 import { workoutRepository } from "../repositories/workoutRepository";
 import { wellnessRepository } from "../repositories/wellnessRepository";
@@ -15,6 +16,13 @@ import { calculateWorkoutStress } from "../calculate-workout-stress";
 import { getUserTimezone, getEndOfDayUTC } from "../date";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { userIngestionQueue } from "../../../trigger/queues";
+import {
+  calculateLapSplits,
+  calculatePaceVariability,
+  calculateAveragePace,
+  analyzePacingStrategy,
+  detectSurges
+} from "../pacing";
 
 export class IntervalsService {
   /**
@@ -95,6 +103,123 @@ export class IntervalsService {
     }
 
     return upsertedCount;
+  }
+
+  /**
+   * Sync activity stream data including pacing metrics.
+   */
+  static async syncActivityStream(userId: string, workoutId: string, activityId: string) {
+    // Get Intervals integration
+    const integration = await prisma.integration.findFirst({
+      where: {
+        userId: userId,
+        provider: 'intervals'
+      }
+    });
+    
+    if (!integration) {
+      throw new Error('Intervals.icu integration not found');
+    }
+    
+    // Fetch streams from Intervals.icu API
+    const streams = await fetchIntervalsActivityStreams(
+      integration,
+      activityId
+    );
+    
+    // Check if we got any stream data
+    if (!streams.time || !streams.time.data || (Array.isArray(streams.time.data) && streams.time.data.length === 0)) {
+      console.log(`[IntervalsService] No stream data available for activity ${activityId}`);
+      return null;
+    }
+    
+    // Extract data arrays
+    const timeData = (streams.time?.data as number[]) || [];
+    const distanceData = (streams.distance?.data as number[]) || [];
+    const velocityData = (streams.velocity?.data as number[]) || [];
+    const heartrateData = (streams.heartrate?.data as number[]) || null;
+    const cadenceData = (streams.cadence?.data as number[]) || null;
+    const wattsData = (streams.watts?.data as number[]) || null;
+    const altitudeData = (streams.altitude?.data as number[]) || null;
+    const latlngData = (streams.latlng?.data as [number, number][]) || null;
+    const gradeData = (streams.grade?.data as number[]) || null;
+    const movingData = (streams.moving?.data as boolean[]) || null;
+    
+    // Calculate pacing metrics
+    let lapSplits = null;
+    let paceVariability = null;
+    let avgPacePerKm = null;
+    let pacingStrategy = null;
+    let surges = null;
+    
+    if (timeData.length > 0 && distanceData.length > 0) {
+      // Calculate lap splits (1km intervals)
+      lapSplits = calculateLapSplits(timeData, distanceData, 1000);
+      
+      // Calculate pace variability
+      if (velocityData.length > 0) {
+        paceVariability = calculatePaceVariability(velocityData);
+        
+        // Calculate average pace
+        avgPacePerKm = calculateAveragePace(
+          timeData[timeData.length - 1],
+          distanceData[distanceData.length - 1]
+        );
+      }
+      
+      // Analyze pacing strategy
+      if (lapSplits && lapSplits.length >= 2) {
+        pacingStrategy = analyzePacingStrategy(lapSplits);
+      }
+      
+      // Detect surges
+      if (velocityData.length > 20 && timeData.length > 20) {
+        surges = detectSurges(velocityData, timeData);
+      }
+    }
+    
+    // Store in database
+    const workoutStream = await prisma.workoutStream.upsert({
+      where: { workoutId: workoutId },
+      create: {
+        workoutId: workoutId,
+        time: timeData,
+        distance: distanceData,
+        velocity: velocityData,
+        heartrate: heartrateData,
+        cadence: cadenceData,
+        watts: wattsData,
+        altitude: altitudeData,
+        latlng: latlngData,
+        grade: gradeData,
+        moving: movingData,
+        lapSplits,
+        paceVariability,
+        avgPacePerKm,
+        pacingStrategy,
+        surges
+      },
+      update: {
+        time: timeData,
+        distance: distanceData,
+        velocity: velocityData,
+        heartrate: heartrateData,
+        cadence: cadenceData,
+        watts: wattsData,
+        altitude: altitudeData,
+        latlng: latlngData,
+        grade: gradeData,
+        moving: movingData,
+        lapSplits,
+        paceVariability,
+        avgPacePerKm,
+        pacingStrategy,
+        surges,
+        updatedAt: new Date()
+      }
+    });
+    
+    return workoutStream;
   }
 
   /**
