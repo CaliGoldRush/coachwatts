@@ -12,6 +12,32 @@
             Back to Fitness
           </UButton>
         </template>
+
+        <template #right>
+          <div class="flex gap-2">
+            <UButton
+              icon="i-heroicons-share"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              class="font-bold"
+              @click="isShareModalOpen = true"
+            >
+              <span class="hidden sm:inline">Share</span>
+            </UButton>
+            <UButton
+              icon="i-heroicons-chat-bubble-left-right"
+              color="primary"
+              variant="solid"
+              size="sm"
+              class="font-bold"
+              @click="chatAboutWellness"
+            >
+              <span class="hidden sm:inline">Chat about this day</span>
+              <span class="sm:hidden">Chat</span>
+            </UButton>
+          </div>
+        </template>
       </UDashboardNavbar>
     </template>
 
@@ -140,6 +166,127 @@
                   :style="{ height: day.value ? `${Math.min((day.value / 150) * 100, 100)}%` : '2px' }"
                 />
               </div>
+            </div>
+          </div>
+
+          <!-- AI Analysis Section -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-bold text-gray-900 dark:text-white">AI Wellness Analysis</h2>
+              <UButton
+                v-if="!wellness.aiAnalysisJson && wellness.aiAnalysisStatus !== 'PROCESSING'"
+                icon="i-heroicons-sparkles"
+                color="primary"
+                variant="solid"
+                size="sm"
+                class="font-bold"
+                :loading="analyzingWellness"
+                :disabled="analyzingWellness"
+                @click="analyzeWellness"
+              >
+                Analyze
+              </UButton>
+              <UButton
+                v-else-if="wellness.aiAnalysisStatus !== 'PROCESSING'"
+                icon="i-heroicons-arrow-path"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                class="font-bold"
+                :loading="analyzingWellness"
+                :disabled="analyzingWellness"
+                @click="analyzeWellness"
+              >
+                Re-analyze
+              </UButton>
+            </div>
+            
+            <!-- Structured Analysis Display -->
+            <div v-if="wellness.aiAnalysisJson" class="space-y-6">
+              <!-- Executive Summary -->
+              <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="text-base font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                    <span class="i-heroicons-light-bulb w-5 h-5"></span>
+                    Quick Take
+                  </h3>
+                  <span v-if="wellness.aiAnalysisJson.status" :class="getStatusBadgeClass(wellness.aiAnalysisJson.status)">
+                    {{ wellness.aiAnalysisJson.status }}
+                  </span>
+                </div>
+                <p class="text-base text-gray-800 dark:text-gray-200 leading-relaxed">{{ wellness.aiAnalysisJson.executive_summary }}</p>
+              </div>
+
+              <!-- Recommendations -->
+              <div v-if="wellness.aiAnalysisJson.recommendations && wellness.aiAnalysisJson.recommendations.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span class="i-heroicons-clipboard-document-list w-5 h-5"></span>
+                    Recommendations
+                  </h3>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                  <div
+                    v-for="(rec, index) in wellness.aiAnalysisJson.recommendations"
+                    :key="index"
+                    class="border-l-4 pl-4 py-2"
+                    :class="getPriorityBorderClass(rec.priority)"
+                  >
+                    <div class="flex items-center gap-2 mb-1">
+                      <h4 class="font-semibold text-gray-900 dark:text-white">{{ rec.title }}</h4>
+                      <span v-if="rec.priority" :class="getPriorityBadgeClass(rec.priority)">
+                        {{ rec.priority }}
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ rec.description }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Detailed Sections -->
+              <div v-if="wellness.aiAnalysisJson.sections" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div
+                  v-for="(section, index) in wellness.aiAnalysisJson.sections"
+                  :key="index"
+                  class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+                >
+                  <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ section.title }}</h3>
+                    <span :class="getStatusBadgeClass(section.status)">
+                      {{ section.status }}
+                    </span>
+                  </div>
+                  <div class="px-6 py-4">
+                    <ul class="space-y-2">
+                      <li
+                        v-for="(point, pIndex) in section.analysis_points"
+                        :key="pIndex"
+                        class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
+                      >
+                        <span class="i-heroicons-chevron-right w-4 h-4 mt-0.5 text-primary-500 flex-shrink-0"></span>
+                        <span>{{ point }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Timestamp -->
+              <div v-if="wellness.aiAnalyzedAt" class="text-xs text-gray-500 dark:text-gray-400 text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                Analyzed on {{ formatDate(wellness.aiAnalyzedAt) }}
+              </div>
+            </div>
+            
+            <div v-else-if="!analyzingWellness && wellness.aiAnalysisStatus !== 'PROCESSING'" class="text-center py-8">
+              <div class="text-gray-500 dark:text-gray-400">
+                <span class="i-heroicons-light-bulb w-12 h-12 mx-auto mb-4 opacity-50"></span>
+                <p class="text-sm">Click "Analyze" to get AI-powered insights on your recovery and readiness.</p>
+              </div>
+            </div>
+
+            <div v-else class="text-center py-8">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Generating analysis with AI...</p>
             </div>
           </div>
 
@@ -369,9 +516,65 @@
       </div>
     </template>
   </UDashboardPanel>
+
+  <!-- Share Modal -->
+  <UModal
+    v-model:open="isShareModalOpen"
+    title="Share Wellness Data"
+    description="Anyone with this link can view this wellness data. The link will expire in 30 days."
+  >
+    <template #body>
+      <div class="space-y-4">
+        <div v-if="generatingShareLink" class="flex items-center justify-center py-8">
+          <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
+        </div>
+        <div v-else-if="shareLink" class="space-y-4">
+          <div class="flex gap-2">
+            <UInput
+              v-model="shareLink"
+              readonly
+              class="flex-1"
+            />
+            <UButton
+              icon="i-heroicons-clipboard"
+              color="neutral"
+              variant="outline"
+              @click="copyToClipboard"
+            >
+              Copy
+            </UButton>
+          </div>
+          <p class="text-xs text-gray-500">
+            This link provides read-only access to this specific wellness record.
+          </p>
+        </div>
+        <div v-else class="flex flex-col items-center justify-center py-8 text-center">
+          <UIcon name="i-heroicons-link" class="w-8 h-8 text-gray-400 mb-2" />
+          <p class="text-gray-600 mb-4">Click below to generate a shareable link.</p>
+          <UButton
+            color="primary"
+            @click="generateShareLink"
+            :loading="generatingShareLink"
+          >
+            Generate Link
+          </UButton>
+        </div>
+      </div>
+    </template>
+    <template #footer>
+      <UButton
+        label="Close"
+        color="neutral"
+        variant="ghost"
+        @click="isShareModalOpen = false"
+      />
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
+import { marked } from 'marked'
+
 definePageMeta({
   middleware: 'auth'
 })
@@ -383,6 +586,15 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const showRawJson = ref(false)
 
+// Feature states
+const analyzingWellness = ref(false)
+const isShareModalOpen = ref(false)
+const shareLink = ref('')
+const generatingShareLink = ref(false)
+
+// Polling reference
+let pollingInterval: NodeJS.Timeout | null = null
+
 // Fetch wellness data
 async function fetchWellness() {
   loading.value = true
@@ -391,6 +603,11 @@ async function fetchWellness() {
   try {
     const id = route.params.id as string
     wellness.value = await $fetch(`/api/wellness/${id}`)
+    
+    // If analysis is processing, start polling
+    if (wellness.value?.aiAnalysisStatus === 'PROCESSING') {
+      startPolling()
+    }
   } catch (e: any) {
     console.error('Error fetching wellness:', e)
     error.value = e.data?.message || e.message || 'Failed to load wellness data'
@@ -398,6 +615,146 @@ async function fetchWellness() {
     loading.value = false
   }
 }
+
+// Share functionality
+const generateShareLink = async () => {
+  if (!wellness.value?.id) return
+  
+  generatingShareLink.value = true
+  try {
+    const response = await $fetch('/api/share/generate', {
+      method: 'POST',
+      body: {
+        resourceType: 'WELLNESS',
+        resourceId: wellness.value.id
+      }
+    })
+    shareLink.value = response.url
+  } catch (error) {
+    console.error('Failed to generate share link:', error)
+    toast.add({
+      title: 'Error',
+      description: 'Failed to generate share link. Please try again.',
+      color: 'error'
+    })
+  } finally {
+    generatingShareLink.value = false
+  }
+}
+
+const copyToClipboard = () => {
+  if (!shareLink.value) return
+  
+  navigator.clipboard.writeText(shareLink.value)
+  toast.add({
+    title: 'Copied',
+    description: 'Share link copied to clipboard.',
+    color: 'success'
+  })
+}
+
+// Chat functionality
+function chatAboutWellness() {
+  if (!wellness.value) return
+  navigateTo({
+    path: '/chat',
+    query: { wellnessId: wellness.value.id }
+  })
+}
+
+// AI Analysis functionality
+async function analyzeWellness() {
+  if (!wellness.value) return
+  
+  analyzingWellness.value = true
+  try {
+    const result = await $fetch(`/api/wellness/${wellness.value.id}/analyze`, {
+      method: 'POST'
+    }) as any
+    
+    // If already completed, update immediately
+    if (result.status === 'COMPLETED' && result.analysis) {
+      wellness.value.aiAnalysisJson = result.analysis
+      wellness.value.aiAnalyzedAt = result.analyzedAt
+      wellness.value.aiAnalysisStatus = 'COMPLETED'
+      analyzingWellness.value = false
+      
+      toast.add({
+        title: 'Analysis Ready',
+        description: 'Wellness analysis is ready',
+        color: 'success',
+        icon: 'i-heroicons-check-circle'
+      })
+      return
+    }
+    
+    // Update status and start polling
+    wellness.value.aiAnalysisStatus = result.status || 'PROCESSING'
+    
+    toast.add({
+      title: 'Analysis Started',
+      description: 'AI is analyzing your wellness data...',
+      color: 'info',
+      icon: 'i-heroicons-sparkles'
+    })
+    
+    startPolling()
+  } catch (e: any) {
+    console.error('Error triggering wellness analysis:', e)
+    analyzingWellness.value = false
+    toast.add({
+      title: 'Analysis Failed',
+      description: e.data?.message || 'Failed to start analysis',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle'
+    })
+  }
+}
+
+function startPolling() {
+  if (pollingInterval) clearInterval(pollingInterval)
+  
+  pollingInterval = setInterval(async () => {
+    if (!wellness.value) return
+    
+    try {
+      const updated = await $fetch(`/api/wellness/${wellness.value.id}`) as any
+      
+      // Update fields
+      wellness.value.aiAnalysis = updated.aiAnalysis
+      wellness.value.aiAnalysisJson = updated.aiAnalysisJson
+      wellness.value.aiAnalysisStatus = updated.aiAnalysisStatus
+      wellness.value.aiAnalyzedAt = updated.aiAnalyzedAt
+      
+      if (updated.aiAnalysisStatus === 'COMPLETED' || updated.aiAnalysisStatus === 'FAILED') {
+        analyzingWellness.value = false
+        stopPolling()
+        
+        if (updated.aiAnalysisStatus === 'COMPLETED') {
+           toast.add({
+            title: 'Analysis Complete',
+            color: 'success',
+            icon: 'i-heroicons-check-circle'
+          })
+        }
+      }
+    } catch (e) {
+      console.error('Error polling wellness status:', e)
+    }
+  }, 3000)
+}
+
+function stopPolling() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+    pollingInterval = null
+  }
+}
+
+// Cleanup
+onUnmounted(() => {
+  stopPolling()
+})
 
 // Utility functions
 function formatDate(date: string | Date) {
@@ -410,6 +767,30 @@ function formatDate(date: string | Date) {
     day: 'numeric',
     timeZone: 'UTC'  // Force UTC to prevent timezone shifts
   })
+}
+
+function getStatusBadgeClass(status: string) {
+  const baseClass = 'px-2 py-0.5 rounded text-xs font-medium'
+  if (status === 'optimal') return `${baseClass} bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200`
+  if (status === 'good') return `${baseClass} bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200`
+  if (status === 'caution') return `${baseClass} bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200`
+  if (status === 'attention' || status === 'rest_required') return `${baseClass} bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200`
+  return `${baseClass} bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`
+}
+
+function getPriorityBorderClass(priority: string) {
+  if (priority === 'high') return 'border-red-500'
+  if (priority === 'medium') return 'border-yellow-500'
+  if (priority === 'low') return 'border-blue-500'
+  return 'border-gray-300'
+}
+
+function getPriorityBadgeClass(priority: string) {
+  const baseClass = 'px-2 py-0.5 rounded text-xs font-medium'
+  if (priority === 'high') return `${baseClass} bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200`
+  if (priority === 'medium') return `${baseClass} bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200`
+  if (priority === 'low') return `${baseClass} bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200`
+  return `${baseClass} bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200`
 }
 
 const formattedRawJson = computed(() => {
