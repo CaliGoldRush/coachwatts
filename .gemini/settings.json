@@ -18,6 +18,12 @@
     "sentry": {
       "url": "https://mcp.sentry.dev/mcp/newpush-y4/coach-watts",
       "trust": true
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ]
     }
   },
   "security": {

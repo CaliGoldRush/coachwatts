@@ -59,10 +59,15 @@
         <div v-else class="p-3 sm:p-6 space-y-4 sm:space-y-8">
           <DashboardMissingDataBanner v-if="missingFields.length > 0" :missing-fields="missingFields" />
 
-          <div>
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Welcome back</h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">Your AI-powered endurance coach is analyzing your latest data.</p>
-          </div>
+          <UCard v-if="showWelcome" class="mb-4">
+            <div class="flex justify-between items-start">
+              <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Welcome back</h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 font-medium">Your AI-powered endurance coach is analyzing your latest data.</p>
+              </div>
+              <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm" @click="showWelcome = false" />
+            </div>
+          </UCard>
         
           <!-- Row 1: Athlete Profile / Today's Training / Performance Overview -->
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 items-stretch">
@@ -183,6 +188,8 @@
 </template>
 
 <script setup lang="ts">
+import { useLocalStorage } from '@vueuse/core'
+
 const { formatDate, getUserLocalDate } = useFormat()
 
 definePageMeta({
@@ -202,6 +209,8 @@ const integrationStore = useIntegrationStore()
 const userStore = useUserStore()
 const recommendationStore = useRecommendationStore()
 const activityStore = useActivityStore()
+
+const showWelcome = useLocalStorage('dashboard-welcome-banner', true)
 
 const upcomingWorkouts = ref<any[]>([])
 const loadingUpcoming = ref(false)

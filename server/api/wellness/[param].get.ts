@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Populate with Daily Metrics
   historyMetrics.forEach(m => {
-    const d = m.date.toISOString().split('T')[0]
+    const d = m.date.toISOString().split('T')[0]!
     historyMap.set(d, {
       hrv: m.hrv,
       restingHr: m.restingHr,
@@ -172,7 +172,7 @@ export default defineEventHandler(async (event) => {
 
   // 2. Override with Wellness
   historyWellness.forEach(w => {
-    const d = w.date.toISOString().split('T')[0]
+    const d = w.date.toISOString().split('T')[0]!
     const existing = historyMap.get(d) || {}
     historyMap.set(d, {
       ...existing,
@@ -193,14 +193,14 @@ export default defineEventHandler(async (event) => {
   const sortedDates = Array.from(historyMap.keys()).sort().reverse()
   
   // Calculate Trends and History
-  const targetDateStr = targetDate.toISOString().split('T')[0]
+  const targetDateStr = targetDate.toISOString().split('T')[0]!
   const values30Entries = Array.from(historyMap.entries())
-    .filter(([d]) => d <= targetDateStr && d > new Date(targetDate.getTime() - 30 * 86400000).toISOString().split('T')[0])
+    .filter(([d]) => d <= targetDateStr && d > new Date(targetDate.getTime() - 30 * 86400000).toISOString().split('T')[0]!)
     .sort(([a], [b]) => a.localeCompare(b))
 
   metrics.forEach(key => {
     const values7 = values30Entries
-      .filter(([d]) => d > new Date(targetDate.getTime() - 7 * 86400000).toISOString().split('T')[0])
+      .filter(([d]) => d > new Date(targetDate.getTime() - 7 * 86400000).toISOString().split('T')[0]!)
       .map(([, v]) => v[key])
       .filter(v => v != null)
 
@@ -209,7 +209,7 @@ export default defineEventHandler(async (event) => {
       .filter(v => v != null)
     
     // Find previous day data (not just the last entry, but specifically the day before target)
-    const previousDateStr = new Date(targetDate.getTime() - 86400000).toISOString().split('T')[0]
+    const previousDateStr = new Date(targetDate.getTime() - 86400000).toISOString().split('T')[0]!
     const previousEntry = historyMap.get(previousDateStr)
 
     trends[key] = {
