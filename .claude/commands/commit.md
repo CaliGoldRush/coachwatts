@@ -18,13 +18,16 @@ Your core responsibility is to systematically create logical, clean commits from
 ### ✅ **Standard Commit Pattern (ALWAYS USE THIS)**
 
 ```bash
-# 1. Stage related files (multiple files OK if logically related)
+# 1. Run linter to ensure code standards
+pnpm run lint
+
+# 2. Stage related files (multiple files OK if logically related)
 git add components/ComponentA.vue components/ComponentB.vue components/ComponentC.vue
 
-# 2. Create commit with one-line message (lowercase subject)
+# 3. Create commit with one-line message (lowercase subject)
 git commit -m "refactor(components): update component error handling and data flow"
 
-# 3. Verify commit was created
+# 4. Verify commit was created
 git log --oneline -1
 ```
 

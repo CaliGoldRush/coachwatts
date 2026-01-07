@@ -348,6 +348,12 @@ npx trigger.dev@latest deploy  # Deploy jobs to production
 - Constants: `UPPER_SNAKE_CASE`
 - Composables: `useCamelCase()`
 
+### ESLint & Code Standards
+-   **Enforcement**: ESLint is enabled. Run `pnpm lint` to check and `pnpm lint:fix` to auto-fix.
+-   **Configuration**: See `eslint.config.mjs`. Some strict rules (`no-explicit-any`, `no-unused-vars`) are disabled for legacy compatibility.
+-   **Type Suppression**: Use `@ts-expect-error` with a description instead of `@ts-ignore`.
+-   **Services**: Implement services as constant objects (`export const Service = { ... }`) rather than classes with static methods.
+
 ## 🧪 Testing Strategy
 
 ### Unit Tests

@@ -50,6 +50,7 @@
   "devDependencies": {
     "@iconify-json/heroicons": "^1.2.3",
     "@iconify-json/lucide": "^1.2.82",
+    "@nuxt/eslint": "^1.12.1",
     "@release-it/conventional-changelog": "^10.0.4",
     "@tiptap/core": "^3.15.1",
     "@tiptap/pm": "^3.15.1",
@@ -60,6 +61,7 @@
     "@types/turndown": "^5.0.6",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
+    "eslint": "^9.39.2",
     "glob": "^13.0.0",
     "magicast": "^0.3.5",
     "react": "^18",
@@ -67,7 +69,8 @@
     "release-it": "^19.2.2",
     "release-it-pnpm": "^4.6.6",
     "tailwindcss": "^4.1.18",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "name": "coach-wattz",
   "private": true,
@@ -77,6 +80,8 @@
     "dev": "nuxt dev",
     "dev:trigger": "pnpm prisma:generate && npx trigger.dev@latest dev",
     "generate": "nuxt generate",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "postinstall": "prisma generate && nuxt prepare",
     "preview": "nuxt preview",
     "prisma:generate": "prisma generate",

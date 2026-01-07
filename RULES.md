@@ -146,7 +146,7 @@ const data = await prisma.model.findUnique({
 ### Ingestion Guidelines
 - **Workouts**: Always prefer **UTC timestamps** from external APIs (e.g., Strava `start_date`, Whoop `start`). Store directly in `DateTime` columns.
 - **Deduplication**: Match activities using UTC timestamps, not local time strings, to ensure consistency across different source providers.
-- **Wellness/Nutrition**: Force dates to **UTC Midnight** (e.g., `new Date(Date.UTC(year, month, day))`) when saving to `@db.Date` columns. This prevents calendar days from shifting based on server timezone.
+-   **Wellness/Nutrition**: Force dates to **UTC Midnight** (e.g., `new Date(Date.UTC(year, month, day))`) when saving to `@db.Date` columns. This prevents calendar days from shifting based on server timezone.
 
 ---
 
@@ -156,3 +156,36 @@ const data = await prisma.model.findUnique({
 -   **Strict Null Checks**: Always handle `undefined`/`null` using `?.` and `??`.
 -   **Semantic Colors**: Use `primary`, `neutral`, `success`, `error`, `warning` instead of raw colors.
 -   **No Duplicate Imports**: Check for existing imports before adding new ones.
+
+---
+
+## 11. ESLint & Code Standards
+
+### Core Rules
+-   **Linting is Enforced**: The project uses ESLint with `@nuxt/eslint` and standard rules.
+-   **Zero Tolerance**: Do not introduce new linting errors.
+-   **Fixing Issues**: Use `pnpm lint:fix` to automatically resolve fixable issues.
+-   **Verification**: Run `pnpm lint` before completing tasks.
+
+### Configuration
+-   **Config File**: `eslint.config.mjs` extends Nuxt defaults.
+-   **Relaxed Rules**:
+    -   `@typescript-eslint/no-explicit-any`: **OFF** (Legacy compatibility)
+    -   `@typescript-eslint/no-unused-vars`: **OFF** (Legacy compatibility)
+    -   `vue/multi-word-component-names`: **OFF** (Project convention)
+    -   `vue/no-multiple-template-root`: **OFF** (Vue 3 support)
+
+### Best Practices
+-   **Type Suppression**: Prefer `@ts-expect-error` over `@ts-ignore`. **Always** provide a description explaining why the error is expected.
+    ```typescript
+    // @ts-expect-error - External library types mismatch
+    someFunctionCall()
+    ```
+-   **Service Objects**: Use constant objects instead of static classes for services to avoid `no-extraneous-class` errors.
+    ```typescript
+    // Good
+    export const MyService = {
+      async doSomething() { ... }
+    }
+    ```
+-   **Security**: Use `<!-- eslint-disable vue/no-v-html -->` only when absolutely necessary for trusted content (e.g., Markdown rendering). Wrap the directive around the specific element.

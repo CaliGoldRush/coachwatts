@@ -26,7 +26,15 @@ export default defineNuxtConfig({
     }
   },
 
-  modules: ['@nuxt/ui', '@sidebase/nuxt-auth', '@nuxtjs/mdc', '@pinia/nuxt', 'nuxt-gtag', '@sentry/nuxt/module'],
+  modules: [
+    '@nuxt/ui',
+    '@sidebase/nuxt-auth',
+    '@nuxtjs/mdc',
+    '@pinia/nuxt',
+    'nuxt-gtag',
+    '@sentry/nuxt/module',
+    '@nuxt/eslint'
+  ],
 
   colorMode: {
     preference: 'dark',
