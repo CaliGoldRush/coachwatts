@@ -96,7 +96,9 @@ backfillWorkoutsCommand
                             intensity: normalized.intensity
                         }
                     });
-                    process.stdout.write('.');
+                    if (fixedCount % 50 === 0) {
+                        process.stdout.write('.');
+                    }
                 }
                 fixedCount++;
             } else {

@@ -47,7 +47,6 @@ backfillPlannedWorkoutsCommand
                     { durationSec: null },
                     { workIntensity: { gt: 2 } }
                 ],
-                category: 'WORKOUT',
                 rawJson: { not: Prisma.JsonNull }
             },
             take: limit
