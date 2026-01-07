@@ -321,28 +321,16 @@
         </div>
         <div v-if="editingField === 'country'" class="flex gap-2 w-full relative z-50">
            <USelectMenu
-            v-model="editValue"
-            :items="countries"
-            option-attribute="name"
-            value-attribute="code"
+            v-model="countryModel"
+            :items="countriesWithLabel"
+            option-attribute="label"
+            :search-attributes="['name', 'code']"
             size="sm"
             class="flex-1"
             searchable
             searchable-placeholder="Search country..."
             autofocus
-          >
-            <template #label>
-              <span v-if="editValue" class="flex items-center gap-2">
-                <span>{{ countries.find(c => c.code === editValue)?.flag }}</span>
-                <span>{{ countries.find(c => c.code === editValue)?.name || editValue }}</span>
-              </span>
-              <span v-else>Select country</span>
-            </template>
-            <template #option="{ option }">
-               <span class="mr-2">{{ option.flag }}</span>
-               <span>{{ option.name }}</span>
-            </template>
-          </USelectMenu>
+          />
           <UButton size="xs" color="primary" variant="ghost" icon="i-heroicons-check" @click="saveField" />
           <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="cancelEdit" />
         </div>
@@ -416,6 +404,16 @@ const editValue = ref<any>(null)
 const timezones = Intl.supportedValuesOf('timeZone')
 const autodetecting = ref(false)
 const toast = useToast()
+
+const countryModel = computed({
+  get: () => countriesWithLabel.value.find(c => c.code === editValue.value),
+  set: (val: any) => { editValue.value = val?.code }
+})
+
+const countriesWithLabel = computed(() => countries.map(c => ({
+  ...c,
+  label: `${c.flag} ${c.name}`
+})))
 
 // Confirmation Modal State
 const showConfirmModal = ref(false)
