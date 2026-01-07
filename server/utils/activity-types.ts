@@ -1,15 +1,15 @@
 export const WORKOUT_ICONS: Record<string, string> = {
-  'Ride': 'i-heroicons-bolt',
-  'VirtualRide': 'i-heroicons-bolt',
-  'Run': 'i-heroicons-fire',
-  'Swim': 'i-heroicons-lifebuoy',
-  'Gym': 'i-heroicons-trophy',
-  'WeightTraining': 'i-heroicons-trophy',
-  'Rest': 'i-heroicons-moon',
-  'Active Recovery': 'i-heroicons-arrow-path-rounded-square',
-  'Walk': 'i-heroicons-footprints',
-  'Hike': 'i-heroicons-map',
-  'Yoga': 'i-heroicons-sparkles'
+  'Ride': 'i-tabler-bike',
+  'VirtualRide': 'i-tabler-device-laptop',
+  'Run': 'i-tabler-run',
+  'Swim': 'i-tabler-swimming',
+  'Gym': 'i-tabler-barbell',
+  'WeightTraining': 'i-tabler-barbell',
+  'Rest': 'i-tabler-zzz',
+  'Active Recovery': 'i-tabler-recharging',
+  'Walk': 'i-tabler-walk',
+  'Hike': 'i-tabler-mountain',
+  'Yoga': 'i-tabler-yoga'
 }
 
 export const WORKOUT_COLORS: Record<string, string> = {
