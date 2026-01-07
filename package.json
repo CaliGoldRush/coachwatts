@@ -10,6 +10,7 @@
     "@pinia/nuxt": "^0.11.3",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
+    "@sentry/nuxt": "^10",
     "@sidebase/nuxt-auth": "^1.1.1",
     "@tiptap/extension-image": "^3.15.1",
     "@tiptap/extension-link": "^3.15.1",
@@ -28,6 +29,7 @@
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.3",
     "fit-file-parser": "^2.1.0",
+    "import-in-the-middle": "^2.0.1",
     "leaflet": "^1.9.4",
     "marked": "^17.0.1",
     "next-auth": "4.21.1",
@@ -88,5 +90,10 @@
     "db:dump:prod": "scripts/dump-db.sh DATABASE_URL_PROD"
   },
   "type": "module",
-  "version": "0.5.7"
+  "version": "0.5.7",
+  "pnpm": {
+    "overrides": {
+      "@vercel/nft": "^0.27.4"
+    }
+  }
 }

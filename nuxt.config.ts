@@ -26,13 +26,7 @@ export default defineNuxtConfig({
     }
   },
 
-  modules: [
-    '@nuxt/ui',
-    '@sidebase/nuxt-auth',
-    '@nuxtjs/mdc',
-    '@pinia/nuxt',
-    'nuxt-gtag'
-  ],
+  modules: ['@nuxt/ui', '@sidebase/nuxt-auth', '@nuxtjs/mdc', '@pinia/nuxt', 'nuxt-gtag', '@sentry/nuxt/module'],
 
   colorMode: {
     preference: 'dark',
@@ -112,5 +106,14 @@ export default defineNuxtConfig({
         }
       }
     }
+  },
+
+  sentry: {
+    org: 'newpush-y4',
+    project: 'coach-watts'
+  },
+
+  sourcemap: {
+    client: 'hidden'
   }
 })

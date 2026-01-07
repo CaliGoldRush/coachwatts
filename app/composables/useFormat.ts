@@ -14,15 +14,12 @@ export const useFormat = () => {
     return toZonedTime(new Date(date), timezone.value)
   }
 
-  const formatDate = (date: string | Date, formatStr: string = 'MMM d, yyyy') => {
+  const formatDate = (date: string | Date, formatStr: string | any = 'MMM d, yyyy') => {
     if (!date) return ''
     try {
       // If formatStr is an object (legacy Intl options), ignore it or map it.
-      // Since we are replacing the implementation, we assume callers can adapt or we stick to string formats.
-      // The previous implementation allowed Intl.DateTimeFormatOptions.
-      // To be safe, we can check type.
       if (typeof formatStr === 'object') {
-        return new Date(date).toLocaleDateString('en-US', { ...formatStr, timeZone: timezone.value })
+        return new Date(date).toLocaleDateString('en-US', { ...(formatStr as any), timeZone: timezone.value })
       }
       
       return format(toZoned(date), formatStr, { timeZone: timezone.value })
@@ -35,8 +32,8 @@ export const useFormat = () => {
     return formatDate(date, 'MMM d')
   }
 
-  const formatDateTime = (date: string | Date) => {
-    return formatDate(date, 'MMM d, yyyy h:mm a')
+  const formatDateTime = (date: string | Date, formatStr: string = 'MMM d, yyyy h:mm a') => {
+    return formatDate(date, formatStr)
   }
 
   const formatRelativeTime = (date: string | Date) => {
@@ -49,28 +46,14 @@ export const useFormat = () => {
   }
 
   /**
-   * Get the user's current local date as a Date object set to UTC midnight.
-   * Useful for comparing with DB dates stored at UTC midnight.
+   * Format a date with a specific timezone (manual override)
    */
-  const getUserLocalDate = (): Date => {
+  const formatUserDate = (date: string | Date, tz: string, formatStr: string = 'yyyy-MM-dd') => {
+    if (!date) return ''
     try {
-      const dateStr = format(toZoned(new Date()), 'yyyy-MM-dd', { timeZone: timezone.value })
-      return new Date(`${dateStr}T00:00:00Z`)
+      return format(toZonedTime(new Date(date), tz), formatStr, { timeZone: tz })
     } catch (e) {
-      const now = new Date()
-      return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
-    }
-  }
-
-  /**
-   * Get the user's current local time as a string (HH:mm)
-   */
-  const getUserLocalTime = (): string => {
-    try {
-      return format(toZoned(new Date()), 'HH:mm', { timeZone: timezone.value })
-    } catch (e) {
-      const now = new Date()
-      return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+      return ''
     }
   }
 
@@ -79,6 +62,7 @@ export const useFormat = () => {
     formatShortDate,
     formatDateTime,
     formatRelativeTime,
+    formatUserDate,
     getUserLocalDate,
     getUserLocalTime,
     timezone

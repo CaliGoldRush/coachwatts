@@ -807,7 +807,7 @@ async function getWorkoutDetails(userId: string, timezone: string, args: any): P
       // args.date is expected to be YYYY-MM-DD in local time
       const dateParts = args.date.split('-')
       if (dateParts.length === 3) {
-        const localDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+        const localDate = new Date(parseInt(dateParts[0]!), parseInt(dateParts[1]!) - 1, parseInt(dateParts[2]!))
         const startOfDay = getStartOfDayUTC(timezone, localDate)
         const endOfDay = getEndOfDayUTC(timezone, localDate)
         where.date = { gte: startOfDay, lte: endOfDay }
@@ -945,13 +945,13 @@ async function getNutritionLog(
   endDate?: string
 ): Promise<any> {
   const startParts = startDate.split('-')
-  const localStartDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]))
+  const localStartDate = new Date(parseInt(startParts[0]!), parseInt(startParts[1]!) - 1, parseInt(startParts[2]!))
   const start = getStartOfDayUTC(timezone, localStartDate)
   
   let end: Date
   if (endDate) {
     const endParts = endDate.split('-')
-    const localEndDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]))
+    const localEndDate = new Date(parseInt(endParts[0]!), parseInt(endParts[1]!) - 1, parseInt(endParts[2]!))
     end = getEndOfDayUTC(timezone, localEndDate)
   } else {
     end = getEndOfDayUTC(timezone, localStartDate)
@@ -1023,13 +1023,13 @@ async function getWellnessMetrics(
   endDate?: string
 ): Promise<any> {
   const startParts = startDate.split('-')
-  const localStartDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]))
+  const localStartDate = new Date(parseInt(startParts[0]!), parseInt(startParts[1]!) - 1, parseInt(startParts[2]!))
   const start = getStartOfDayUTC(timezone, localStartDate)
   
   let end: Date
   if (endDate) {
     const endParts = endDate.split('-')
-    const localEndDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]))
+    const localEndDate = new Date(parseInt(endParts[0]!), parseInt(endParts[1]!) - 1, parseInt(endParts[2]!))
     end = getEndOfDayUTC(timezone, localEndDate)
   } else {
     end = getEndOfDayUTC(timezone, localStartDate)
@@ -1208,7 +1208,7 @@ async function getPerformanceMetrics(userId: string, timezone: string, args: any
       // Assuming week starts on Monday
       const localDateStr = formatUserDate(w.date, timezone, 'yyyy-MM-dd')
       const parts = localDateStr.split('-')
-      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+      const d = new Date(parseInt(parts[0]!), parseInt(parts[1]!) - 1, parseInt(parts[2]!))
       const day = d.getDay()
       const diff = d.getDate() - day + (day == 0 ? -6 : 1) // adjust when day is sunday
       d.setDate(diff)
@@ -1327,14 +1327,14 @@ async function searchWorkouts(userId: string, timezone: string, args: any): Prom
 
   if (args.date_from) {
     const fromParts = args.date_from.split('-')
-    const localFrom = new Date(parseInt(fromParts[0]), parseInt(fromParts[1]) - 1, parseInt(fromParts[2]))
+    const localFrom = new Date(parseInt(fromParts[0]!), parseInt(fromParts[1]!) - 1, parseInt(fromParts[2]!))
     where.date = { gte: getStartOfDayUTC(timezone, localFrom) }
   }
 
   if (args.date_to) {
     where.date = where.date || {}
     const toParts = args.date_to.split('-')
-    const localTo = new Date(parseInt(toParts[0]), parseInt(toParts[1]) - 1, parseInt(toParts[2]))
+    const localTo = new Date(parseInt(toParts[0]!), parseInt(toParts[1]!) - 1, parseInt(toParts[2]!))
     where.date.lte = getEndOfDayUTC(timezone, localTo)
   }
 

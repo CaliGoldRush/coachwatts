@@ -382,7 +382,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['update:modelValue', 'autodetect'])
-const { formatDate, formatUserDate, timezone } = useFormat()
+const { formatDate, timezone } = useFormat()
 
 const editingField = ref<string | null>(null)
 const editValue = ref<any>(null)

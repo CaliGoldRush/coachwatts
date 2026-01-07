@@ -39,11 +39,7 @@ export default defineNuxtPlugin((nuxtApp) => {
           const toast = useToast()
           toast.add({
             title: 'Timezone Detected',
-            description: `Your timezone has been set to ${detectedTimezone}. You can change this in Settings.`,
-            color: 'primary',
-            icon: 'i-heroicons-clock',
-            timeout: 6000
-          })
+                        description: `We've detected your timezone as ${detectedTimezone}. Your training dates will now align correctly.`,            color: 'primary'          })
         }
       } catch (e) {
         console.warn('[Timezone] Failed to auto-detect or save timezone:', e)

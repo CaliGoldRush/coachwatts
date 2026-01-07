@@ -217,7 +217,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'created', 'updated'])
-const { formatDate, formatUserDate, getUserLocalDate, timezone } = useFormat()
+const { formatDate, getUserLocalDate, timezone } = useFormat()
 
 const isEditMode = computed(() => !!props.goal)
 const step = ref(1)

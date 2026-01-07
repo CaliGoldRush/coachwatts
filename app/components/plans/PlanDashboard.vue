@@ -417,7 +417,7 @@ import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
 import WeeklyZoneSummary from '~/components/ui/WeeklyZoneSummary.vue'
 import PlanAIModal from '~/components/plans/PlanAIModal.vue'
 
-const { formatDate, formatUserDate, getUserLocalDate, timezone } = useFormat()
+const { formatDate, getUserLocalDate, timezone } = useFormat()
 
 const props = defineProps<{
   plan: any
