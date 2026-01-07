@@ -1,7 +1,7 @@
 <template>
   <div class="bg-gray-900 py-24 sm:py-32 relative overflow-hidden">
     <!-- Background Gradient -->
-    <div class="absolute inset-0 bg-gradient-to-br from-primary-900/20 to-gray-900 z-0"></div>
+    <div class="absolute inset-0 bg-gradient-to-br from-primary-900/20 to-gray-900 z-0"/>
 
     <div class="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
       <div class="mx-auto max-w-2xl text-center">
@@ -61,7 +61,7 @@
       <!-- Community CTA -->
       <div class="mt-16 flex justify-center">
          <div class="relative rounded-full px-3 py-1 text-sm leading-6 text-gray-400 ring-1 ring-gray-700 hover:ring-gray-500">
-            Join the conversation on <a href="#" class="font-semibold text-primary-400"><span class="absolute inset-0" aria-hidden="true"></span>Discord <span aria-hidden="true">&rarr;</span></a>
+            Join the conversation on <a href="#" class="font-semibold text-primary-400"><span class="absolute inset-0" aria-hidden="true"/>Discord <span aria-hidden="true">&rarr;</span></a>
          </div>
       </div>
 

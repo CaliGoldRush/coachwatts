@@ -21,14 +21,14 @@
       </div>
 
       <div v-if="$slots.image" class="mt-16 sm:mt-24 relative">
-        <div class="absolute -inset-4 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-xl blur-2xl opacity-50 -z-10"></div>
+        <div class="absolute -inset-4 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-xl blur-2xl opacity-50 -z-10"/>
         <slot name="image" />
       </div>
     </UContainer>
     
     <!-- Background blobs -->
-    <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl -z-10"></div>
-    <div class="absolute bottom-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl -z-10"></div>
+    <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl -z-10"/>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl -z-10"/>
   </div>
 </template>
 

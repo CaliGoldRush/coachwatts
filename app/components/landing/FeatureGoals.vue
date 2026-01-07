@@ -50,7 +50,7 @@
                     <div class="mt-4 flex gap-2">
                         <UBadge color="neutral" variant="subtle" size="xs">Target: 300W</UBadge>
                         <div class="w-16 h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden mt-0.5">
-                            <div class="h-full bg-amber-500 w-3/4"></div>
+                            <div class="h-full bg-amber-500 w-3/4"/>
                         </div>
                     </div>
                 </div>
@@ -88,11 +88,11 @@
                         <span class="text-xs text-gray-500">Build habits that stick.</span>
                     </p>
                     <div class="mt-4 flex gap-1">
-                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                        <div class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-700"></div>
-                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"/>
+                        <div class="w-3 h-3 rounded-full bg-green-500"/>
+                        <div class="w-3 h-3 rounded-full bg-green-500"/>
+                        <div class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-700"/>
+                        <div class="w-3 h-3 rounded-full bg-green-500"/>
                     </div>
                 </div>
             </div>

@@ -14,7 +14,7 @@
                </NuxtLink>
             </div>
             <h1 class="mt-10 text-4xl font-bold tracking-tight text-white sm:text-6xl font-mono">
-               Unlock Your True Potential. <br />
+               Unlock Your True Potential. <br >
                <span class="text-primary-500">Stop Guessing. Start Winning.</span>
             </h1>
             <p class="mt-6 text-lg leading-8 text-gray-300">
@@ -22,11 +22,13 @@
                secure, private, and insanely effective.
             </p>
             <div class="mt-10 flex items-center gap-x-6">
-               <UButton to="/join" size="xl" color="primary" variant="solid"
+               <UButton
+to="/join" size="xl" color="primary" variant="solid"
                   class="px-8 py-3 text-base font-semibold shadow-sm hover:bg-primary-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400">
                   Claim Your Digital Twin (Free)
                </UButton>
-               <UButton to="#how-it-works" size="xl" color="neutral" variant="ghost"
+               <UButton
+to="#how-it-works" size="xl" color="neutral" variant="ghost"
                   class="text-sm font-semibold leading-6 text-white">
                   See How It Works <span aria-hidden="true">→</span>
                </UButton>
@@ -52,13 +54,13 @@
                         <div
                            class="h-12 border-b border-gray-700 flex items-center justify-between px-4 bg-gray-800/50 backdrop-blur">
                            <div class="flex items-center space-x-2">
-                              <div class="w-3 h-3 rounded-full bg-red-500/50"></div>
-                              <div class="w-3 h-3 rounded-full bg-yellow-500/50"></div>
-                              <div class="w-3 h-3 rounded-full bg-green-500/50"></div>
+                              <div class="w-3 h-3 rounded-full bg-red-500/50"/>
+                              <div class="w-3 h-3 rounded-full bg-yellow-500/50"/>
+                              <div class="w-3 h-3 rounded-full bg-green-500/50"/>
                            </div>
                            <div class="flex items-center space-x-3">
-                              <div class="h-2 w-20 bg-gray-700 rounded-full"></div>
-                              <div class="h-8 w-8 bg-gray-700 rounded-full"></div>
+                              <div class="h-2 w-20 bg-gray-700 rounded-full"/>
+                              <div class="h-8 w-8 bg-gray-700 rounded-full"/>
                            </div>
                         </div>
 
@@ -66,9 +68,11 @@
 
                            <div class="col-span-1 flex flex-col items-center space-y-6 pt-4 text-gray-600">
                               <UIcon name="i-heroicons-home" class="w-6 h-6 text-primary-500" />
-                              <UIcon name="i-heroicons-chart-bar"
+                              <UIcon
+name="i-heroicons-chart-bar"
                                  class="w-6 h-6 hover:text-gray-400 transition-colors" />
-                              <UIcon name="i-heroicons-calendar"
+                              <UIcon
+name="i-heroicons-calendar"
                                  class="w-6 h-6 hover:text-gray-400 transition-colors" />
                               <UIcon name="i-heroicons-user" class="w-6 h-6 hover:text-gray-400 transition-colors" />
                            </div>
@@ -88,7 +92,7 @@
                                  <div class="text-sm text-gray-400 font-mono leading-relaxed h-12 relative">
                                     <span class="typing-text">Recovery is low (34%). Switching intervals to Zone
                                        2...</span>
-                                    <span class="cursor inline-block w-2 h-4 bg-primary-500 ml-1 animate-pulse"></span>
+                                    <span class="cursor inline-block w-2 h-4 bg-primary-500 ml-1 animate-pulse"/>
                                  </div>
                               </div>
 
@@ -102,11 +106,11 @@
                                     </span>
                                  </div>
                                  <div class="mt-3 h-10 flex items-end space-x-1">
-                                    <div class="w-1/5 bg-gray-700 h-4 rounded-t"></div>
-                                    <div class="w-1/5 bg-gray-700 h-6 rounded-t"></div>
-                                    <div class="w-1/5 bg-gray-700 h-5 rounded-t"></div>
-                                    <div class="w-1/5 bg-gray-700 h-8 rounded-t"></div>
-                                    <div class="w-1/5 bg-primary-500 h-10 rounded-t animate-pulse"></div>
+                                    <div class="w-1/5 bg-gray-700 h-4 rounded-t"/>
+                                    <div class="w-1/5 bg-gray-700 h-6 rounded-t"/>
+                                    <div class="w-1/5 bg-gray-700 h-5 rounded-t"/>
+                                    <div class="w-1/5 bg-gray-700 h-8 rounded-t"/>
+                                    <div class="w-1/5 bg-primary-500 h-10 rounded-t animate-pulse"/>
                                  </div>
                               </div>
 
@@ -119,7 +123,7 @@
                                  </div>
                                  <div class="mt-4 w-full bg-gray-700 h-2 rounded-full overflow-hidden">
                                     <div class="bg-red-500 h-full w-[34%] relative">
-                                       <div class="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
+                                       <div class="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"/>
                                     </div>
                                  </div>
                               </div>
@@ -127,13 +131,14 @@
                               <div
                                  class="col-span-2 bg-gray-800/30 rounded-xl border border-gray-700/30 h-32 relative overflow-hidden group-hover:border-gray-700/50 transition-colors">
                                  <div
-                                    class="absolute inset-0 opacity-10 bg-[url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbm95MXY4Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0/U3qYN8S0j3bpK/giphy.gif')] bg-cover mix-blend-screen pointer-events-none">
-                                 </div>
+                                    class="absolute inset-0 opacity-10 bg-[url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbm95MXY4Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0/U3qYN8S0j3bpK/giphy.gif')] bg-cover mix-blend-screen pointer-events-none"/>
 
                                  <svg class="absolute bottom-0 left-0 right-0 h-full w-full" preserveAspectRatio="none">
-                                    <path d="M0,80 C100,70 200,90 300,50 C400,10 500,60 600,40 L600,128 L0,128 Z"
+                                    <path
+d="M0,80 C100,70 200,90 300,50 C400,10 500,60 600,40 L600,128 L0,128 Z"
                                        fill="url(#gradient)" opacity="0.2" />
-                                    <path d="M0,80 C100,70 200,90 300,50 C400,10 500,60 600,40" stroke="#10b981"
+                                    <path
+d="M0,80 C100,70 200,90 300,50 C400,10 500,60 600,40" stroke="#10b981"
                                        stroke-width="2" fill="none" class="drop-shadow-lg" />
                                     <defs>
                                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">

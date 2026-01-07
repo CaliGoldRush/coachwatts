@@ -17,12 +17,14 @@
           <div class="mt-10 flex items-center gap-x-4">
             <h4 class="flex-none text-sm font-semibold leading-6 text-primary-600 dark:text-primary-400">What's included
             </h4>
-            <div class="h-px flex-auto bg-gray-100 dark:bg-gray-700"></div>
+            <div class="h-px flex-auto bg-gray-100 dark:bg-gray-700"/>
           </div>
-          <ul role="list"
+          <ul
+role="list"
             class="mt-8 grid grid-cols-1 gap-4 text-sm leading-6 text-gray-600 dark:text-gray-300 sm:grid-cols-2 sm:gap-6">
             <li v-for="feature in includedFeatures" :key="feature" class="flex gap-x-3">
-              <UIcon name="i-heroicons-check" class="h-6 w-5 flex-none text-primary-600 dark:text-primary-400"
+              <UIcon
+name="i-heroicons-check" class="h-6 w-5 flex-none text-primary-600 dark:text-primary-400"
                 aria-hidden="true" />
               {{ feature }}
             </li>

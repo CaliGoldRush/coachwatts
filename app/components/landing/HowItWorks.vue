@@ -2,8 +2,7 @@
   <div id="how-it-works" class="py-24 sm:py-32 bg-gray-900 relative overflow-hidden">
     <!-- Matrix Background Effect -->
     <div
-      class="absolute inset-0 opacity-5 bg-[url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbm95MXY4Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0/U3qYN8S0j3bpK/giphy.gif')] bg-cover mix-blend-screen pointer-events-none">
-    </div>
+      class="absolute inset-0 opacity-5 bg-[url('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbm95MXY4Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0Z3Y0/U3qYN8S0j3bpK/giphy.gif')] bg-cover mix-blend-screen pointer-events-none"/>
 
     <div class="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
       <div class="mx-auto max-w-2xl text-center">
@@ -35,11 +34,10 @@
 
               <!-- Visual Hint -->
               <div class="mt-6 flex -space-x-2 overflow-hidden">
-                <div class="inline-block h-6 w-6 rounded-full bg-orange-500 ring-2 ring-gray-900"></div>
+                <div class="inline-block h-6 w-6 rounded-full bg-orange-500 ring-2 ring-gray-900"/>
                 <!-- Strava color -->
-                <div class="inline-block h-6 w-6 rounded-full bg-black ring-2 ring-gray-900 border border-white/20">
-                </div> <!-- Whoop color -->
-                <div class="inline-block h-6 w-6 rounded-full bg-blue-500 ring-2 ring-gray-900"></div>
+                <div class="inline-block h-6 w-6 rounded-full bg-black ring-2 ring-gray-900 border border-white/20"/> <!-- Whoop color -->
+                <div class="inline-block h-6 w-6 rounded-full bg-blue-500 ring-2 ring-gray-900"/>
                 <!-- Icons for more -->
                 <div
                   class="inline-block h-6 w-6 rounded-full bg-gray-700 ring-2 ring-gray-900 flex items-center justify-center text-[10px] text-white font-bold">
@@ -49,8 +47,7 @@
 
             <!-- Connector Line (Desktop) -->
             <div
-              class="hidden lg:block absolute top-7 left-14 w-[calc(100%-3.5rem)] h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-primary-500/50 transition-all duration-500">
-            </div>
+              class="hidden lg:block absolute top-7 left-14 w-[calc(100%-3.5rem)] h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-primary-500/50 transition-all duration-500"/>
           </div>
 
           <!-- Step 2: Analyze -->
@@ -69,8 +66,8 @@
               <div class="mt-4 flex items-center gap-2">
                 <span class="relative flex h-3 w-3">
                   <span
-                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"/>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"/>
                 </span>
                 <span
                   class="px-2 py-1 rounded bg-red-500/10 text-red-400 text-xs font-mono border border-red-500/20">Status:
@@ -79,8 +76,7 @@
             </dd>
             <!-- Connector Line -->
             <div
-              class="hidden lg:block absolute top-7 left-14 w-[calc(100%-3.5rem)] h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-primary-500/50 transition-all duration-500">
-            </div>
+              class="hidden lg:block absolute top-7 left-14 w-[calc(100%-3.5rem)] h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-primary-500/50 transition-all duration-500"/>
           </div>
 
           <!-- Step 3: Profile -->
@@ -108,15 +104,15 @@
             </dd>
             <!-- Connector Line -->
             <div
-              class="hidden lg:block absolute top-7 left-14 w-[calc(100%-3.5rem)] h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-primary-500/50 transition-all duration-500">
-            </div>
+              class="hidden lg:block absolute top-7 left-14 w-[calc(100%-3.5rem)] h-px bg-gradient-to-r from-gray-800 to-transparent group-hover:from-primary-500/50 transition-all duration-500"/>
           </div>
 
           <!-- Step 4: Coach -->
           <div class="flex flex-col relative group">
             <div
               class="mb-6 flex h-14 w-14 items-center justify-center rounded-lg bg-gray-800 ring-1 ring-gray-700 group-hover:bg-primary-500/10 group-hover:ring-primary-500 transition-all duration-300">
-              <UIcon name="i-heroicons-chat-bubble-bottom-center-text"
+              <UIcon
+name="i-heroicons-chat-bubble-bottom-center-text"
                 class="h-6 w-6 text-white group-hover:text-primary-400" />
             </div>
             <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-white">

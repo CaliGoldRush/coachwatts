@@ -59,7 +59,8 @@
 
               <div class="relative pl-9">
                 <dt class="inline font-semibold text-white">
-                  <UIcon name="i-heroicons-chat-bubble-bottom-center-text"
+                  <UIcon
+name="i-heroicons-chat-bubble-bottom-center-text"
                     class="absolute left-1 top-1 h-5 w-5 text-primary-500" />
                   4. Holistic Coaching
                 </dt>
@@ -88,7 +89,7 @@
               </div>
 
               <div class="h-8 flex justify-center">
-                <div class="w-px bg-gray-600"></div>
+                <div class="w-px bg-gray-600"/>
               </div>
 
               <!-- Ingestion Engine -->
@@ -98,7 +99,7 @@
               </div>
 
               <div class="h-8 flex justify-center">
-                <div class="w-px bg-gray-600"></div>
+                <div class="w-px bg-gray-600"/>
               </div>
 
               <!-- Analysis Layer -->
@@ -116,7 +117,7 @@
               <!-- The Digital Twin -->
               <div
                 class="p-6 bg-gradient-to-b from-gray-800 to-gray-900 border-2 border-primary-500 rounded-xl text-center relative overflow-hidden">
-                <div class="absolute inset-0 bg-primary-500/5"></div>
+                <div class="absolute inset-0 bg-primary-500/5"/>
                 <div class="relative z-10">
                   <UIcon name="i-heroicons-user" class="w-12 h-12 text-primary-500 mx-auto mb-2" />
                   <div class="text-white font-bold text-lg">DIGITAL ATHLETE TWIN</div>
@@ -129,7 +130,7 @@
               </div>
 
               <div class="h-8 flex justify-center">
-                <div class="w-px bg-gray-600"></div>
+                <div class="w-px bg-gray-600"/>
               </div>
 
               <!-- Output -->
