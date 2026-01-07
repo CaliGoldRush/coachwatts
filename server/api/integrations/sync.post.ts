@@ -169,12 +169,6 @@ export default defineEventHandler(async (event) => {
     : 'ingest-hevy'
   
   try {
-    console.log(`[Sync] Triggering task: ${taskId} for user: ${userId}`)
-    console.log(`[Sync] Current time: ${now.toISOString()}`)
-    console.log(`[Sync] Start date: ${startDate.toISOString()} (${startDate.toISOString().split('T')[0]})`)
-    console.log(`[Sync] End date: ${endDate.toISOString()} (${endDate.toISOString().split('T')[0]})`)
-    console.log(`[Sync] Days to sync: ${Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000))}`)
-    
     const handle = await tasks.trigger(taskId, {
       userId,
       startDate: startDate.toISOString(),
@@ -182,8 +176,6 @@ export default defineEventHandler(async (event) => {
     }, {
       concurrencyKey: userId
     })
-    
-    console.log(`[Sync] Task triggered successfully. Job ID: ${handle.id}`)
     
     return {
       success: true,

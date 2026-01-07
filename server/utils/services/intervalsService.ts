@@ -29,8 +29,6 @@ export class IntervalsService {
    * Sync activities for a user within a given date range.
    */
   static async syncActivities(userId: string, startDate: Date, endDate: Date) {
-    console.log(`[IntervalsService] Syncing activities for user ${userId} from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-    
     const integration = await prisma.integration.findUnique({
       where: {
         userId_provider: {
@@ -51,13 +49,11 @@ export class IntervalsService {
     const historicalEnd = endDate > historicalEndLocal ? historicalEndLocal : endDate;
 
     const allActivities = await fetchIntervalsWorkouts(integration, startDate, historicalEnd);
-    console.log(`[IntervalsService] Fetched ${allActivities.length} activities`);
 
     // Filter out incomplete Strava activities
     const activities = allActivities.filter(activity => {
       const isIncompleteStrava = activity.source === 'STRAVA' && activity._note?.includes('not available via the API');
       if (isIncompleteStrava) {
-        console.log(`[IntervalsService] Skipping incomplete Strava activity: ${activity.id}`);
         return false;
       }
       return true;
@@ -91,7 +87,6 @@ export class IntervalsService {
       // Sync stream data if applicable
       if (upsertedWorkout.type && pacingActivityTypes.includes(upsertedWorkout.type)) {
          try {
-           console.log(`[IntervalsService] Syncing streams for activity ${activity.id}`);
            await IntervalsService.syncActivityStream(userId, upsertedWorkout.id, activity.id);
          } catch (error) {
            console.error(`[IntervalsService] Failed to sync stream for workout ${upsertedWorkout.id}`, error);
@@ -126,12 +121,10 @@ export class IntervalsService {
     
     // Check if we got any stream data
     if (!streams.time || !streams.time.data || (Array.isArray(streams.time.data) && streams.time.data.length === 0)) {
-      console.log(`[IntervalsService] No stream data available for activity ${activityId}`);
       return null;
     }
     
     const dataPoints = (streams.time.data as any[]).length;
-    console.log(`[IntervalsService] Found ${dataPoints} data points for activity ${activityId}`);
     
     // Extract data arrays
     const timeData = (streams.time?.data as number[]) || [];
@@ -220,8 +213,6 @@ export class IntervalsService {
       }
     });
     
-    console.log(`[IntervalsService] Successfully synced ${dataPoints} data points for activity ${activityId}`);
-    
     return workoutStream;
   }
 
@@ -229,8 +220,6 @@ export class IntervalsService {
    * Sync wellness data for a user within a given date range.
    */
   static async syncWellness(userId: string, startDate: Date, endDate: Date) {
-    console.log(`[IntervalsService] Syncing wellness for user ${userId} from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-
     const integration = await prisma.integration.findUnique({
       where: {
         userId_provider: {
@@ -250,7 +239,6 @@ export class IntervalsService {
     const historicalEnd = endDate > historicalEndLocal ? historicalEndLocal : endDate;
 
     const wellnessData = await fetchIntervalsWellness(integration, startDate, historicalEnd);
-    console.log(`[IntervalsService] Fetched ${wellnessData.length} wellness entries`);
 
     let upsertedCount = 0;
     for (const wellness of wellnessData) {
@@ -273,8 +261,6 @@ export class IntervalsService {
    * Sync planned workouts and events for a user within a given date range.
    */
   static async syncPlannedWorkouts(userId: string, startDate: Date, endDate: Date) {
-    console.log(`[IntervalsService] Syncing planned workouts for user ${userId} from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-
     const integration = await prisma.integration.findUnique({
       where: {
         userId_provider: {
@@ -289,7 +275,6 @@ export class IntervalsService {
     }
 
     const plannedWorkouts = await fetchIntervalsPlannedWorkouts(integration, startDate, endDate);
-    console.log(`[IntervalsService] Fetched ${plannedWorkouts.length} planned workouts`);
 
     let plannedUpserted = 0;
     let eventsUpserted = 0;
@@ -348,7 +333,6 @@ export class IntervalsService {
    * Handle activity deletion.
    */
   static async deleteActivity(userId: string, activityId: string) {
-    console.log(`[IntervalsService] Deleting activity ${activityId} for user ${userId}`);
     await prisma.workout.deleteMany({
       where: {
         userId,
@@ -362,7 +346,6 @@ export class IntervalsService {
    * Handle planned workout/event deletion.
    */
   static async deletePlannedWorkouts(userId: string, externalIds: string[]) {
-    console.log(`[IntervalsService] Deleting ${externalIds.length} planned workouts for user ${userId}`);
     
     await prisma.plannedWorkout.deleteMany({
       where: {

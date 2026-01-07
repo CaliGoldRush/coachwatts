@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
       }
       if (workout.averageHr && workout.averageHr > 0) {
         description.push(`${Math.round(workout.averageHr)} bpm`)
-        details.push({ label: 'Avg HR', value: `${Math.round(workout.averageHr)} bpm`, icon: 'i-tabler-heart-beat', color: 'text-rose-500' })
+        details.push({ label: 'Avg HR', value: `${Math.round(workout.averageHr)} bpm`, icon: 'i-tabler-heartbeat', color: 'text-rose-500' })
       }
       
       timelineItems.push({
@@ -194,7 +194,7 @@ export default defineEventHandler(async (event) => {
       }
       if (entry.restingHr && entry.restingHr > 0) {
         description.push(`RHR ${Math.round(entry.restingHr)} bpm`)
-        details.push({ label: 'RHR', value: `${Math.round(entry.restingHr)} bpm`, icon: 'i-tabler-heart-beat', color: 'text-rose-500' })
+        details.push({ label: 'RHR', value: `${Math.round(entry.restingHr)} bpm`, icon: 'i-tabler-heartbeat', color: 'text-rose-500' })
       }
       if (entry.sleepQuality) {
         description.push(`Sleep: ${entry.sleepQuality}/10`)
