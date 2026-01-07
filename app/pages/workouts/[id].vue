@@ -221,7 +221,7 @@
 
         <div v-else-if="workout" class="space-y-6">
           <!-- Header Section: Workout Info (2/3) + Performance Scores (1/3) -->
-          <div id="header" class="scroll-mt-20"></div>
+          <div id="header" class="scroll-mt-20"/>
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Workout Info Card - 2/3 -->
             <div class="lg:col-span-2">
@@ -233,15 +233,15 @@
                     </h1>
                     <div class="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
                       <div class="flex items-center gap-1">
-                        <span class="i-heroicons-calendar w-4 h-4"></span>
+                        <span class="i-heroicons-calendar w-4 h-4"/>
                         {{ formatDate(workout.date) }}
                       </div>
                       <div v-if="workout.type" class="flex items-center gap-1">
-                        <span class="i-heroicons-tag w-4 h-4"></span>
+                        <span class="i-heroicons-tag w-4 h-4"/>
                         {{ workout.type }}
                       </div>
                       <div class="flex items-center gap-1">
-                        <span class="i-heroicons-clock w-4 h-4"></span>
+                        <span class="i-heroicons-clock w-4 h-4"/>
                         {{ formatDuration(workout.durationSec) }}
                       </div>
                     </div>
@@ -321,7 +321,7 @@
           </div>
 
           <!-- Training Impact Section (TSS, CTL, ATL, TSB) -->
-          <div id="training-impact" class="scroll-mt-20"></div>
+          <div id="training-impact" class="scroll-mt-20"/>
           <div v-if="hasTrainingMetrics(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Training Impact & Load</h2>
             
@@ -418,14 +418,14 @@
           </div>
 
           <!-- Exercises Section -->
-          <div id="exercises" class="scroll-mt-20"></div>
+          <div id="exercises" class="scroll-mt-20"/>
           <div v-if="shouldShowExercises(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Exercises</h2>
             <WorkoutsExerciseList :exercises="workout.exercises" />
           </div>
 
           <!-- AI Analysis Section -->
-          <div id="analysis" class="scroll-mt-20"></div>
+          <div id="analysis" class="scroll-mt-20"/>
           
           <!-- Plan Adherence (if linked) -->
           <div v-if="workout.plannedWorkout" class="mb-6">
@@ -473,7 +473,7 @@
               <!-- Executive Summary -->
               <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
                 <h3 class="text-base font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
-                  <span class="i-heroicons-light-bulb w-5 h-5"></span>
+                  <span class="i-heroicons-light-bulb w-5 h-5"/>
                   Quick Take
                 </h3>
                 <p class="text-base text-gray-800 dark:text-gray-200 leading-relaxed">{{ workout.aiAnalysisJson.executive_summary }}</p>
@@ -499,7 +499,7 @@
                         :key="pIndex"
                         class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
                       >
-                        <span class="i-heroicons-chevron-right w-4 h-4 mt-0.5 text-primary-500 flex-shrink-0"></span>
+                        <span class="i-heroicons-chevron-right w-4 h-4 mt-0.5 text-primary-500 flex-shrink-0"/>
                         <span>{{ point }}</span>
                       </li>
                     </ul>
@@ -511,7 +511,7 @@
               <div v-if="workout.aiAnalysisJson.recommendations && workout.aiAnalysisJson.recommendations.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <span class="i-heroicons-clipboard-document-list w-5 h-5"></span>
+                    <span class="i-heroicons-clipboard-document-list w-5 h-5"/>
                     Recommendations
                   </h3>
                 </div>
@@ -538,7 +538,7 @@
                 <!-- Strengths -->
                 <div v-if="workout.aiAnalysisJson.strengths && workout.aiAnalysisJson.strengths.length > 0" class="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
                   <h3 class="text-lg font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
-                    <span class="i-heroicons-check-circle w-5 h-5"></span>
+                    <span class="i-heroicons-check-circle w-5 h-5"/>
                     Strengths
                   </h3>
                   <ul class="space-y-2">
@@ -547,7 +547,7 @@
                       :key="index"
                       class="flex items-start gap-2 text-sm text-green-800 dark:text-green-200"
                     >
-                      <span class="i-heroicons-plus-circle w-4 h-4 mt-0.5 flex-shrink-0"></span>
+                      <span class="i-heroicons-plus-circle w-4 h-4 mt-0.5 flex-shrink-0"/>
                       <span>{{ strength }}</span>
                     </li>
                   </ul>
@@ -556,7 +556,7 @@
                 <!-- Weaknesses -->
                 <div v-if="workout.aiAnalysisJson.weaknesses && workout.aiAnalysisJson.weaknesses.length > 0" class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-6 border border-orange-200 dark:border-orange-800">
                   <h3 class="text-lg font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
-                    <span class="i-heroicons-exclamation-triangle w-5 h-5"></span>
+                    <span class="i-heroicons-exclamation-triangle w-5 h-5"/>
                     Areas for Improvement
                   </h3>
                   <ul class="space-y-2">
@@ -565,7 +565,7 @@
                       :key="index"
                       class="flex items-start gap-2 text-sm text-orange-800 dark:text-orange-200"
                     >
-                      <span class="i-heroicons-arrow-trending-up w-4 h-4 mt-0.5 flex-shrink-0"></span>
+                      <span class="i-heroicons-arrow-trending-up w-4 h-4 mt-0.5 flex-shrink-0"/>
                       <span>{{ weakness }}</span>
                     </li>
                   </ul>
@@ -581,7 +581,9 @@
             <!-- Fallback to Markdown if JSON not available -->
             <div v-else-if="workout.aiAnalysis" class="space-y-4">
               <div class="prose prose-sm dark:prose-invert max-w-none">
-                <div v-html="renderedAnalysis" class="text-gray-700 dark:text-gray-300"></div>
+                <!-- eslint-disable vue/no-v-html -->
+                <div class="text-gray-700 dark:text-gray-300" v-html="renderedAnalysis"/>
+                <!-- eslint-enable vue/no-v-html -->
               </div>
               <div v-if="workout.aiAnalyzedAt" class="text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
                 Analyzed on {{ formatDate(workout.aiAnalyzedAt) }}
@@ -590,68 +592,68 @@
             
             <div v-else-if="!analyzingWorkout" class="text-center py-8">
               <div class="text-gray-500 dark:text-gray-400">
-                <span class="i-heroicons-light-bulb w-12 h-12 mx-auto mb-4 opacity-50"></span>
+                <span class="i-heroicons-light-bulb w-12 h-12 mx-auto mb-4 opacity-50"/>
                 <p class="text-sm">Click "Analyze Workout" to get AI-powered insights on your performance, pacing, and technique.</p>
               </div>
             </div>
 
             <div v-else class="text-center py-8">
-              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"/>
               <p class="text-sm text-gray-600 dark:text-gray-400">Generating analysis with AI...</p>
             </div>
           </div>
 
           <!-- Power Curve Section (for activities with power data) -->
-          <div id="power-curve" class="scroll-mt-20"></div>
+          <div id="power-curve" class="scroll-mt-20"/>
           <div v-if="shouldShowDetailedPacing(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Power Duration Curve</h2>
             <PowerCurveChart :workout-id="workout.id" />
           </div>
 
           <!-- Interval Analysis Section -->
-          <div id="intervals" class="scroll-mt-20"></div>
+          <div id="intervals" class="scroll-mt-20"/>
           <div v-if="shouldShowIntervals(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Intervals & Peak Efforts</h2>
             <IntervalsAnalysis :workout-id="workout.id" />
           </div>
 
           <!-- Advanced Analytics Section -->
-          <div id="advanced" class="scroll-mt-20"></div>
+          <div id="advanced" class="scroll-mt-20"/>
           <div v-if="shouldShowDetailedPacing(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Advanced Analytics</h2>
             <AdvancedWorkoutMetrics :workout-id="workout.id" />
           </div>
 
           <!-- Route Map Section -->
-          <div id="map" class="scroll-mt-20"></div>
+          <div id="map" class="scroll-mt-20"/>
           <div v-if="shouldShowMap(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Route</h2>
             <UiWorkoutMap :coordinates="workout.streams.latlng" :interactive="true" />
           </div>
 
           <!-- Pacing Analysis Section (for Run/Ride/Walk/Hike activities) -->
-          <div id="pacing" class="scroll-mt-20"></div>
+          <div id="pacing" class="scroll-mt-20"/>
           <div v-if="shouldShowDetailedPacing(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Pacing Analysis</h2>
             <PacingAnalysis :workout-id="workout.id" />
           </div>
 
           <!-- Timeline Visualization (for Run/Ride/Walk/Hike activities) -->
-          <div id="timeline" class="scroll-mt-20"></div>
+          <div id="timeline" class="scroll-mt-20"/>
           <div v-if="shouldShowDetailedPacing(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Workout Timeline</h2>
             <WorkoutTimeline :workout-id="workout.id" />
           </div>
 
           <!-- Zone Distribution Visualization -->
-          <div id="zones" class="scroll-mt-20"></div>
+          <div id="zones" class="scroll-mt-20"/>
           <div v-if="shouldShowPacing(workout)" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Training Zones</h2>
             <ZoneChart :workout-id="workout.id" />
           </div>
 
           <!-- Efficiency Metrics Section -->
-          <div id="efficiency" class="scroll-mt-20"></div>
+          <div id="efficiency" class="scroll-mt-20"/>
           <EfficiencyMetricsCard
             v-if="hasEfficiencyMetrics(workout)"
             :metrics="{
@@ -669,11 +671,11 @@
             v-model="workout.notes"
             :notes-updated-at="workout.notesUpdatedAt"
             :api-endpoint="`/api/workouts/${workout.id}/notes`"
-            @update:notesUpdatedAt="workout.notesUpdatedAt = $event"
+            @update:notes-updated-at="workout.notesUpdatedAt = $event"
           />
 
           <!-- Detailed Metrics Section -->
-          <div id="metrics" class="scroll-mt-20"></div>
+          <div id="metrics" class="scroll-mt-20"/>
           <div v-if="availableMetrics.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Detailed Metrics</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
@@ -694,7 +696,7 @@
           </div>
 
           <!-- Duplicate Workout Section -->
-          <div id="duplicates" class="scroll-mt-20"></div>
+          <div id="duplicates" class="scroll-mt-20"/>
           <div v-if="workout.isDuplicate || (workout.duplicates && workout.duplicates.length > 0) || workout.plannedWorkout" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Duplicate Management</h2>
             
@@ -899,8 +901,8 @@
           <p class="text-gray-600 mb-4">Click below to generate a shareable link.</p>
           <UButton
             color="primary"
-            @click="generateShareLink"
             :loading="generatingShareLink"
+            @click="generateShareLink"
           >
             Generate Link
           </UButton>

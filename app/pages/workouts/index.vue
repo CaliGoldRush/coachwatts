@@ -8,25 +8,25 @@
         <template #right>
           <div class="flex gap-3">
             <UButton
-              @click="generateExplanations"
               :loading="generatingExplanations"
               color="primary"
               variant="solid"
               icon="i-heroicons-sparkles"
               size="sm"
               class="font-bold"
+              @click="generateExplanations"
             >
               <span class="hidden sm:inline">Insights</span>
               <span class="sm:hidden">AI</span>
             </UButton>
             <UButton
-              @click="analyzeAllWorkouts"
               :loading="analyzingWorkouts"
               color="neutral"
               variant="outline"
               size="sm"
               icon="i-heroicons-cpu-chip"
               class="font-bold"
+              @click="analyzeAllWorkouts"
             >
               <span class="hidden sm:inline">Analyze</span>
               <span class="sm:hidden">Sync</span>
@@ -109,9 +109,9 @@
           </UCard>
 
           <WorkoutTable
+            v-model:current-page="currentPage"
             :workouts="paginatedWorkouts"
             :loading="loading"
-            v-model:current-page="currentPage"
             :total-pages="totalPages"
             :total-workouts="filteredWorkouts.length"
             :visible-pages="visiblePages"
@@ -254,7 +254,7 @@ const visiblePages = computed(() => {
   const pages = []
   const maxVisible = 7
   let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2))
-  let end = Math.min(totalPages.value, start + maxVisible - 1)
+  const end = Math.min(totalPages.value, start + maxVisible - 1)
   
   if (end - start < maxVisible - 1) {
     start = Math.max(1, end - maxVisible + 1)

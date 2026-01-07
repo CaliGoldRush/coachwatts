@@ -232,8 +232,8 @@
 
           <!-- Workout Visualization -->
           <component 
-            v-if="workout.structuredWorkout"
             :is="getWorkoutComponent(workout.type)"
+            v-if="workout.structuredWorkout"
             :workout="workout" 
             :user-ftp="userFtp"
             :generating="generating"
@@ -537,8 +537,8 @@
           <p class="text-gray-600 mb-4">Click below to generate a shareable link.</p>
           <UButton
             color="primary"
-            @click="generateShareLink"
             :loading="generatingShareLink"
+            @click="generateShareLink"
           >
             Generate Link
           </UButton>

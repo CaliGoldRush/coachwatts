@@ -71,23 +71,23 @@
             <!-- Legend (Calendar Only) -->
             <div v-if="viewMode === 'calendar'" class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 shrink-0">
               <div class="flex items-center gap-1.5">
-                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <div class="w-2 h-2 rounded-full bg-green-500"/>
                 <span>Completed</span>
               </div>
               <div class="flex items-center gap-1.5">
-                <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                <div class="w-2 h-2 rounded-full bg-blue-500"/>
                 <span>From Plan</span>
               </div>
               <div class="flex items-center gap-1.5">
-                <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                <div class="w-2 h-2 rounded-full bg-amber-500"/>
                 <span>Planned</span>
               </div>
               <div class="flex items-center gap-1.5">
-                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                <div class="w-2 h-2 rounded-full bg-red-500"/>
                 <span>Missed</span>
               </div>
               <div class="flex items-center gap-1.5 border-l border-gray-300 dark:border-gray-700 pl-3">
-                <div class="w-4 h-1 bg-green-500 rounded-sm"></div>
+                <div class="w-4 h-1 bg-green-500 rounded-sm"/>
                 <span>TSS</span>
               </div>
             </div>
@@ -291,13 +291,12 @@
           <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-x-auto h-full flex flex-col">
             <UTable
               ref="table"
+              v-model:column-visibility="columnVisibility"
               :data="sortedActivities"
               :columns="availableColumns"
-              v-model:column-visibility="columnVisibility"
               :loading="status === 'pending'"
               class="flex-1 w-full"
               empty="No activities found for this month"
-              @select="(_, row) => openActivity(row.original)"
               :ui="{
                 root: 'w-full',
                 base: 'w-full table-auto',
@@ -305,6 +304,7 @@
                 td: 'text-sm text-gray-900 dark:text-gray-100 cursor-pointer px-4 py-3',
                 tbody: 'divide-y divide-gray-200 dark:divide-gray-800'
               }"
+              @select="(_, row) => openActivity(row.original)"
             >
               <template #type-cell="{ row }">
                 <div class="flex items-center gap-2">
@@ -543,8 +543,8 @@
 
     <template #footer>
       <div class="flex justify-end gap-3 w-full">
-        <UButton color="neutral" variant="ghost" @click="showMergeModal = false" :disabled="isMerging">Cancel</UButton>
-        <UButton color="primary" @click="confirmMerge" :loading="isMerging">Merge</UButton>
+        <UButton color="neutral" variant="ghost" :disabled="isMerging" @click="showMergeModal = false">Cancel</UButton>
+        <UButton color="primary" :loading="isMerging" @click="confirmMerge">Merge</UButton>
       </div>
     </template>
   </UModal>
@@ -563,8 +563,8 @@
 
     <template #footer>
       <div class="flex justify-end gap-3 w-full">
-        <UButton color="neutral" variant="ghost" @click="showLinkModal = false" :disabled="isLinking">Cancel</UButton>
-        <UButton color="primary" @click="confirmLink" :loading="isLinking">Link</UButton>
+        <UButton color="neutral" variant="ghost" :disabled="isLinking" @click="showLinkModal = false">Cancel</UButton>
+        <UButton color="primary" :loading="isLinking" @click="confirmLink">Link</UButton>
       </div>
     </template>
   </UModal>

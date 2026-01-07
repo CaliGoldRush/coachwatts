@@ -35,19 +35,19 @@
             @drop.prevent="handleDrop"
           >
             <input
-              type="file"
               ref="fileInput"
+              type="file"
               class="hidden"
               accept=".fit"
               @change="handleFileSelect"
-            />
+            >
             
             <div v-if="!selectedFile" class="text-center">
               <UButton
-                @click="fileInput?.click()"
                 color="primary"
                 variant="soft"
                 class="mb-4"
+                @click="fileInput?.click()"
               >
                 Select File
               </UButton>
@@ -68,10 +68,10 @@
               </div>
               
               <UButton
-                @click="uploadFile"
                 :loading="uploading"
                 color="primary"
                 block
+                @click="uploadFile"
               >
                 {{ uploading ? 'Uploading...' : 'Upload Workout' }}
               </UButton>
