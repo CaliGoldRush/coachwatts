@@ -365,7 +365,7 @@ useHead({
                   Analyzing your athlete profile, workouts, and performance to suggest achievable goals...
                 </p>
               </div>
-              <USkeleton class="h-32 w-full" v-for="i in 3" :key="i" />
+              <USkeleton v-for="i in 3" :key="i" class="h-32 w-full" />
             </div>
             
             <div v-else-if="suggestions" class="space-y-6">
@@ -461,7 +461,7 @@ useHead({
                   Reviewing your active goals for rationality and achievability...
                 </p>
               </div>
-              <USkeleton class="h-32 w-full" v-for="i in 2" :key="i" />
+              <USkeleton v-for="i in 2" :key="i" class="h-32 w-full" />
             </div>
             
             <div v-else-if="review" class="space-y-6">
@@ -573,7 +573,7 @@ useHead({
           </div>
           
           <div v-if="loading" class="space-y-4">
-            <USkeleton class="h-32 w-full" v-for="i in 2" :key="i" />
+            <USkeleton v-for="i in 2" :key="i" class="h-32 w-full" />
           </div>
           
           <div v-else-if="goals.length === 0 && !showWizard" class="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-lg">
@@ -584,7 +584,7 @@ useHead({
             <p class="text-gray-500 dark:text-gray-400 mt-2 mb-6 max-w-md mx-auto">
               Set your first goal to get personalized AI coaching advice and track your progress.
             </p>
-            <UButton color="primary" size="lg" @click="showWizard = true" icon="i-heroicons-plus">
+            <UButton color="primary" size="lg" icon="i-heroicons-plus" @click="showWizard = true">
               Create First Goal
             </UButton>
           </div>

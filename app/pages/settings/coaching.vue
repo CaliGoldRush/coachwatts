@@ -76,7 +76,7 @@
     <UModal v-model:open="isRemoveModalOpen" title="Remove Coach" description="Are you sure you want to remove this coach? They will no longer be able to see or manage your data.">
       <template #footer>
         <UButton label="Cancel" color="neutral" variant="ghost" @click="isRemoveModalOpen = false" />
-        <UButton label="Remove Coach" color="red" @click="removeCoach" :loading="removing" />
+        <UButton label="Remove Coach" color="red" :loading="removing" @click="removeCoach" />
       </template>
     </UModal>
   </div>

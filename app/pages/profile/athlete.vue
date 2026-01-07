@@ -412,9 +412,9 @@
             <UButton
               v-else
               color="primary"
-              @click="generateNewProfile"
               :loading="userStore.generating"
               :disabled="userStore.generating"
+              @click="generateNewProfile"
             >
               <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-2" />
               {{ userStore.generating ? 'Generating...' : 'Regenerate Profile' }}
@@ -427,12 +427,12 @@
             {{ isViewingHistorical ? 'No athlete profile found for this date' : 'No athlete profile found' }}
           </p>
           <div v-if="isViewingHistorical" class="mt-4">
-            <UButton @click="resetToLatest" color="primary">
+            <UButton color="primary" @click="resetToLatest">
               View Latest Profile
             </UButton>
           </div>
           <div v-else class="mt-4">
-            <UButton @click="generateNewProfile" :loading="userStore.generating">
+            <UButton :loading="userStore.generating" @click="generateNewProfile">
               Generate Profile
             </UButton>
           </div>
@@ -440,8 +440,7 @@
       </div>
     </template>
     
-    <template #footer>
-    </template>
+    <template #footer/>
   </UDashboardPanel>
   
   <UModal
@@ -481,8 +480,8 @@
           <p class="text-gray-600 mb-4">Click below to generate a shareable link.</p>
           <UButton
             color="primary"
-            @click="generateShareLink"
             :loading="generatingShareLink"
+            @click="generateShareLink"
           >
             Generate Link
           </UButton>

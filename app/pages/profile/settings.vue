@@ -16,9 +16,9 @@
             <button 
               v-for="tab in tabs" 
               :key="tab.id"
-              @click="activeTab = tab.id"
               class="relative py-4 text-sm font-medium transition-colors"
               :class="activeTab === tab.id ? 'text-primary' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              @click="activeTab = tab.id"
             >
               <div class="flex items-center gap-2">
                 <UIcon :name="tab.icon" class="w-4 h-4" />
@@ -27,7 +27,7 @@
               <div 
                 v-if="activeTab === tab.id"
                 class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full"
-              ></div>
+              />
             </button>
           </div>
         </div>
@@ -39,9 +39,9 @@
             <ProfileBasicSettings
               v-if="activeTab === 'basic'"
               :model-value="profile"
+              :email="user?.email || ''"
               @update:model-value="handleProfileUpdate"
               @autodetect="handleAutodetect"
-              :email="user?.email || ''"
             />
             
             <ProfileCustomZones

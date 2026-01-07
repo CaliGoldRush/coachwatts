@@ -15,5 +15,5 @@ navigateTo('/settings/apps', { replace: true })
 </script>
 
 <template>
-  <div></div>
+  <div/>
 </template>
