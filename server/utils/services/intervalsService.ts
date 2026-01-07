@@ -14,6 +14,7 @@ import { normalizeTSS } from "../normalize-tss";
 import { calculateWorkoutStress } from "../calculate-workout-stress";
 import { getUserTimezone, getEndOfDayUTC } from "../date";
 import { tasks } from "@trigger.dev/sdk/v3";
+import { userIngestionQueue } from "../../../trigger/queues";
 
 export class IntervalsService {
   /**
@@ -86,7 +87,8 @@ export class IntervalsService {
             workoutId: upsertedWorkout.id,
             activityId: activity.id
           }, {
-            concurrencyKey: userId
+            concurrencyKey: userId,
+            queue: userIngestionQueue.name
           });
       }
     }
