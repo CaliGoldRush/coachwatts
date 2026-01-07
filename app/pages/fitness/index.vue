@@ -362,17 +362,6 @@ async function fetchWellness() {
   try {
     const wellness = await $fetch('/api/wellness')
     
-    // Debug: Log fetched wellness data
-    console.log('[Fitness] Fetched wellness data:', {
-      totalRecords: wellness.length,
-      latestDate: wellness.length > 0 ? (wellness[0] as any).date : 'none',
-      recentDates: wellness.slice(0, 5).map((w: any) => ({
-        date: w.date,
-        recoveryScore: w.recoveryScore,
-        dateType: typeof w.date
-      }))
-    })
-    
     allWellness.value = wellness
   } catch (error) {
     console.error('Error fetching wellness:', error)
@@ -394,26 +383,9 @@ const filteredWellness = computed(() => {
   const now = new Date()
   const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999))
   
-  // Debug: Log date filtering
-  console.log('[Fitness] Date filter check:', {
-    nowLocal: now.toLocaleString(),
-    todayUTC: todayUTC.toISOString(),
-    beforeFilter: wellness.length,
-    sampleDates: wellness.slice(0, 3).map(w => ({
-      date: w.date,
-      parsed: new Date(w.date).toISOString(),
-      comparison: new Date(w.date) <= todayUTC
-    }))
-  })
-  
   wellness = wellness.filter(w => {
     const wellnessDate = new Date(w.date)
     return wellnessDate <= todayUTC
-  })
-  
-  console.log('[Fitness] After date filter:', {
-    count: wellness.length,
-    filteredOut: allWellness.value.length - wellness.length
   })
   
   if (filterRecovery.value) {
@@ -493,14 +465,6 @@ function formatDate(date: string | Date) {
     month: 'short',
     day: 'numeric',
     timeZone: 'UTC'  // Force UTC to prevent timezone shifts
-  })
-  
-  // Debug logging to track date conversion
-  console.log('[Fitness] Date conversion:', {
-    input: date,
-    parsed: d.toISOString(),
-    formatted,
-    inputType: typeof date
   })
   
   return formatted

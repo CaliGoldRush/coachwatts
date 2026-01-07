@@ -1196,8 +1196,6 @@ async function fetchFitnessData() {
     const start = (fitnessPage.value - 1) * fitnessItemsPerPage
     const end = start + fitnessItemsPerPage
     fitnessData.value = sorted.slice(start, end)
-      
-    console.log(`Fetched ${wellness.length} total wellness records, ${withData.length} with data, showing ${fitnessData.value.length} on page ${fitnessPage.value}`)
   } catch (error) {
     console.error('Error fetching fitness data:', error)
   }
@@ -1206,15 +1204,12 @@ async function fetchFitnessData() {
 // Fetch nutrition data
 async function fetchNutritionData() {
   try {
-    console.log('Fetching nutrition data...')
     const response: any = await $fetch('/api/nutrition')
-    console.log('Nutrition API response:', response)
     const allNutrition = response.nutrition || []
     nutritionTotalItems.value = allNutrition.length
     const start = (nutritionPage.value - 1) * nutritionItemsPerPage
     const end = start + nutritionItemsPerPage
     nutritionData.value = allNutrition.slice(start, end)
-    console.log(`Loaded ${nutritionData.value.length} nutrition entries on page ${nutritionPage.value}`)
   } catch (error) {
     console.error('Error fetching nutrition data:', error)
     nutritionData.value = []

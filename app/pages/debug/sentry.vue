@@ -85,7 +85,7 @@ const triggerServerLog = async () => {
           Trigger and Capture Exception
         </UButton>
 
-        <UDivider label="Server Side" />
+        <USeparator label="Server Side" />
 
         <UButton color="neutral" @click="triggerServerLog" :loading="loadingServer">
           Trigger Server-Side Logs
