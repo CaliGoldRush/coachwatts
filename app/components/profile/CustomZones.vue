@@ -52,11 +52,11 @@
               <div v-for="(zone, index) in localPowerZones" :key="index" class="flex items-center gap-2 py-1">
                 <span class="text-muted w-32 text-sm">{{ zone.name }}</span>
                 <template v-if="index === 0">
-                    <span class="text-sm text-muted"><</span>
+                    <span class="text-sm text-muted">&lt;</span>
                     <UInput v-model="zone.max" type="number" size="xs" class="w-20" />
                 </template>
                   <template v-else-if="index === localPowerZones.length - 1">
-                    <span class="text-sm text-muted">></span>
+                    <span class="text-sm text-muted">&gt;</span>
                     <UInput v-model="zone.min" type="number" size="xs" class="w-20" />
                 </template>
                 <template v-else>
@@ -75,8 +75,8 @@
             <div v-for="(zone, index) in localPowerZones" :key="index" class="flex items-center justify-between text-sm py-1 border-b dark:border-gray-700 last:border-0">
                 <span class="text-muted">{{ zone.name }}</span>
                 <span class="font-medium">
-                    <template v-if="index === 0">< {{ zone.max }} W</template>
-                    <template v-else-if="index === localPowerZones.length - 1">> {{ zone.min }} W</template>
+                    <template v-if="index === 0">&lt; {{ zone.max }} W</template>
+                    <template v-else-if="index === localPowerZones.length - 1">&gt; {{ zone.min }} W</template>
                     <template v-else>{{ zone.min }}-{{ zone.max }} W</template>
                 </span>
               </div>

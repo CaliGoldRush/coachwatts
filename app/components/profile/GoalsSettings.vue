@@ -34,7 +34,7 @@
     </div>
     
     <div v-if="loading" class="space-y-4">
-      <USkeleton class="h-32 w-full" v-for="i in 2" :key="i" />
+      <USkeleton v-for="i in 2" :key="i" class="h-32 w-full" />
     </div>
     
     <div v-else-if="goals.length === 0 && !showWizard" class="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-lg">

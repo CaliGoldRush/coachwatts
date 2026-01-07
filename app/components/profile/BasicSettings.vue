@@ -19,7 +19,7 @@
       <div class="group relative">
         <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Name</label>
-          <button @click="startEdit('name')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('name')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -35,7 +35,7 @@
       <div class="group relative">
         <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Language</label>
-          <button @click="startEdit('language')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('language')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -51,7 +51,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Weight</label>
-          <button @click="startEdit('weight')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('weight')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -67,7 +67,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Units</label>
-          <button @click="startEdit('weightUnits')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('weightUnits')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -83,7 +83,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Height</label>
-          <button @click="startEdit('height')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('height')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -99,7 +99,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Units</label>
-          <button @click="startEdit('heightUnits')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('heightUnits')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -115,7 +115,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Distance</label>
-          <button @click="startEdit('distanceUnits')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('distanceUnits')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -131,7 +131,7 @@
         <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Temperature</label>
-          <button @click="startEdit('temperatureUnits')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('temperatureUnits')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -147,7 +147,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Resting HR</label>
-          <button @click="startEdit('restingHr')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('restingHr')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -162,7 +162,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Max HR</label>
-          <button @click="startEdit('maxHr')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('maxHr')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -177,7 +177,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">LTHR</label>
-          <button @click="startEdit('lthr')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('lthr')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -192,7 +192,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">FTP</label>
-          <button @click="startEdit('ftp')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('ftp')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -208,7 +208,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Form</label>
-          <button @click="startEdit('form')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('form')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -235,7 +235,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Visibility</label>
-          <button @click="startEdit('visibility')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('visibility')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -251,7 +251,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Sex</label>
-          <button @click="startEdit('sex')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('sex')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -267,12 +267,12 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Date of Birth</label>
-          <button @click="startEdit('dob')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('dob')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
           <div v-if="editingField === 'dob'" class="flex gap-2">
-          <UInput :model-value="editValue ? formatUserDate(editValue, timezone, 'yyyy-MM-dd') : ''" @update:model-value="val => editValue = val" type="date" size="sm" class="w-full" autofocus @keyup.enter="saveField" @keyup.esc="cancelEdit" />
+          <UInput :model-value="editValue ? formatUserDate(editValue, timezone, 'yyyy-MM-dd') : ''" type="date" size="sm" class="w-full" autofocus @update:model-value="val => editValue = val" @keyup.enter="saveField" @keyup.esc="cancelEdit" />
           <UButton size="xs" color="primary" variant="ghost" icon="i-heroicons-check" @click="saveField" />
           <UButton size="xs" color="neutral" variant="ghost" icon="i-heroicons-x-mark" @click="cancelEdit" />
         </div>
@@ -283,7 +283,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">City</label>
-          <button @click="startEdit('city')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('city')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -299,7 +299,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">State/Province</label>
-          <button @click="startEdit('state')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('state')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -315,7 +315,7 @@
       <div class="group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Country</label>
-          <button @click="startEdit('country')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('country')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -343,7 +343,7 @@
       <div class="lg:col-span-2 group relative">
           <div class="flex items-center gap-1 mb-1">
           <label class="text-sm text-muted">Timezone</label>
-          <button @click="startEdit('timezone')" class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button class="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" @click="startEdit('timezone')">
             <UIcon name="i-heroicons-pencil" class="w-3 h-3 text-muted hover:text-primary" />
           </button>
         </div>
@@ -389,6 +389,7 @@
 </template>
 
 <script setup lang="ts">
+import { countries } from '~/utils/countries'
 const props = defineProps<{
   modelValue: any
   email: string
@@ -396,7 +397,6 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue', 'autodetect'])
 const { formatDate, formatUserDate, timezone } = useFormat()
-import { countries } from '~/utils/countries'
 
 const editingField = ref<string | null>(null)
 const editValue = ref<any>(null)
