@@ -36,3 +36,6 @@ backups/
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+.gemini/
+gha-creds-*.json
