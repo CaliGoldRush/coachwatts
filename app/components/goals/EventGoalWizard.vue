@@ -7,9 +7,9 @@
         <button 
           v-for="type in goalTypes" 
           :key="type.id"
-          @click="selectType(type.id)"
           class="p-4 rounded-lg border-2 text-left transition-all hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10"
           :class="selectedType === type.id ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-gray-200 dark:border-gray-800'"
+          @click="selectType(type.id)"
         >
           <div class="p-2 rounded-lg w-fit mb-3" :class="type.color">
             <UIcon :name="type.icon" class="w-6 h-6" />
@@ -52,20 +52,21 @@
           <div 
             v-for="event in userEvents" 
             :key="event.id"
-            @click="toggleUserEvent(event)"
             class="p-4 rounded-lg border cursor-pointer transition-all flex justify-between items-center group"
             :class="form.eventIds.includes(event.id) ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary' : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'"
+            @click="toggleUserEvent(event)"
           >
             <div>
               <div class="font-medium text-lg" :class="form.eventIds.includes(event.id) ? 'text-primary' : ''">{{ event.title }}</div>
               <div class="text-sm text-muted mt-1 flex items-center gap-2">
                 <UIcon name="i-heroicons-calendar" class="w-4 h-4" />
                 {{ formatDate(event.date) }}
-                <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"/>
                 {{ event.type }}
               </div>
             </div>
-            <div class="w-6 h-6 rounded-full border flex items-center justify-center transition-colors"
+            <div
+class="w-6 h-6 rounded-full border flex items-center justify-center transition-colors"
               :class="form.eventIds.includes(event.id) ? 'bg-primary border-primary text-white' : 'border-gray-300 dark:border-gray-600 group-hover:border-primary'"
             >
                <UIcon v-if="form.eventIds.includes(event.id)" name="i-heroicons-check" class="w-4 h-4" />
@@ -76,9 +77,9 @@
             <UButton 
               size="lg" 
               color="primary" 
-              @click="step = 3" 
-              icon="i-heroicons-arrow-right"
+              icon="i-heroicons-arrow-right" 
               :disabled="form.eventIds.length === 0"
+              @click="step = 3"
             >
               Continue with {{ form.eventIds.length }} Event{{ form.eventIds.length !== 1 ? 's' : '' }}
             </UButton>
@@ -164,10 +165,10 @@
         </template>
 
         <div class="pt-6 flex justify-end">
-          <UButton v-if="hideApproach" size="xl" color="primary" @click="saveGoal" :loading="saving" icon="i-heroicons-check" class="px-8">
+          <UButton v-if="hideApproach" size="xl" color="primary" :loading="saving" icon="i-heroicons-check" class="px-8" @click="saveGoal">
             {{ isEditMode ? 'Update Goal' : 'Create Goal' }}
           </UButton>
-          <UButton v-else size="xl" color="primary" @click="step = 4" icon="i-heroicons-arrow-right" class="px-8">
+          <UButton v-else size="xl" color="primary" icon="i-heroicons-arrow-right" class="px-8" @click="step = 4">
             Next: Training Approach
           </UButton>
         </div>
@@ -192,9 +193,9 @@
             <button 
               v-for="p in priorityOptions" 
               :key="p.value"
-              @click="form.priority = p.value"
               class="p-4 rounded-lg border-2 text-left transition-all flex items-center gap-4"
               :class="form.priority === p.value ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-gray-200 dark:border-gray-800 hover:border-primary/50'"
+              @click="form.priority = p.value"
             >
               <div class="p-2 rounded bg-gray-100 dark:bg-gray-800" :class="p.color">
                 <UIcon :name="p.icon" class="w-5 h-5" />
@@ -209,7 +210,7 @@
         </div>
 
         <div class="pt-6 flex justify-end">
-          <UButton size="xl" color="primary" @click="saveGoal" :loading="saving" icon="i-heroicons-check" class="px-8">
+          <UButton size="xl" color="primary" :loading="saving" icon="i-heroicons-check" class="px-8" @click="saveGoal">
             {{ isEditMode ? 'Update Goal' : 'Create Goal' }}
           </UButton>
         </div>

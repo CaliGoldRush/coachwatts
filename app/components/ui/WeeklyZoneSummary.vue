@@ -25,7 +25,7 @@
       <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
         <div v-for="zone in zones" :key="zone.name" class="flex flex-col p-1.5 bg-gray-50 dark:bg-gray-900 rounded border border-gray-100 dark:border-gray-800">
           <div class="flex items-center gap-1.5 mb-1">
-            <div class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: zone.color }"></div>
+            <div class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: zone.color }"/>
             <span class="font-medium text-gray-500">{{ zone.name }}</span>
           </div>
           <span class="font-bold pl-3.5">{{ formatDuration(zone.duration) }}</span>

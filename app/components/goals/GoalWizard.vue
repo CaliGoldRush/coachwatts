@@ -7,9 +7,9 @@
         <button 
           v-for="type in goalTypes" 
           :key="type.id"
-          @click="selectType(type.id)"
           class="p-4 rounded-lg border-2 text-left transition-all hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10"
           :class="selectedType === type.id ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-gray-200 dark:border-gray-800'"
+          @click="selectType(type.id)"
         >
           <div class="p-2 rounded-lg w-fit mb-3" :class="type.color">
             <UIcon :name="type.icon" class="w-6 h-6" />
@@ -33,8 +33,8 @@
           size="sm"
           color="primary"
           variant="soft"
-          @click="generateAiSuggestion"
           :loading="generatingSuggestion"
+          @click="generateAiSuggestion"
         >
           AI Suggest
         </UButton>
@@ -162,27 +162,27 @@
           <div class="flex flex-col gap-2">
             <button
               type="button"
-              @click="form.priority = 'HIGH'"
               class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left"
               :class="form.priority === 'HIGH' ? 'border-error bg-error/5' : 'border-gray-200 dark:border-gray-800 hover:border-error/50'"
+              @click="form.priority = 'HIGH'"
             >
               <span class="text-error font-semibold">High</span>
               <span class="text-sm text-muted">Primary focus</span>
             </button>
             <button
               type="button"
-              @click="form.priority = 'MEDIUM'"
               class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left"
               :class="form.priority === 'MEDIUM' ? 'border-warning bg-warning/5' : 'border-gray-200 dark:border-gray-800 hover:border-warning/50'"
+              @click="form.priority = 'MEDIUM'"
             >
               <span class="text-warning font-semibold">Medium</span>
               <span class="text-sm text-muted">Important</span>
             </button>
             <button
               type="button"
-              @click="form.priority = 'LOW'"
               class="flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left"
               :class="form.priority === 'LOW' ? 'border-success bg-success/5' : 'border-gray-200 dark:border-gray-800 hover:border-success/50'"
+              @click="form.priority = 'LOW'"
             >
               <span class="text-success font-semibold">Low</span>
               <span class="text-sm text-muted">Nice to have</span>
@@ -202,7 +202,7 @@
         </div>
 
         <div class="pt-6 flex justify-end">
-          <UButton size="xl" color="primary" @click="saveGoal" :loading="saving" icon="i-heroicons-check" class="px-8">
+          <UButton size="xl" color="primary" :loading="saving" icon="i-heroicons-check" class="px-8" @click="saveGoal">
             {{ isEditMode ? 'Update Goal' : 'Create Goal' }}
           </UButton>
         </div>

@@ -2,8 +2,8 @@
   <div class="py-16 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-t border-gray-200 dark:border-gray-700 relative overflow-hidden">
     <!-- Decorative background elements -->
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none opacity-50 dark:opacity-20">
-      <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-primary-500/10 rounded-full blur-3xl"></div>
-      <div class="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-primary-500/10 rounded-full blur-3xl"/>
+      <div class="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"/>
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
