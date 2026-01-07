@@ -15,9 +15,9 @@
           <div 
             v-for="workout in completedWorkouts" 
             :key="workout.id"
-            @click="selectedCompleted = workout"
             class="p-3 rounded border cursor-pointer hover:border-primary transition-colors"
             :class="selectedCompleted?.id === workout.id ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700'"
+            @click="selectedCompleted = workout"
           >
             <div class="font-bold">{{ workout.title }}</div>
             <div class="text-xs text-muted flex gap-2 mt-1">
@@ -41,9 +41,9 @@
           <div 
             v-for="planned in plannedWorkouts" 
             :key="planned.id"
-            @click="selectedPlanned = planned"
             class="p-3 rounded border cursor-pointer hover:border-primary transition-colors"
             :class="selectedPlanned?.id === planned.id ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700'"
+            @click="selectedPlanned = planned"
           >
             <div class="font-bold">{{ planned.title }}</div>
             <div class="text-xs text-muted flex gap-2 mt-1">
@@ -65,8 +65,8 @@
       <UButton 
         :disabled="!canMatch" 
         color="primary" 
-        @click="matchWorkouts" 
-        :loading="matching"
+        :loading="matching" 
+        @click="matchWorkouts"
       >
         Link Workouts
       </UButton>

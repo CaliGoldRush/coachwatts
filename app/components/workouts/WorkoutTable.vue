@@ -53,8 +53,8 @@
           <tr
             v-for="workout in workouts"
             :key="workout.id"
-            @click="$emit('navigate', workout.id)"
             class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            @click="$emit('navigate', workout.id)"
           >
             <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
               <span class="sm:hidden">{{ formatShortDate(workout.date) }}</span>
@@ -101,9 +101,9 @@
         </div>
         <div class="flex gap-2">
           <button
-            @click="$emit('update:currentPage', currentPage - 1)"
             :disabled="currentPage === 1"
             class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            @click="$emit('update:currentPage', currentPage - 1)"
           >
             Previous
           </button>
@@ -111,21 +111,21 @@
             <button
               v-for="page in visiblePages"
               :key="page"
-              @click="$emit('update:currentPage', page)"
               :class="[
                 'px-3 py-1 rounded text-sm',
                 page === currentPage
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
               ]"
+              @click="$emit('update:currentPage', page)"
             >
               {{ page }}
             </button>
           </div>
           <button
-            @click="$emit('update:currentPage', currentPage + 1)"
             :disabled="currentPage === totalPages"
             class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            @click="$emit('update:currentPage', currentPage + 1)"
           >
             Next
           </button>

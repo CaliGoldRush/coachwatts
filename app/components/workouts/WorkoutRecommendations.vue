@@ -29,27 +29,31 @@
             </div>
           </div>
           <div class="flex-1 space-y-2">
-            <h4 class="font-bold text-sm tracking-tight" :class="{
+            <h4
+class="font-bold text-sm tracking-tight" :class="{
               'text-red-900 dark:text-red-100': rec.priority === 'high',
               'text-amber-900 dark:text-amber-100': rec.priority === 'medium',
               'text-blue-900 dark:text-blue-100': rec.priority === 'low'
             }">
               {{ rec.title }}
             </h4>
-            <p class="text-sm leading-relaxed" :class="{
+            <p
+class="text-sm leading-relaxed" :class="{
               'text-red-800/80 dark:text-red-200/80': rec.priority === 'high',
               'text-amber-800/80 dark:text-amber-200/80': rec.priority === 'medium',
               'text-blue-800/80 dark:text-blue-200/80': rec.priority === 'low'
             }">
               {{ rec.description }}
             </p>
-            <div class="pt-2 border-t flex justify-between items-center" :class="{
+            <div
+class="pt-2 border-t flex justify-between items-center" :class="{
               'border-red-200/50 dark:border-red-800/50': rec.priority === 'high',
               'border-amber-200/50 dark:border-amber-800/50': rec.priority === 'medium',
               'border-blue-200/50 dark:border-blue-800/50': rec.priority === 'low'
             }">
               <span class="text-[10px] font-bold uppercase tracking-widest opacity-60">{{ rec.metric }}</span>
-              <span class="text-[10px] font-bold uppercase tracking-widest text-right" :class="{
+              <span
+class="text-[10px] font-bold uppercase tracking-widest text-right" :class="{
                 'text-red-600 dark:text-red-400': rec.priority === 'high',
                 'text-amber-600 dark:text-amber-400': rec.priority === 'medium',
                 'text-blue-600 dark:text-blue-400': rec.priority === 'low'

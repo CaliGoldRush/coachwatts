@@ -122,7 +122,7 @@
     </div>
 
     <div v-else-if="regenerating" class="text-center py-8">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"/>
       <p class="text-sm text-gray-600 dark:text-gray-400">Analyzing plan adherence...</p>
     </div>
 

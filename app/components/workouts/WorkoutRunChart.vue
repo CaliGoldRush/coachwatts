@@ -8,7 +8,7 @@
       <!-- Legend -->
       <div class="flex items-center gap-4 text-xs">
         <div class="flex items-center gap-1.5">
-          <div class="w-3 h-3 rounded-sm bg-blue-500"></div>
+          <div class="w-3 h-3 rounded-sm bg-blue-500"/>
           <span class="text-muted">Intensity (% LTHR)</span>
         </div>
       </div>
@@ -30,7 +30,7 @@
           <div class="flex-1 relative min-w-0" style="height: 200px">
             <!-- Grid lines -->
             <div class="absolute inset-0 flex flex-col justify-between">
-              <div v-for="i in 6" :key="i" class="border-t border-gray-200 dark:border-gray-700"></div>
+              <div v-for="i in 6" :key="i" class="border-t border-gray-200 dark:border-gray-700"/>
             </div>
 
             <!-- Intensity bars -->
@@ -88,7 +88,7 @@
             :key="index"
             class="grid grid-cols-[12px_1fr_48px_80px_110px] items-start gap-4 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
           >
-            <div class="w-3 h-3 rounded-full flex-shrink-0 mt-1" :style="{ backgroundColor: getStepColor(getStepIntensity(step)) }"></div>
+            <div class="w-3 h-3 rounded-full flex-shrink-0 mt-1" :style="{ backgroundColor: getStepColor(getStepIntensity(step)) }"/>
             <div class="min-w-0">
               <div class="text-sm font-medium truncate">{{ step.name }}</div>
               <div class="text-xs text-muted">{{ step.type }}</div>
@@ -134,15 +134,14 @@
               backgroundColor: zone.color
             }"
             :title="`${zone.name}: ${formatDuration(zone.duration)}`"
-          >
-          </div>
+          />
         </div>
 
         <!-- Legend -->
         <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
           <div v-for="zone in zoneDistribution" :key="zone.name" class="flex flex-col p-1.5 bg-gray-50 dark:bg-gray-900 rounded border border-gray-100 dark:border-gray-800">
             <div class="flex items-center gap-1.5 mb-1">
-              <div class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: zone.color }"></div>
+              <div class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: zone.color }"/>
               <span class="font-medium text-gray-500">{{ zone.name }}</span>
             </div>
             <span class="font-bold pl-3.5">{{ formatDuration(zone.duration) }}</span>

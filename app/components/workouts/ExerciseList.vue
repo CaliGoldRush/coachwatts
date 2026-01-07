@@ -32,8 +32,8 @@
               <th scope="col" class="px-4 py-2">Type</th>
               <th scope="col" class="px-4 py-2 text-right">Weight</th>
               <th scope="col" class="px-4 py-2 text-right">Reps</th>
-              <th scope="col" class="px-4 py-2 text-right" v-if="hasDistance(workoutExercise)">Distance</th>
-              <th scope="col" class="px-4 py-2 text-right" v-if="hasDuration(workoutExercise)">Duration</th>
+              <th v-if="hasDistance(workoutExercise)" scope="col" class="px-4 py-2 text-right">Distance</th>
+              <th v-if="hasDuration(workoutExercise)" scope="col" class="px-4 py-2 text-right">Duration</th>
               <th scope="col" class="px-4 py-2 text-right">RPE</th>
             </tr>
           </thead>
@@ -54,10 +54,10 @@
                 <span v-if="set.reps">{{ set.reps }}</span>
                 <span v-else class="text-gray-400">-</span>
               </td>
-              <td class="px-4 py-2 text-right" v-if="hasDistance(workoutExercise)">
+              <td v-if="hasDistance(workoutExercise)" class="px-4 py-2 text-right">
                 <span v-if="set.distanceMeters">{{ set.distanceMeters }} m</span>
               </td>
-              <td class="px-4 py-2 text-right" v-if="hasDuration(workoutExercise)">
+              <td v-if="hasDuration(workoutExercise)" class="px-4 py-2 text-right">
                 <span v-if="set.durationSec">{{ formatDuration(set.durationSec) }}</span>
               </td>
               <td class="px-4 py-2 text-right">

@@ -8,8 +8,8 @@
           color="neutral" 
           variant="ghost" 
           icon="i-heroicons-chat-bubble-left-right" 
-          @click="$emit('add-messages')"
           class="whitespace-nowrap"
+          @click="$emit('add-messages')"
         >
           <span class="hidden sm:inline">Add Messages</span>
           <span class="inline sm:hidden">Messages</span>

@@ -6,7 +6,7 @@
       class="rounded-sm"
       :style="getStepStyle(step)"
       :title="`${step.name}: ${formatDuration(step.durationSeconds)}`"
-    ></div>
+    />
   </div>
 </template>
 
