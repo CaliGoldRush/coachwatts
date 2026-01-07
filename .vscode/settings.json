@@ -6,5 +6,9 @@
     "statusBarItem.remoteBackground": "#cba6f7",
     "statusBarItem.remoteForeground": "#15202b"
   },
-  "peacock.color": "#cba6f7"
+  "peacock.color": "#cba6f7",
+  "cSpell.words": [
+    "nums",
+    "vueuse"
+  ]
 }
