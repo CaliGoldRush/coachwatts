@@ -4,7 +4,7 @@
       class="sticky top-0 z-50 bg-white/75 dark:bg-gray-950/75 backdrop-blur border-b border-gray-200 dark:border-gray-800">
       <UContainer class="h-16 flex items-center justify-between">
         <NuxtLink to="/" class="flex items-center hover:opacity-90 transition-opacity">
-          <img src="/media/coach-watts.webp" alt="Coach Watts" class="h-12 w-auto object-contain" />
+          <img src="/media/coach-watts.webp" alt="Coach Watts" class="h-12 w-auto object-contain" >
         </NuxtLink>
 
         <nav class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -33,7 +33,7 @@
                   <UBadge size="xs" color="primary" variant="soft" class="font-bold">Free</UBadge>
                 </NuxtLink>
                 <NuxtLink to="/stories" class="text-sm font-medium hover:text-primary transition-colors">Stories</NuxtLink>
-                <hr class="border-gray-200 dark:border-gray-800" />
+                <hr class="border-gray-200 dark:border-gray-800" >
                 <UButton to="/login" variant="ghost" color="gray" block>Sign In</UButton>
                 <UButton to="/join" color="primary" block>Get Started</UButton>
               </div>
@@ -52,7 +52,7 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div class="md:col-span-2">
             <NuxtLink to="/" class="flex items-center mb-4 hover:opacity-90 transition-opacity">
-              <img src="/media/coach-watts.webp" alt="Coach Watts" class="h-16 w-auto object-contain" />
+              <img src="/media/coach-watts.webp" alt="Coach Watts" class="h-16 w-auto object-contain" >
             </NuxtLink>
             <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
               AI-powered endurance coaching that adapts to your life, recovery, and goals.

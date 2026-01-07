@@ -3,6 +3,8 @@ const { data, signOut } = useAuth()
 const user = computed(() => data.value?.user)
 const route = useRoute()
 
+defineEmits(['open-sidebar'])
+
 const links = [
   {
     label: 'Admin Home',

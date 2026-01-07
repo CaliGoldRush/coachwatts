@@ -242,13 +242,13 @@ const groups = computed(() => [{
             src="/media/coach-watts.webp" 
             alt="Coach Watts" 
             class="h-8 lg:h-10 w-auto object-contain"
-          />
+          >
           <img 
             v-else
             src="/media/logo.webp" 
             alt="Coach Watts" 
             class="size-12 object-contain"
-          />
+          >
         </NuxtLink>
       </template>
 
