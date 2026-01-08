@@ -56,6 +56,7 @@ export async function syncPlannedWorkoutToIntervals(
     return {
       success: true,
       synced: true,
+      result,
       message: 'Synced to Intervals.icu successfully'
     }
   } catch (error: any) {

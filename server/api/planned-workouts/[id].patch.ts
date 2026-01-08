@@ -113,9 +113,16 @@ export default defineEventHandler(async (event) => {
       }
     })
 
+    // Determine if it's a local-only workout that needs CREATE instead of UPDATE
+    const isLocal =
+      existing.syncStatus === 'LOCAL_ONLY' ||
+      existing.externalId.startsWith('ai_gen_') ||
+      existing.externalId.startsWith('ai-gen-') ||
+      existing.externalId.startsWith('adhoc-')
+
     // Attempt sync to Intervals.icu
     const syncResult = await syncPlannedWorkoutToIntervals(
-      'UPDATE',
+      isLocal ? 'CREATE' : 'UPDATE',
       {
         id: updated.id,
         externalId: updated.externalId,
@@ -135,7 +142,12 @@ export default defineEventHandler(async (event) => {
       data: {
         syncStatus: syncResult.synced ? 'SYNCED' : 'PENDING',
         lastSyncedAt: syncResult.synced ? new Date() : undefined,
-        syncError: syncResult.error || null
+        syncError: syncResult.error || null,
+        // If it was a CREATE operation, update the externalId with the real one from Intervals.icu
+        ...(syncResult.synced &&
+          syncResult.result?.id && {
+            externalId: String(syncResult.result.id)
+          })
       }
     })
 

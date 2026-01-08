@@ -2,6 +2,8 @@ import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateStructuredAnalysis } from '../server/utils/gemini'
 import { prisma } from '../server/utils/db'
 import { userReportsQueue } from './queues'
+import { syncPlannedWorkoutToIntervals } from '../server/utils/intervals-sync'
+import { WorkoutConverter } from '../server/utils/workout-converter'
 
 const workoutStructureSchema = {
   type: 'object',
@@ -251,10 +253,49 @@ export const generateStructuredWorkoutTask = task({
       }
     }
 
-    await (prisma as any).plannedWorkout.update({
+    const updatedWorkout = await (prisma as any).plannedWorkout.update({
       where: { id: plannedWorkoutId },
       data: updateData
     })
+
+    // Sync to Intervals.icu if it's already published (not local-only)
+    const isLocal =
+      updatedWorkout.syncStatus === 'LOCAL_ONLY' ||
+      updatedWorkout.externalId.startsWith('ai_gen_') ||
+      updatedWorkout.externalId.startsWith('ai-gen-') ||
+      updatedWorkout.externalId.startsWith('adhoc-')
+
+    if (!isLocal) {
+      logger.log('Syncing updated structure to Intervals.icu', { plannedWorkoutId })
+
+      // Convert structure to Intervals.icu format (text/string)
+      // We must reconstruct the workout data object for the converter
+      const workoutData = {
+        title: updatedWorkout.title,
+        description: updatedWorkout.description || '',
+        steps: structure.steps || [],
+        messages: [],
+        ftp: workout.user.ftp || 250
+      }
+
+      const workoutDoc = WorkoutConverter.toIntervalsICU(workoutData)
+
+      await syncPlannedWorkoutToIntervals(
+        'UPDATE',
+        {
+          id: updatedWorkout.id,
+          externalId: updatedWorkout.externalId,
+          date: updatedWorkout.date,
+          title: updatedWorkout.title,
+          description: updatedWorkout.description,
+          type: updatedWorkout.type,
+          durationSec: updatedWorkout.durationSec,
+          tss: updatedWorkout.tss,
+          workout_doc: workoutDoc // Pass the converted string
+        },
+        workout.userId
+      )
+    }
 
     return { success: true, plannedWorkoutId }
   }

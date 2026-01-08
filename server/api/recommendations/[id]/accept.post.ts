@@ -1,6 +1,7 @@
 import { getServerSession } from '../../../utils/session'
 import { prisma } from '../../../utils/db'
 import { tasks } from '@trigger.dev/sdk/v3'
+import { syncPlannedWorkoutToIntervals } from '../../../utils/intervals-sync'
 
 defineRouteMeta({
   openAPI: {
@@ -73,8 +74,8 @@ export default defineEventHandler(async (event) => {
   // Prepare the new description (completely replacing the old one)
   const newDescription = `${modifications.description}${modifications.zone_adjustments ? `\n\nZone Adjustments: ${modifications.zone_adjustments}` : ''}`
 
-  // Update Planned Workout
-  await prisma.plannedWorkout.update({
+  // Update Planned Workout locally
+  const updatedWorkout = await prisma.plannedWorkout.update({
     where: { id: recommendation.plannedWorkoutId },
     data: {
       title: modifications.new_title,
@@ -93,6 +94,30 @@ export default defineEventHandler(async (event) => {
   await tasks.trigger('generate-structured-workout', {
     plannedWorkoutId: recommendation.plannedWorkoutId
   })
+
+  // Sync to Intervals.icu if it's already published (not local-only)
+  const isLocal =
+    updatedWorkout.syncStatus === 'LOCAL_ONLY' ||
+    updatedWorkout.externalId.startsWith('ai_gen_') ||
+    updatedWorkout.externalId.startsWith('ai-gen-') ||
+    updatedWorkout.externalId.startsWith('adhoc-')
+
+  if (!isLocal) {
+    await syncPlannedWorkoutToIntervals(
+      'UPDATE',
+      {
+        id: updatedWorkout.id,
+        externalId: updatedWorkout.externalId,
+        date: updatedWorkout.date,
+        title: updatedWorkout.title,
+        description: updatedWorkout.description,
+        type: updatedWorkout.type,
+        durationSec: updatedWorkout.durationSec,
+        tss: updatedWorkout.tss
+      },
+      userId
+    )
+  }
 
   // Mark recommendation as accepted
   await prisma.activityRecommendation.update({

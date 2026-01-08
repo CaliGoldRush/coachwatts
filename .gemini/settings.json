@@ -19,6 +19,10 @@
       "url": "https://mcp.sentry.dev/mcp/newpush-y4/coach-watts",
       "trust": true
     },
+    "trigger": {
+      "command": "npx",
+      "args": ["trigger.dev@latest", "mcp", "--api-url", "https://trigger.newpush.com/"]
+    },
     "chrome-devtools": {
       "command": "npx",
       "args": [
