@@ -98,7 +98,7 @@
     "cw:cli": "tsx cli/index.ts",
     "db:dump": "scripts/dump-db.sh",
     "db:dump:prod": "scripts/dump-db.sh DATABASE_URL_PROD",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "type": "module",
   "version": "0.5.8",
