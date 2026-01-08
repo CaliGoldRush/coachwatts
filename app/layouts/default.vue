@@ -273,7 +273,11 @@
       </template>
 
       <template #default="{ collapsed }">
-        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+        <UDashboardSearchButton
+          v-if="false"
+          :collapsed="collapsed"
+          class="bg-transparent ring-default"
+        />
 
         <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip />
       </template>
@@ -281,6 +285,20 @@
       <template #footer="{ collapsed }">
         <div>
           <div v-if="!collapsed" class="px-4 pb-2">
+            <div class="flex justify-center mb-4">
+              <NuxtLink
+                to="https://www.strava.com"
+                target="_blank"
+                class="hover:opacity-100 transition-opacity"
+              >
+                <img
+                  src="/images/logos/strava_powered_by.png"
+                  alt="Powered by Strava"
+                  class="h-6 w-auto opacity-75 hover:opacity-100"
+                />
+              </NuxtLink>
+            </div>
+            <USeparator class="mb-4" />
             <div class="flex items-center gap-2">
               <UButton
                 to="https://discord.gg/dPYkzg49T9"
