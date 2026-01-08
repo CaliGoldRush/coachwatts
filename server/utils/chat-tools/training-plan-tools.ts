@@ -1,4 +1,5 @@
 import { prisma } from '../db'
+import { tasks } from '@trigger.dev/sdk/v3'
 
 /**
  * Training Plan Management Tools
@@ -503,12 +504,50 @@ export async function updateTrainingAvailability(userId: string, args: any): Pro
  * Generate training plan
  */
 export async function generateTrainingPlan(userId: string, args: any): Promise<any> {
-  return {
-    message: 'Training plan generation requires user confirmation',
-    instruction:
-      'Please ask the user to confirm they want to generate a training plan, then trigger the /api/plans/generate endpoint',
-    confirmation_required: true,
-    parameters: args
+  const { days, start_date, user_confirmed } = args
+
+  if (!user_confirmed) {
+    return {
+      message: 'Training plan generation requires user confirmation',
+      instruction:
+        'Please ask the user to confirm they want to generate a training plan. Once confirmed, call this tool again with user_confirmed=true',
+      confirmation_required: true,
+      parameters: args
+    }
+  }
+
+  try {
+    const daysToPlann = days || 7
+    const startDate = start_date ? new Date(start_date) : new Date()
+
+    // Trigger the plan generation job with per-user concurrency
+    const handle = await tasks.trigger(
+      'generate-weekly-plan',
+      {
+        userId,
+        startDate,
+        daysToPlann
+      },
+      {
+        concurrencyKey: userId
+      }
+    )
+
+    return {
+      success: true,
+      message: `Training plan generation started! It may take a minute or two to complete.`,
+      job_id: handle.id,
+      details: {
+        days: daysToPlann,
+        start_date: startDate.toISOString().split('T')[0]
+      }
+    }
+  } catch (error: any) {
+    console.error('Failed to trigger training plan generation:', error)
+    return {
+      error: 'Failed to start plan generation',
+      message: error.message
+    }
   }
 }
 
