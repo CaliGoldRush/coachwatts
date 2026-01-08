@@ -5,6 +5,8 @@ declare module 'next-auth' {
     user: {
       id: string
       isAdmin: boolean
+      termsAcceptedAt: string | null
+      timezone: string | null
     } & DefaultSession['user']
   }
 

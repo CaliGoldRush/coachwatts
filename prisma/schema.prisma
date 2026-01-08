@@ -24,6 +24,12 @@ model User {
   
   isAdmin       Boolean   @default(false)
 
+  // Consent & Legal
+  termsAcceptedAt       DateTime?
+  termsVersion          String?
+  privacyPolicyVersion  String?
+  healthConsentAcceptedAt DateTime?
+
   // Settings for Coaching
   ftp           Int?      // Functional Threshold Power (Watts)
   maxHr         Int?      // Max Heart Rate
