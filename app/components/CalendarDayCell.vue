@@ -3,8 +3,13 @@
     class="min-h-[120px] p-2 bg-white dark:bg-gray-900 transition-colors flex flex-col"
     :class="{
       'opacity-50': isOtherMonth,
-      'bg-blue-50 dark:bg-blue-950': isToday
+      'bg-blue-50 dark:bg-blue-950': isToday,
+      'bg-gray-100 dark:bg-gray-800 ring-2 ring-primary-500 ring-inset': isDayDragOver
     }"
+    @dragover.prevent="onDayDragOver"
+    @dragenter.prevent="onDayDragEnter"
+    @dragleave="onDayDragLeave"
+    @drop="onDayDrop"
   >
     <!-- Date Number & Wellness Metrics -->
     <div class="flex items-center justify-between mb-2">
@@ -281,10 +286,12 @@
     'wellness-click': [date: Date]
     'merge-activity': [data: { source: CalendarActivity; target: CalendarActivity }]
     'link-activity': [data: { planned: CalendarActivity; completed: CalendarActivity }]
+    'reschedule-activity': [data: { activity: { id: string; source: string }; date: Date }]
   }>()
 
   const dayNumber = computed(() => format(props.date, 'd'))
   const isDragOver = ref<string | null>(null)
+  const isDayDragOver = ref(false)
 
   function onDragStart(event: DragEvent, activity: CalendarActivity) {
     if (event.dataTransfer) {
@@ -293,10 +300,11 @@
         JSON.stringify({
           id: activity.id,
           title: activity.title,
-          source: activity.source
+          source: activity.source,
+          date: activity.date // Include date to check if it's a reschedule
         })
       )
-      event.dataTransfer.effectAllowed = 'link'
+      event.dataTransfer.effectAllowed = 'move' // Use move since we can also reschedule
     }
   }
 
@@ -339,6 +347,60 @@
       }
     }
   }
+
+  // Day cell drag handlers for rescheduling
+  function onDayDragOver(event: DragEvent) {
+    // Check if dragging a planned workout (optional: inspect DataTransfer items if needed)
+    // For now, just allow dropping
+    // isDayDragOver.value = true // Handled in DragEnter to avoid flickering?
+    // dragover fires continuously
+  }
+
+  function onDayDragEnter(event: DragEvent) {
+    isDayDragOver.value = true
+  }
+
+  function onDayDragLeave(event: DragEvent) {
+    // Check if we are really leaving the element and not entering a child
+    if (
+      event.relatedTarget &&
+      (event.currentTarget as HTMLElement).contains(event.relatedTarget as Node)
+    ) {
+      return
+    }
+    isDayDragOver.value = false
+  }
+
+  function onDayDrop(event: DragEvent) {
+    isDayDragOver.value = false
+    if (event.dataTransfer) {
+      const data = event.dataTransfer.getData('application/json')
+      if (data) {
+        try {
+          const sourceActivity = JSON.parse(data)
+
+          // Only allow rescheduling planned workouts
+          if (sourceActivity.source === 'planned') {
+            const targetDateStr = format(props.date, 'yyyy-MM-dd')
+            const sourceDateStr = sourceActivity.date
+              ? format(new Date(sourceActivity.date), 'yyyy-MM-dd')
+              : ''
+
+            // Only emit if the date has changed
+            if (sourceDateStr !== targetDateStr) {
+              emit('reschedule-activity', {
+                activity: sourceActivity,
+                date: props.date
+              })
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing drop data', e)
+        }
+      }
+    }
+  }
+
   const isToday = computed(() => isTodayFn(props.date))
 
   // Get nutrition data from any activity on this day (they all have same nutrition data)

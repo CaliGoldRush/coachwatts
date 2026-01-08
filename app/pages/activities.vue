@@ -258,6 +258,7 @@
                   @wellness-click="openWellnessModal"
                   @merge-activity="onMergeActivity"
                   @link-activity="onLinkActivity"
+                  @reschedule-activity="onRescheduleActivity"
                 />
               </template>
             </div>
@@ -1159,6 +1160,41 @@
       })
     } finally {
       isMerging.value = false
+    }
+  }
+
+  async function onRescheduleActivity({
+    activity,
+    date
+  }: {
+    activity: { id: string; source: string }
+    date: Date
+  }) {
+    const toast = useToast()
+
+    try {
+      await $fetch(`/api/planned-workouts/${activity.id}`, {
+        method: 'PATCH',
+        body: {
+          date: date.toISOString()
+        }
+      })
+
+      // Refresh data
+      await refresh()
+
+      toast.add({
+        title: 'Workout Rescheduled',
+        description: `Workout moved to ${format(date, 'MMM do')}.`,
+        color: 'success'
+      })
+    } catch (error: any) {
+      console.error('Reschedule failed:', error)
+      toast.add({
+        title: 'Reschedule Failed',
+        description: error.data?.message || 'Could not move workout.',
+        color: 'error'
+      })
     }
   }
 
