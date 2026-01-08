@@ -187,6 +187,16 @@ export async function createPlannedWorkout(userId: string, args: any): Promise<a
       title: intervalsWorkout.name
     })
 
+    // Map intensity string to number
+    const intensityMap: Record<string, number> = {
+      recovery: 0.5,
+      easy: 0.6,
+      moderate: 0.75,
+      hard: 0.9,
+      very_hard: 1.0
+    }
+    const workIntensity = intensity ? intensityMap[intensity.toLowerCase()] || null : null
+
     // Create locally (store with time for reference, but Prisma will truncate to date only)
     console.log('[createPlannedWorkout] 💾 Creating in local database...')
     const workout = await prisma.plannedWorkout.create({
@@ -200,7 +210,7 @@ export async function createPlannedWorkout(userId: string, args: any): Promise<a
         category: 'WORKOUT',
         durationSec: duration_minutes ? duration_minutes * 60 : null,
         tss: tss || null,
-        workIntensity: intensity || null,
+        workIntensity,
         completed: false,
         syncStatus: 'SYNCED',
         lastSyncedAt: new Date()
