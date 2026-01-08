@@ -55,7 +55,7 @@ export const publishCommand = new Command('publish')
     const lines = content.split('\n')
     let firstHeaderIndex = -1
     let secondHeaderIndex = -1
-    let headerLevelRegex: RegExp | null = null
+    let currentReleaseLevel = 0
 
     for (let i = 0; i < lines.length; i++) {
       const match = lines[i].match(/^(#+)\s+(.*)/)
@@ -70,9 +70,12 @@ export const publishCommand = new Command('publish')
 
         if (firstHeaderIndex === -1) {
           firstHeaderIndex = i
-          // Determine the level of the first header and look for subsequent headers of the same level
-          headerLevelRegex = new RegExp(`^#{${level}}\\s+`)
-        } else if (headerLevelRegex && lines[i].match(headerLevelRegex)) {
+          // Determine the level of the first header
+          // We look for the next header that is the SAME level OR HIGHER (fewer #s)
+          // e.g. If current is ## (level 2), we stop at ## (level 2) or # (level 1)
+          // This handles cases where mixed header levels are used for releases.
+          currentReleaseLevel = level
+        } else if (level <= currentReleaseLevel) {
           secondHeaderIndex = i
           break
         }
