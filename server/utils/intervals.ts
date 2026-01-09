@@ -862,6 +862,22 @@ export function normalizeIntervalsPlannedWorkout(event: IntervalsPlannedWorkout,
   }
 }
 
+function mapIntervalsMood(val: number | undefined | null): number | null {
+  if (!val) return null
+  // Intervals: 1=Great, 2=Good, 3=Avg, 4=Bad
+  // Coach Watts (1-10): 10=Great
+  const map: Record<number, number> = { 1: 10, 2: 7, 3: 4, 4: 1 }
+  return map[val] || null
+}
+
+function mapIntervalsSoreness(val: number | undefined | null): number | null {
+  if (!val) return null
+  // Intervals: 1=Low, 2=Avg, 3=High, 4=Extreme
+  // Coach Watts (1-10): 10=Extreme (High Soreness)
+  const map: Record<number, number> = { 1: 1, 2: 4, 3: 7, 4: 10 }
+  return map[val] || null
+}
+
 export function normalizeIntervalsWellness(
   wellness: IntervalsWellness,
   userId: string,
@@ -890,10 +906,10 @@ export function normalizeIntervalsWellness(
     recoveryScore: null, // Not directly available from Intervals.icu
 
     // Subjective
-    soreness: wellness.soreness || null,
+    soreness: mapIntervalsSoreness(wellness.soreness),
     fatigue: wellness.fatigue || null,
     stress: wellness.stress || null,
-    mood: wellness.mood || null,
+    mood: mapIntervalsMood(wellness.mood),
     motivation: wellness.motivation || null,
 
     // Physical

@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
       - HRV: ${wellness.hrv} ms
       - Sleep: ${wellness.sleepHours} hours (Score: ${wellness.sleepScore})
       - Readiness: ${readinessLabel}
-      - Subjective: Stress ${wellness.stress}/10, Fatigue ${wellness.fatigue}/10, Soreness ${wellness.soreness}/10
+      - Subjective: Stress ${wellness.stress}/10, Fatigue ${wellness.fatigue}/10, Soreness ${wellness.soreness}/10 (10=Extreme), Mood ${wellness.mood}/10 (10=Great)
       - Vitals: SpO2 ${wellness.spO2}%, Weight ${wellness.weight}kg
       
       HISTORY (Last 30 Days):

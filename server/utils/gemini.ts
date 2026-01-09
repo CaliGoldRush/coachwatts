@@ -487,9 +487,9 @@ export function buildMetricsSummary(metrics: any[]): string {
 
       // Subjective wellness
       if (m.fatigue !== null) parts.push(`Fatigue ${m.fatigue}/10`)
-      if (m.soreness !== null) parts.push(`Soreness ${m.soreness}/10`)
+      if (m.soreness !== null) parts.push(`Soreness ${m.soreness}/10 (10=Extreme)`)
       if (m.stress !== null) parts.push(`Stress ${m.stress}/10`)
-      if (m.mood !== null) parts.push(`Mood ${m.mood}/10`)
+      if (m.mood !== null) parts.push(`Mood ${m.mood}/10 (10=Great)`)
 
       return parts.join(', ')
     })
