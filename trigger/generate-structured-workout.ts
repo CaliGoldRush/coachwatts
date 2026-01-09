@@ -291,7 +291,8 @@ export const generateStructuredWorkoutTask = task({
           type: updatedWorkout.type,
           durationSec: updatedWorkout.durationSec,
           tss: updatedWorkout.tss,
-          workout_doc: workoutDoc // Pass the converted string
+          workout_doc: workoutDoc, // Pass the converted string
+          managedBy: updatedWorkout.managedBy
         },
         workout.userId
       )

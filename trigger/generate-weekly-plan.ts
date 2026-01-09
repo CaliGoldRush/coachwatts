@@ -703,7 +703,8 @@ Create a structured, progressive plan for the next ${daysToPlann} days.`
             category: 'WORKOUT',
             externalId: `ai_gen_${userId}_${d.date}_${Date.now()}_${Math.random().toString(36).substring(7)}`, // Generate unique external ID
             syncStatus: 'LOCAL_ONLY', // Mark as local initially
-            trainingWeekId: undefined // We'll link this if we have a TrainingWeek record
+            trainingWeekId: undefined, // We'll link this if we have a TrainingWeek record
+            managedBy: 'COACH_WATTS'
           }
         })
         .filter(Boolean) // Remove nulls

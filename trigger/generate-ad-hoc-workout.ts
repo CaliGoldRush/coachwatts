@@ -143,7 +143,8 @@ export const generateAdHocWorkoutTask = task({
         durationSec: suggestion.durationMinutes * 60,
         tss: suggestion.targetTss,
         syncStatus: 'LOCAL_ONLY', // Mark as local initially
-        externalId: `adhoc-${userId}-${Date.now()}` // Generate unique external ID
+        externalId: `adhoc-${userId}-${Date.now()}`, // Generate unique external ID
+        managedBy: 'COACH_WATTS'
       }
     })
 

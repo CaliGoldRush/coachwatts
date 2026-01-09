@@ -256,7 +256,8 @@ Return valid JSON matching the schema provided.`
               tss: workout.tssEstimate,
               workIntensity: getIntensityScore(workout.intensity),
               externalId: `ai-gen-${createdWeek.id}-${dayOfWeek}-${index}-${Date.now()}`,
-              category: 'WORKOUT'
+              category: 'WORKOUT',
+              managedBy: 'COACH_WATTS'
             }
           })
 

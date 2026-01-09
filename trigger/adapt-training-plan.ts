@@ -61,12 +61,13 @@ export const adaptTrainingPlanTask = task({
       )
 
       if (currentWeek) {
-        // Delete future workouts in this week
+        // Delete future workouts in this week managed by CoachWatts
         await prisma.plannedWorkout.deleteMany({
           where: {
             trainingWeekId: currentWeek.id,
             date: { gt: now },
-            completed: false
+            completed: false,
+            managedBy: 'COACH_WATTS'
           }
         })
 
