@@ -716,21 +716,30 @@
           </UCard>
 
           <!-- Actions -->
-          <div class="mt-6 flex gap-4">
-            <UButton color="neutral" variant="outline" @click="handlePrint">
-              <UIcon name="i-heroicons-printer" class="w-4 h-4 mr-2" />
-              Print / Save as PDF
-            </UButton>
+          <div class="mt-6 flex justify-between items-center">
+            <div class="flex gap-4">
+              <UButton color="neutral" variant="outline" @click="handlePrint">
+                <UIcon name="i-heroicons-printer" class="w-4 h-4 mr-2" />
+                Print / Save as PDF
+              </UButton>
 
-            <UButton
-              v-if="report.status === 'COMPLETED'"
-              color="neutral"
-              variant="outline"
-              disabled
-            >
-              <UIcon name="i-heroicons-share" class="w-4 h-4 mr-2" />
-              Share (Coming Soon)
-            </UButton>
+              <UButton
+                v-if="report.status === 'COMPLETED'"
+                color="neutral"
+                variant="outline"
+                disabled
+              >
+                <UIcon name="i-heroicons-share" class="w-4 h-4 mr-2" />
+                Share (Coming Soon)
+              </UButton>
+            </div>
+
+            <AiFeedback
+              v-if="report.llmUsageId"
+              :llm-usage-id="report.llmUsageId"
+              :initial-feedback="report.feedback"
+              :initial-feedback-text="report.feedbackText"
+            />
           </div>
         </div>
 
@@ -760,6 +769,9 @@
     workouts?: any[]
     suggestions?: any
     modelVersion?: string
+    llmUsageId?: string
+    feedback?: string
+    feedbackText?: string
   }
 
   const {

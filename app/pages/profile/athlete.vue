@@ -525,27 +525,36 @@
           </div>
 
           <!-- Actions -->
-          <div class="mt-6 flex gap-4">
-            <UButton color="neutral" variant="outline" @click="handlePrint">
-              <UIcon name="i-heroicons-printer" class="w-4 h-4 mr-2" />
-              Print / Save as PDF
-            </UButton>
+          <div class="mt-6 flex justify-between items-center">
+            <div class="flex gap-4">
+              <UButton color="neutral" variant="outline" @click="handlePrint">
+                <UIcon name="i-heroicons-printer" class="w-4 h-4 mr-2" />
+                Print / Save as PDF
+              </UButton>
 
-            <UButton v-if="isViewingHistorical" color="primary" @click="resetToLatest">
-              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-2" />
-              View Latest Profile
-            </UButton>
+              <UButton v-if="isViewingHistorical" color="primary" @click="resetToLatest">
+                <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-2" />
+                View Latest Profile
+              </UButton>
 
-            <UButton
-              v-else
-              color="primary"
-              :loading="userStore.generating"
-              :disabled="userStore.generating"
-              @click="generateNewProfile"
-            >
-              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-2" />
-              {{ userStore.generating ? 'Generating...' : 'Regenerate Profile' }}
-            </UButton>
+              <UButton
+                v-else
+                color="primary"
+                :loading="userStore.generating"
+                :disabled="userStore.generating"
+                @click="generateNewProfile"
+              >
+                <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 mr-2" />
+                {{ userStore.generating ? 'Generating...' : 'Regenerate Profile' }}
+              </UButton>
+            </div>
+
+            <AiFeedback
+              v-if="profile.llmUsageId"
+              :llm-usage-id="profile.llmUsageId"
+              :initial-feedback="profile.feedback"
+              :initial-feedback-text="profile.feedbackText"
+            />
           </div>
         </div>
 

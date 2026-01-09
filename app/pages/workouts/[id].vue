@@ -742,9 +742,17 @@
               <!-- Timestamp -->
               <div
                 v-if="workout.aiAnalyzedAt"
-                class="text-xs text-gray-500 dark:text-gray-400 text-center pt-4 border-t border-gray-200 dark:border-gray-700"
+                class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700"
               >
-                Analyzed on {{ formatDate(workout.aiAnalyzedAt) }}
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Analyzed on {{ formatDate(workout.aiAnalyzedAt) }}
+                </div>
+                <AiFeedback
+                  v-if="workout.llmUsageId"
+                  :llm-usage-id="workout.llmUsageId"
+                  :initial-feedback="workout.feedback"
+                  :initial-feedback-text="workout.feedbackText"
+                />
               </div>
             </div>
 
@@ -757,9 +765,17 @@
               </div>
               <div
                 v-if="workout.aiAnalyzedAt"
-                class="text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700"
+                class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700"
               >
-                Analyzed on {{ formatDate(workout.aiAnalyzedAt) }}
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Analyzed on {{ formatDate(workout.aiAnalyzedAt) }}
+                </div>
+                <AiFeedback
+                  v-if="workout.llmUsageId"
+                  :llm-usage-id="workout.llmUsageId"
+                  :initial-feedback="workout.feedback"
+                  :initial-feedback-text="workout.feedbackText"
+                />
               </div>
             </div>
 

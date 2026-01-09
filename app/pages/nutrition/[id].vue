@@ -455,9 +455,17 @@
               <!-- Timestamp -->
               <div
                 v-if="nutrition.aiAnalyzedAt"
-                class="text-xs text-gray-500 dark:text-gray-400 text-center pt-4 border-t border-gray-200 dark:border-gray-700"
+                class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700"
               >
-                Analyzed on {{ formatDate(nutrition.aiAnalyzedAt) }}
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Analyzed on {{ formatDate(nutrition.aiAnalyzedAt) }}
+                </div>
+                <AiFeedback
+                  v-if="nutrition.llmUsageId"
+                  :llm-usage-id="nutrition.llmUsageId"
+                  :initial-feedback="nutrition.feedback"
+                  :initial-feedback-text="nutrition.feedbackText"
+                />
               </div>
             </div>
 

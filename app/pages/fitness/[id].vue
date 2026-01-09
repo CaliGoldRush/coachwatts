@@ -378,9 +378,17 @@
               <!-- Timestamp -->
               <div
                 v-if="wellness.aiAnalyzedAt"
-                class="text-xs text-gray-500 dark:text-gray-400 text-center pt-4 border-t border-gray-200 dark:border-gray-700"
+                class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700"
               >
-                Analyzed on {{ formatDate(wellness.aiAnalyzedAt) }}
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Analyzed on {{ formatDate(wellness.aiAnalyzedAt) }}
+                </div>
+                <AiFeedback
+                  v-if="wellness.llmUsageId"
+                  :llm-usage-id="wellness.llmUsageId"
+                  :initial-feedback="wellness.feedback"
+                  :initial-feedback-text="wellness.feedbackText"
+                />
               </div>
             </div>
 
