@@ -4,6 +4,7 @@ import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
 import { formatUserDate } from '../server/utils/date'
+import { calculateProjectedPMC, getCurrentFitnessSummary } from '../server/utils/training-stress'
 
 const recommendationSchema = {
   type: 'object',
@@ -76,7 +77,9 @@ export const recommendTodayActivityTask = task({
       athleteProfile,
       activeGoals,
       futureWorkouts,
-      currentPlan
+      currentPlan,
+      upcomingEvents,
+      currentFitness
     ] = await Promise.all([
       // Today's planned workout
       prisma.plannedWorkout.findFirst({
@@ -136,13 +139,13 @@ export const recommendTodayActivityTask = task({
         }
       }),
 
-      // Future planned workouts (next 3 days)
+      // Future planned workouts (next 14 days)
       prisma.plannedWorkout.findMany({
         where: {
           userId,
           date: {
             gt: today,
-            lte: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)
+            lte: new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000)
           }
         },
         orderBy: { date: 'asc' },
@@ -170,7 +173,22 @@ export const recommendTodayActivityTask = task({
         select: {
           planJson: true
         }
-      })
+      }),
+
+      // Upcoming Events (next 14 days)
+      prisma.event.findMany({
+        where: {
+          userId,
+          date: {
+            gte: today,
+            lte: new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000)
+          }
+        },
+        orderBy: { date: 'asc' }
+      }),
+
+      // Current Fitness State
+      getCurrentFitnessSummary(userId)
     ])
 
     logger.log('Data fetched', {
@@ -180,8 +198,18 @@ export const recommendTodayActivityTask = task({
       hasAthleteProfile: !!athleteProfile,
       activeGoalsCount: activeGoals.length,
       futureWorkoutsCount: futureWorkouts.length,
-      hasCurrentPlan: !!currentPlan
+      upcomingEventsCount: upcomingEvents.length,
+      currentFitness
     })
+
+    // Calculate Projected PMC Trends
+    const projectedMetrics = calculateProjectedPMC(
+      today,
+      new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000),
+      currentFitness.ctl,
+      currentFitness.atl,
+      futureWorkouts
+    )
 
     // Calculate local time context
     const userTimezone = user?.timezone || 'UTC'
@@ -281,15 +309,43 @@ CURRENT TRAINING PLAN:
 `
     }
 
-    // Build upcoming workouts summary
+    // Build upcoming events summary
+    let eventsContext = ''
+    if (upcomingEvents.length > 0) {
+      eventsContext = `
+UPCOMING EVENTS (Next 14 Days):
+${upcomingEvents
+  .map(
+    (e) =>
+      `- ${formatUserDate(e.date, userTimezone, 'EEE MMM dd')}: ${e.title} (${e.type || 'Event'}) - Priority: ${e.priority || 'B'}`
+  )
+  .join('\n')}
+`
+    }
+
+    // Build upcoming workouts summary (Next 14 Days)
     let upcomingContext = ''
     if (futureWorkouts.length > 0) {
       upcomingContext = `
-UPCOMING WORKOUTS (Next 3 Days):
+UPCOMING PLANNED WORKOUTS (Next 14 Days):
 ${futureWorkouts
   .map(
     (w) =>
-      `- ${formatUserDate(w.date, userTimezone, 'EEE')}: ${w.title} (${w.type}, TSS: ${w.tss || 'N/A'})`
+      `- ${formatUserDate(w.date, userTimezone, 'EEE dd')}: ${w.title} (TSS: ${w.tss || 'N/A'})`
+  )
+  .join('\n')}
+`
+    }
+
+    // Build Projected Metrics Context
+    let metricsContext = ''
+    if (projectedMetrics.length > 0) {
+      metricsContext = `
+PROJECTED FITNESS TRENDS (Next 14 Days based on plan):
+${projectedMetrics
+  .map(
+    (m) =>
+      `- ${formatUserDate(m.date, userTimezone, 'EEE dd')}: CTL=${Math.round(m.ctl)}, TSB=${Math.round(m.tsb)}`
   )
   .join('\n')}
 `
@@ -334,6 +390,8 @@ ${
 }
 
 ${upcomingContext}
+${eventsContext}
+${metricsContext}
 
 TODAY'S RECOVERY METRICS:
 ${
@@ -369,24 +427,25 @@ ${zoneDefinitions}
 When suggesting modifications (e.g. "Ride in Zone 2"), target ONLY the user's defined Z2 range. Never use generic percentages - always reference the user's custom zones first.
 
 TASK:
-Analyze whether the athlete should proceed with today's planned workout or modify it based on their current recovery state and recent training load.
+Analyze whether the athlete should proceed with today's planned workout or modify it based on their current recovery state, recent training load, AND FUTURE PLANS.
 
 DECISION CRITERIA:
-- Recovery < 33%: Strong recommendation for rest
-- Recovery 33-50%: Reduce intensity significantly
-- Recovery 50-67%: Modify if workout is hard
-- Recovery 67-80%: Proceed as planned
-- Recovery > 80%: Good day for intensity
+1. **Recovery Status**:
+   - Recovery < 33%: Strong recommendation for rest or active recovery (Zone 1).
+   - Recovery 33-50%: Reduce intensity (cap at Zone 2/3).
+   - Recovery 50-67%: Modify if workout is hard (Threshold+).
+   - Recovery 67-80%: Proceed as planned.
+   - Recovery > 80%: Good day for intensity.
+
+2. **Future Load & Events (PROACTIVE LOAD MANAGEMENT)**:
+   - Check the **Upcoming Events** list. If an 'A' or 'B' priority event is within 48-72 hours, ensure freshness (TSB > -10). Recommend tapering/easy rides if fatigue is high.
+   - Review **Projected Fitness Trends**. If TSB is projected to drop below -30 (High Risk) in the next few days, consider reducing load TODAY to prevent overreaching, unless it is a planned "Overload Block".
+   - If a massive workout (TSS > 150) is planned tomorrow, consider saving matches today.
 
 **If Recovery Score is "Unknown"**: Infer recovery status from Sleep (quality/duration), HRV trends, and Resting HR.
-- Low HRV + High RHR = Poor Recovery
-- High Sleep Score + Low RHR = Good Recovery
 
-- Low HRV (< -15% from baseline): Caution on intensity
-- Poor sleep (< 6 hours): Reduce volume/intensity
-- High recent TSS (> 400 in 3 days): Consider recovery
-- If it is late in the day (e.g. after 20:00) and the workout is not done, consider suggesting Rest or a very short/easy version, unless the user explicitly asks to train late.
-- **If TODAY'S COMPLETED TRAINING shows significant work done**: The user may have already done the planned workout or an alternative. If so, recommend REST or update the plan to reflect completion.
+- **Late in the day**: If it is late (e.g. > 20:00) and workout not done, suggest Rest or Short version.
+- **Completed Training**: If user already trained today, recommend REST or mark as complete.
 
 Provide specific, actionable recommendations with clear reasoning.`
 

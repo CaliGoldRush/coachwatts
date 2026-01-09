@@ -380,3 +380,76 @@ export async function getCurrentFitnessSummary(userId: string) {
     lastUpdated
   }
 }
+
+/**
+ * Calculate Projected PMC metrics for a future date range based on Planned Workouts
+ * Returns array of daily metrics with projected CTL/ATL/TSB
+ */
+export function calculateProjectedPMC(
+  startDate: Date,
+  endDate: Date,
+  initialCTL: number,
+  initialATL: number,
+  plannedWorkouts: { date: Date; tss: number | null }[]
+): PMCMetrics[] {
+  let ctl = initialCTL
+  let atl = initialATL
+  const results: PMCMetrics[] = []
+
+  // Map date string (YYYY-MM-DD) to daily TSS sum
+  const dailyTSS = new Map<string, number>()
+  for (const workout of plannedWorkouts) {
+    if (workout.tss) {
+      const dateKey = workout.date.toISOString().split('T')[0] ?? ''
+      dailyTSS.set(dateKey, (dailyTSS.get(dateKey) || 0) + workout.tss)
+    }
+  }
+
+  // Iterate through each day in the range
+  const currentDate = new Date(startDate)
+  // Reset time to midnight to avoid issues
+  currentDate.setHours(0, 0, 0, 0)
+
+  const endDateTime = new Date(endDate)
+  endDateTime.setHours(23, 59, 59, 999)
+
+  while (currentDate <= endDateTime) {
+    const dateKey = currentDate.toISOString().split('T')[0] ?? ''
+    const tss = dailyTSS.get(dateKey) || 0
+
+    // Calculate based on previous day
+    ctl = calculateCTL(ctl, tss)
+    atl = calculateATL(atl, tss)
+
+    // TSB = CTL (Yesterday) - ATL (Yesterday) usually, or Today?
+    // In strict PMC, TSB for "Today" is usually calculated using "Yesterday's" CTL/ATL.
+    // However, calculateTSB(ctl, atl) uses current values.
+    // If we want "Form" for the *start* of the day, we should use values *before* the workout.
+    // If we want "Form" resulting *after* the workout, we use current values.
+    // Standard TSB is often Yesterday's Fitness - Yesterday's Fatigue.
+    // Let's stick to the simple formula: TSB = CTL - ATL.
+    // If ctl/atl are updated *with* today's stress, then TSB is the state *after* training.
+
+    // BUT: The existing calculatePMCForDateRange does:
+    // ctl = calculateCTL(ctl, tss)
+    // atl = calculateATL(atl, tss)
+    // tsb = calculateTSB(ctl, atl)
+    // This implies TSB is post-activity.
+    // Let's match that consistency.
+
+    const tsb = calculateTSB(ctl, atl)!
+
+    results.push({
+      date: new Date(currentDate),
+      ctl,
+      atl,
+      tsb,
+      tss
+    })
+
+    // Move to next day
+    currentDate.setDate(currentDate.getDate() + 1)
+  }
+
+  return results
+}
