@@ -191,7 +191,8 @@ export const generateWeeklyPlanTask = task({
         startDate: getStartOfDaysAgoUTC(timezone, 14), // Last 14 days relative to today
         endDate: alignedWeekStart, // Up to the start of the plan
         limit: 10,
-        orderBy: { date: 'desc' }
+        orderBy: { date: 'desc' },
+        includeDuplicates: false
       }),
       wellnessRepository.getForUser(userId, {
         startDate: getStartOfDaysAgoUTC(timezone, 7), // Last 7 days

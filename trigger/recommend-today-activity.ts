@@ -81,13 +81,22 @@ export const recommendTodayActivityTask = task({
         // Last 7 days of workouts for context
         workoutRepository.getForUser(userId, {
           startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          orderBy: { date: 'desc' }
+          orderBy: { date: 'desc' },
+          includeDuplicates: false
         }),
 
         // User profile
         prisma.user.findUnique({
           where: { id: userId },
-          select: { ftp: true, weight: true, maxHr: true, timezone: true }
+          select: {
+            ftp: true,
+            weight: true,
+            maxHr: true,
+            timezone: true,
+            lthr: true,
+            hrZones: true,
+            powerZones: true
+          }
         }),
 
         // Latest athlete profile
@@ -205,6 +214,20 @@ ${activeGoals
 `
     }
 
+    // Build zone definitions
+    let zoneDefinitions = ''
+    if (user?.hrZones && Array.isArray(user.hrZones)) {
+      zoneDefinitions += '**User HR Zones:**\n'
+      user.hrZones.forEach((z: any) => {
+        zoneDefinitions += `- ${z.name}: ${z.min}-${z.max} bpm\n`
+      })
+    }
+    // Also explicitly list Z2 if lthr is present
+    if (user?.lthr) {
+      zoneDefinitions += `\n**Reference LTHR:** ${user.lthr} bpm\n`
+      zoneDefinitions += `**Zone 2 (LTHR-based):** ${Math.round(user.lthr * 0.8)}-${Math.round(user.lthr * 0.9)} bpm (80-90% LTHR)\n`
+    }
+
     // Build comprehensive prompt
     const prompt = `You are an expert cycling coach analyzing today's training for your athlete.
 
@@ -251,6 +274,12 @@ ${
 IMPORTANT: The user has explicitly provided this feedback. You MUST take it into account and adjust your recommendation accordingly. If they say they are tired, recommend rest or easy. If they want to push, allow it if safety permits.`
     : ''
 }
+
+CRITICAL: ALWAYS use the user's custom zones defined below.
+
+${zoneDefinitions}
+
+When suggesting modifications (e.g. "Ride in Zone 2"), target ONLY the user's defined Z2 range. Never use generic percentages - always reference the user's custom zones first.
 
 TASK:
 Analyze whether the athlete should proceed with today's planned workout or modify it based on their current recovery state and recent training load.

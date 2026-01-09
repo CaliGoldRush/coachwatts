@@ -1,9 +1,10 @@
 import { logger, task } from '@trigger.dev/sdk/v3'
-import { generateStructuredAnalysis } from '../server/utils/gemini'
+import { generateStructuredAnalysis, buildWorkoutSummary } from '../server/utils/gemini'
 import { prisma } from '../server/utils/db'
 import { userReportsQueue } from './queues'
 import { syncPlannedWorkoutToIntervals } from '../server/utils/intervals-sync'
 import { WorkoutConverter } from '../server/utils/workout-converter'
+import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 
 const workoutStructureSchema = {
   type: 'object',
@@ -90,7 +91,16 @@ export const generateStructuredWorkoutTask = task({
     const workout = await (prisma as any).plannedWorkout.findUnique({
       where: { id: plannedWorkoutId },
       include: {
-        user: { select: { ftp: true, aiPersona: true, name: true } },
+        user: {
+          select: {
+            ftp: true,
+            lthr: true,
+            hrZones: true,
+            powerZones: true,
+            aiPersona: true,
+            name: true
+          }
+        },
         trainingWeek: {
           include: {
             block: {
@@ -118,6 +128,26 @@ export const generateStructuredWorkoutTask = task({
     const phase = workout.trainingWeek?.block.type || 'General'
     const focus = workout.trainingWeek?.block.primaryFocus || 'Fitness'
 
+    // Fetch recent workouts for context
+    const recentWorkouts = await workoutRepository.getForUser(workout.userId, {
+      limit: 5,
+      orderBy: { date: 'desc' }
+    })
+
+    // Build zone definitions
+    let zoneDefinitions = ''
+    if (workout.user.hrZones && Array.isArray(workout.user.hrZones)) {
+      zoneDefinitions += '**User HR Zones:**\n'
+      workout.user.hrZones.forEach((z: any) => {
+        zoneDefinitions += `- ${z.name}: ${z.min}-${z.max} bpm\n`
+      })
+    }
+    // Also explicitly list Z2 if lthr is present
+    if (workout.user.lthr) {
+      zoneDefinitions += `\n**Reference LTHR:** ${workout.user.lthr} bpm\n`
+      zoneDefinitions += `**Zone 2 (LTHR-based):** ${Math.round(workout.user.lthr * 0.8)}-${Math.round(workout.user.lthr * 0.9)} bpm (80-90% LTHR)\n`
+    }
+
     const prompt = `Design a structured ${workout.type} workout for ${workout.user.name || 'Athlete'}.
     
     TITLE: ${workout.title}
@@ -125,6 +155,7 @@ export const generateStructuredWorkoutTask = task({
     INTENSITY: ${workout.workIntensity || 'Moderate'}
     DESCRIPTION: ${workout.description || 'No specific description'}
     USER FTP: ${workout.user.ftp || 250}W
+    USER LTHR: ${workout.user.lthr || 'Unknown'} bpm
     TYPE: ${workout.type}
     
     CONTEXT:
@@ -132,6 +163,15 @@ export const generateStructuredWorkoutTask = task({
     - Phase: ${phase}
     - Focus: ${focus}
     - Coach Persona: ${persona}
+
+    RECENT WORKOUTS:
+    ${buildWorkoutSummary(recentWorkouts)}
+
+    CRITICAL: ALWAYS use the user's custom zones defined below.
+
+    ${zoneDefinitions}
+
+    When generating "[Zone 2]" workouts, target ONLY the user's defined Z2 range. Never use generic percentages - always reference the user's custom zones first.
     
     INSTRUCTIONS:
     - Create a JSON structure defining the exact steps (Warmup, Intervals, Rest, Cooldown).

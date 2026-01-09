@@ -382,6 +382,7 @@ export const generateAthleteProfileTask = task({
           endDate: todayEnd,
           limit: 20,
           orderBy: { date: 'desc' },
+          includeDuplicates: false,
           select: {
             id: true,
             date: true,

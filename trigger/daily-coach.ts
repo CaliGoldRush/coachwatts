@@ -61,7 +61,8 @@ export const dailyCoachTask = task({
           startDate: yesterdayStart,
           endDate: yesterdayEnd,
           limit: 1,
-          orderBy: { date: 'desc' }
+          orderBy: { date: 'desc' },
+          includeDuplicates: false
         })
         .then((workouts) => workouts[0]),
       wellnessRepository.getByDate(userId, todayDateOnly),

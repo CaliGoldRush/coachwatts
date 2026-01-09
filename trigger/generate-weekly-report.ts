@@ -202,7 +202,8 @@ export const generateWeeklyReportTask = task({
         workoutRepository.getForUser(userId, {
           startDate,
           endDate,
-          orderBy: { date: 'asc' }
+          orderBy: { date: 'asc' },
+          includeDuplicates: false
         }),
         wellnessRepository.getForUser(userId, {
           startDate,

@@ -42,7 +42,8 @@ export const generateAdHocWorkoutTask = task({
       workoutRepository.getForUser(userId, {
         startDate: getStartOfDaysAgoUTC(timezone, 7),
         limit: 10,
-        orderBy: { date: 'desc' }
+        orderBy: { date: 'desc' },
+        includeDuplicates: false
       }),
       prisma.user.findUnique({
         where: { id: userId },
