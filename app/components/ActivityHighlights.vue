@@ -88,15 +88,8 @@
   }>()
 
   const { data, refresh } = await useFetch('/api/activity/highlights', {
-    query: { days: props.period }
+    query: computed(() => ({ days: props.period }))
   })
-
-  watch(
-    () => props.period,
-    () => {
-      refresh()
-    }
-  )
 
   const formatDistance = (meters: number | undefined) => {
     if (!meters) return '0'
