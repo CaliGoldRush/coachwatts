@@ -264,7 +264,7 @@
         >
           <img
             v-if="!collapsed"
-            src="/media/coach-watts.webp"
+            src="/media/coach_watts_text_cropped.webp"
             alt="Coach Watts"
             class="h-8 lg:h-10 w-auto object-contain"
           />
