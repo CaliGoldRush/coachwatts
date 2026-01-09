@@ -180,10 +180,10 @@ ${
 TODAY'S RECOVERY:
 ${
   todayMetric
-    ? `- Recovery Score: ${todayMetric.recoveryScore}%
-- HRV: ${todayMetric.hrv} ms
-- Resting HR: ${todayMetric.restingHr} bpm
-- Sleep: ${todayMetric.sleepHours?.toFixed(1)} hours (Score: ${todayMetric.sleepScore}%)
+    ? `- Recovery Score: ${todayMetric.recoveryScore ?? 'Unknown'}${todayMetric.recoveryScore !== null ? '%' : ''}
+- HRV: ${todayMetric.hrv ?? 'Unknown'} ms
+- Resting HR: ${todayMetric.restingHr ?? 'Unknown'} bpm
+- Sleep: ${todayMetric.sleepHours?.toFixed(1) ?? 'Unknown'} hours (Score: ${todayMetric.sleepScore ?? 'Unknown'}%)
 ${todayMetric.spO2 ? `- SpO2: ${todayMetric.spO2}%` : ''}`
     : 'No recovery data available'
 }
@@ -198,7 +198,7 @@ Use Training Stress Balance (TSB/Form) as primary indicator:
 - TSB < -40: Overreaching - rest required
 
 Also consider:
-- Recovery Score < 33%: Recommend rest or very easy activity
+- Recovery Score < 33% (or Poor proxy metrics): Recommend rest or very easy activity
 - Recovery 33-50%: Reduce intensity significantly
 - Recovery 50-67%: Proceed with caution, modify as needed
 - Recovery 67-80%: Proceed as planned
@@ -209,7 +209,7 @@ Also consider:
 - Poor sleep (<7h) reduces training capacity
 ${activeGoals.length > 0 ? `- Consider how today's recommendation impacts progress toward active goals` : ''}
 
-CRITICAL: Base your recommendation on the comprehensive training load data above, especially TSB (Form), not just today's recovery metrics.
+CRITICAL: Base your recommendation on the comprehensive training load data above, especially TSB (Form), not just today's recovery metrics. If Recovery Score is "Unknown", rely on TSB, HRV trend, and Sleep.
 
 Provide a structured recommendation for today's training${activeGoals.length > 0 ? ", considering the athlete's current goals and training load" : ''}.`
 

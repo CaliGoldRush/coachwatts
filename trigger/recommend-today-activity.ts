@@ -255,10 +255,10 @@ TODAY'S RECOVERY METRICS:
 ${
   todayMetric
     ? `
-- Recovery Score: ${todayMetric.recoveryScore}%
-- HRV: ${todayMetric.hrv} ms
-- Resting HR: ${todayMetric.restingHr} bpm
-- Sleep: ${todayMetric.sleepHours?.toFixed(1)} hours (Score: ${todayMetric.sleepScore}%)
+- Recovery Score: ${todayMetric.recoveryScore ?? 'Unknown'}${todayMetric.recoveryScore !== null ? '%' : ''}
+- HRV: ${todayMetric.hrv ?? 'Unknown'} ms
+- Resting HR: ${todayMetric.restingHr ?? 'Unknown'} bpm
+- Sleep: ${todayMetric.sleepHours?.toFixed(1) ?? 'Unknown'} hours (Score: ${todayMetric.sleepScore ?? 'Unknown'}%)
 ${todayMetric.spO2 ? `- SpO2: ${todayMetric.spO2}%` : ''}
 `
     : 'No recovery data available'
@@ -290,6 +290,10 @@ DECISION CRITERIA:
 - Recovery 50-67%: Modify if workout is hard
 - Recovery 67-80%: Proceed as planned
 - Recovery > 80%: Good day for intensity
+
+**If Recovery Score is "Unknown"**: Infer recovery status from Sleep (quality/duration), HRV trends, and Resting HR.
+- Low HRV + High RHR = Poor Recovery
+- High Sleep Score + Low RHR = Good Recovery
 
 - Low HRV (< -15% from baseline): Caution on intensity
 - Poor sleep (< 6 hours): Reduce volume/intensity
