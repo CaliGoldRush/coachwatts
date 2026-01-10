@@ -1,5 +1,7 @@
 import { defineConfig } from '@trigger.dev/sdk/v3'
 import { prismaExtension } from '@trigger.dev/build/extensions/prisma'
+import { esbuildPlugin } from '@trigger.dev/build/extensions'
+import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin'
 
 export default defineConfig({
   project: process.env.TRIGGER_PROJECT_REF!,
@@ -22,7 +24,15 @@ export default defineConfig({
       prismaExtension({
         mode: 'legacy',
         schema: 'prisma/schema.prisma'
-      })
+      }),
+      esbuildPlugin(
+        sentryEsbuildPlugin({
+          org: process.env.SENTRY_ORG,
+          project: process.env.SENTRY_PROJECT,
+          authToken: process.env.SENTRY_AUTH_TOKEN
+        }),
+        { placement: 'last', target: 'deploy' }
+      )
     ]
   }
 })
