@@ -292,6 +292,47 @@
             </UTooltip>
           </div>
 
+          <!-- Garmin Card -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-gray-200 dark:ring-gray-700"
+                >
+                  <img
+                    src="/images/logos/Garmin-Tag-black-high-res.png"
+                    alt="Garmin Logo"
+                    class="w-6 h-6 object-contain dark:hidden"
+                  />
+                  <img
+                    src="/images/logos/Garmin-Tag-white-high-res.png"
+                    alt="Garmin Logo"
+                    class="w-6 h-6 object-contain hidden dark:block"
+                  />
+                </div>
+                <div>
+                  <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Garmin</h2>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Activity & wellness data</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2 text-sm">
+              <p class="text-gray-600 dark:text-gray-400">
+                Garmin data is automatically synced through your Intervals.icu connection.
+              </p>
+            </div>
+
+            <UButton
+              to="/settings/apps"
+              color="neutral"
+              variant="outline"
+              class="mt-4 w-full font-bold justify-center rounded-lg"
+            >
+              Settings
+            </UButton>
+          </div>
+
           <!-- Hevy Card -->
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div class="flex items-center justify-between mb-4">
@@ -1578,6 +1619,7 @@
     if (source === 'intervals') return `${baseClass} bg-blue-100 text-blue-800`
     if (source === 'whoop') return `${baseClass} bg-purple-100 text-purple-800`
     if (source === 'strava') return `${baseClass} bg-orange-100 text-orange-800`
+    if (source === 'garmin') return `${baseClass} bg-cyan-100 text-cyan-800`
     return `${baseClass} bg-gray-100 text-gray-800`
   }
 

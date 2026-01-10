@@ -188,7 +188,8 @@
   const sourceOptions = [
     { label: 'Intervals.icu', value: 'intervals' },
     { label: 'Strava', value: 'strava' },
-    { label: 'Whoop', value: 'whoop' }
+    { label: 'Whoop', value: 'whoop' },
+    { label: 'Garmin', value: 'garmin' }
   ]
 
   // Fetch all workouts

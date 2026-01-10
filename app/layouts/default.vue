@@ -293,7 +293,7 @@
       <template #footer="{ collapsed }">
         <div>
           <div v-if="!collapsed" class="px-4 pb-2">
-            <div class="flex justify-center mb-4">
+            <div class="flex items-center justify-center gap-4 mb-4">
               <NuxtLink
                 to="https://www.strava.com"
                 target="_blank"
@@ -303,6 +303,22 @@
                   src="/images/logos/strava_powered_by.png"
                   alt="Powered by Strava"
                   class="h-6 w-auto opacity-75 hover:opacity-100"
+                />
+              </NuxtLink>
+              <NuxtLink
+                to="https://www.garmin.com"
+                target="_blank"
+                class="hover:opacity-100 transition-opacity"
+              >
+                <img
+                  src="/images/logos/WorksWithGarmin-Black.svg"
+                  alt="Works with Garmin"
+                  class="h-6 w-auto opacity-75 hover:opacity-100 dark:hidden"
+                />
+                <img
+                  src="/images/logos/WorksWithGarmin-White.svg"
+                  alt="Works with Garmin"
+                  class="h-6 w-auto opacity-75 hover:opacity-100 hidden dark:block"
                 />
               </NuxtLink>
             </div>

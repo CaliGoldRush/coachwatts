@@ -282,6 +282,44 @@
           </div>
         </UCard>
 
+        <!-- Garmin -->
+        <UCard :ui="{ body: 'flex flex-col h-full justify-between gap-4' }">
+          <div class="flex items-start gap-4">
+            <div
+              class="w-12 h-12 bg-white rounded-lg flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"
+            >
+              <img
+                src="/images/logos/Garmin-Tag-black-high-res.png"
+                alt="Garmin Logo"
+                class="w-8 h-8 object-contain dark:hidden"
+              />
+              <img
+                src="/images/logos/Garmin-Tag-white-high-res.png"
+                alt="Garmin Logo"
+                class="w-8 h-8 object-contain hidden dark:block"
+              />
+            </div>
+            <div>
+              <h3 class="font-semibold">Garmin</h3>
+              <p class="text-sm text-muted">Activities and health metrics via Intervals.icu</p>
+            </div>
+          </div>
+
+          <div
+            class="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto"
+          >
+            <UButton
+              v-if="!intervalsConnected"
+              color="primary"
+              variant="soft"
+              size="xs"
+              @click="signIn('intervals')"
+            >
+              Connect Intervals
+            </UButton>
+          </div>
+        </UCard>
+
         <!-- Strava -->
         <UCard :ui="{ body: 'flex flex-col h-full justify-between gap-4' }">
           <div class="flex items-start gap-4">

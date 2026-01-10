@@ -3,41 +3,47 @@
     class="h-96 w-full rounded-xl overflow-hidden ring-1 ring-gray-200 dark:ring-gray-800 z-0 bg-gray-100 dark:bg-gray-900 flex items-center justify-center"
   >
     <client-only>
-      <LMap
-        v-if="latLngs.length > 0"
-        ref="map"
-        :zoom="zoom"
-        :center="center"
-        :options="mapOptions"
-        class="h-full w-full"
-        @ready="onMapReady"
-      >
-        <LTileLayer :url="tileUrl" :attribution="attribution" layer-type="base" name="Base" />
+      <div v-if="latLngs.length > 0" class="relative h-full w-full">
+        <LMap
+          ref="map"
+          :zoom="zoom"
+          :center="center"
+          :options="mapOptions"
+          class="h-full w-full z-0"
+          @ready="onMapReady"
+        >
+          <LTileLayer :url="tileUrl" :attribution="attribution" layer-type="base" name="Base" />
 
-        <LPolyline :lat-lngs="latLngs" :color="primaryColor" :weight="4" :opacity="0.8" />
+          <LPolyline :lat-lngs="latLngs" :color="primaryColor" :weight="4" :opacity="0.8" />
 
-        <!-- Start Marker -->
-        <LCircleMarker
-          v-if="startPoint"
-          :lat-lng="startPoint"
-          :radius="6"
-          :color="'white'"
-          :fill-color="primaryColor"
-          :fill-opacity="1"
-          :weight="2"
-        />
+          <!-- Start Marker -->
+          <LCircleMarker
+            v-if="startPoint"
+            :lat-lng="startPoint"
+            :radius="6"
+            :color="'white'"
+            :fill-color="primaryColor"
+            :fill-opacity="1"
+            :weight="2"
+          />
 
-        <!-- End Marker -->
-        <LCircleMarker
-          v-if="endPoint"
-          :lat-lng="endPoint"
-          :radius="6"
-          :color="'white'"
-          :fill-color="'red'"
-          :fill-opacity="1"
-          :weight="2"
-        />
-      </LMap>
+          <!-- End Marker -->
+          <LCircleMarker
+            v-if="endPoint"
+            :lat-lng="endPoint"
+            :radius="6"
+            :color="'white'"
+            :fill-color="'red'"
+            :fill-opacity="1"
+            :weight="2"
+          />
+        </LMap>
+
+        <!-- Attribution Overlay -->
+        <div v-if="provider" class="absolute bottom-1 left-1 z-[1000] pointer-events-none">
+          <UiDataAttribution :provider="provider" :device-name="deviceName" mode="overlay" />
+        </div>
+      </div>
       <div v-else class="flex flex-col items-center gap-2 text-gray-500">
         <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin" />
         <span class="text-sm">Loading map...</span>
@@ -53,6 +59,8 @@
     coordinates: any[]
     interactive?: boolean
     scrollWheelZoom?: boolean
+    provider?: string
+    deviceName?: string
   }>()
 
   const zoom = ref(13)

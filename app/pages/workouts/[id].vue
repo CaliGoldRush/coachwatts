@@ -244,11 +244,11 @@
                     <span :class="getSourceBadgeClass(workout.source)">
                       {{ workout.source }}
                     </span>
-                    <img
-                      v-if="workout.source === 'strava'"
-                      src="/images/logos/strava_powered_by.png"
-                      alt="Powered by Strava"
-                      class="h-6 w-auto self-center"
+                    <UiDataAttribution
+                      v-if="workout.source === 'strava' || workout.source === 'garmin'"
+                      :provider="workout.source"
+                      :device-name="workout.deviceName"
+                      class="self-center"
                     />
                   </div>
                 </div>
@@ -838,7 +838,12 @@
             class="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
           >
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Route</h2>
-            <UiWorkoutMap :coordinates="workout.streams.latlng" :interactive="true" />
+            <UiWorkoutMap
+              :coordinates="workout.streams.latlng"
+              :interactive="true"
+              :provider="workout.source"
+              :device-name="workout.deviceName"
+            />
           </div>
 
           <!-- Pacing Analysis Section (for Run/Ride/Walk/Hike activities) -->
@@ -1663,6 +1668,8 @@
       return `${baseClass} bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200`
     if (source === 'strava')
       return `${baseClass} bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200`
+    if (source === 'garmin')
+      return `${baseClass} bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200`
     return `${baseClass} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200`
   }
 
