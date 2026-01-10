@@ -1,5 +1,27 @@
 import pkg from './package.json'
 
+const getGitCommitHash = () => {
+  if (process.env.NUXT_PUBLIC_COMMIT_HASH) {
+    return process.env.NUXT_PUBLIC_COMMIT_HASH
+  }
+  if (process.env.COMMIT_SHA) {
+    return process.env.COMMIT_SHA.substring(0, 7)
+  }
+  if (process.env.REVISION_ID) {
+    return process.env.REVISION_ID.substring(0, 7)
+  }
+  if (process.env.SHORT_SHA) {
+    return process.env.SHORT_SHA
+  }
+  if (process.env.BUILD_ID) {
+    return process.env.BUILD_ID
+  }
+  return process.env.NODE_ENV === 'development' ? 'dev' : 'unknown'
+}
+
+const commitHash = getGitCommitHash()
+const sentryRelease = `${pkg.name}@${pkg.version}+${commitHash}`
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -91,6 +113,8 @@ export default defineNuxtConfig({
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3099',
       version: pkg.version,
+      commitHash,
+      sentryRelease,
       authBypassEnabled: !!process.env.AUTH_BYPASS_USER,
       authBypassUser: process.env.AUTH_BYPASS_USER || '',
       authBypassName: process.env.AUTH_BYPASS_NAME || '',
