@@ -223,7 +223,17 @@ export const analyzeLast3WorkoutsTask = task({
         .slice(0, 3)
 
       if (workouts.length === 0) {
-        throw new Error('No cycling workouts found for analysis')
+        logger.warn('No cycling workouts found for analysis', { userId })
+
+        await prisma.report.update({
+          where: { id: reportId },
+          data: { status: 'FAILED' }
+        })
+
+        return {
+          success: false,
+          reason: 'No cycling workouts found in recent history'
+        }
       }
 
       logger.log('Workouts fetched', {

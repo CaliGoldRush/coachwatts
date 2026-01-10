@@ -235,7 +235,17 @@ export const analyzeLast3NutritionTask = task({
         .slice(0, 3)
 
       if (nutritionDays.length === 0) {
-        throw new Error('No nutrition data found for analysis')
+        logger.warn('No nutrition data found for analysis', { userId, startDate })
+
+        await prisma.report.update({
+          where: { id: reportId },
+          data: { status: 'FAILED' } // TODO: Add failure reason to report if schema allows
+        })
+
+        return {
+          success: false,
+          reason: 'No nutrition data found for the last 3 days'
+        }
       }
 
       logger.log('Nutrition data fetched', {

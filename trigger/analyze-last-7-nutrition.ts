@@ -3,7 +3,7 @@ import { generateStructuredAnalysis } from '../server/utils/gemini'
 import { prisma } from '../server/utils/db'
 import { nutritionRepository } from '../server/utils/repositories/nutritionRepository'
 import { userReportsQueue } from './queues'
-import { getUserTimezone, formatUserDate } from '../server/utils/date'
+import { getUserTimezone, formatUserDate, getStartOfDaysAgoUTC } from '../server/utils/date'
 
 // Analysis schema for nutrition reports
 const nutritionAnalysisSchema = {
@@ -243,7 +243,17 @@ export const analyzeLast7NutritionTask = task({
         .slice(0, 7) // Take up to 7 days
 
       if (nutritionDays.length === 0) {
-        throw new Error('No nutrition data found for analysis')
+        logger.warn('No nutrition data found for analysis', { userId, startDate })
+
+        await prisma.report.update({
+          where: { id: reportId },
+          data: { status: 'FAILED' }
+        })
+
+        return {
+          success: false,
+          reason: 'No nutrition data found for the last 7 days'
+        }
       }
 
       logger.log('Nutrition data fetched', {

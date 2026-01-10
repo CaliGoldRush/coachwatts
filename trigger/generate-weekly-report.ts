@@ -229,7 +229,17 @@ export const generateWeeklyReportTask = task({
       })
 
       if (workouts.length === 0) {
-        throw new Error('No workout data available for analysis')
+        logger.warn('No workout data available for analysis', { userId, startDate })
+
+        await prisma.report.update({
+          where: { id: reportId },
+          data: { status: 'FAILED' }
+        })
+
+        return {
+          success: false,
+          reason: 'No workout data available for analysis'
+        }
       }
 
       // Build goals context
