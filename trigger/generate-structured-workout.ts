@@ -46,7 +46,10 @@ const workoutStructureSchema = {
               }
             }
           },
-          cadence: { type: 'integer' },
+          cadence: {
+            type: 'integer',
+            description: 'Target cadence in RPM (single integer, no ranges)'
+          },
           name: { type: 'string', description: "e.g. '5min @ 95%'" },
           stroke: {
             type: 'string',
@@ -181,7 +184,7 @@ export const generateStructuredWorkoutTask = task({
     FOR CYCLING (Ride/VirtualRide):
     - Use % of FTP for power targets (e.g. 0.95 = 95%).
     - For ramps (Warmup/Cooldown), use "range" with "start" and "end" values (e.g. start: 0.50, end: 0.75 for warmup).
-    - Include target "cadence" (RPM) for each step (e.g. 85-95 for intervals, 60-80 for rest).
+    - Include target "cadence" (RPM) for each step as a single INTEGER (e.g. 90). Do not use ranges or objects.
 
     FOR RUNNING (Run):
     - Steps should have 'type', 'durationSeconds', 'name'.
