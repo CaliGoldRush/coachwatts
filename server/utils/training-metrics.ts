@@ -399,9 +399,6 @@ export async function calculateIntensityDistribution(
     // IF = sqrt( (TSS * 3600) / (Duration * 100) )
     if ((intensity === null || intensity === undefined) && workout.tss && duration > 0) {
       intensity = Math.sqrt((workout.tss * 3600) / (duration * 100))
-      console.log(
-        `  Workout ${workout.id}: Calculated IF=${intensity.toFixed(3)} from TSS=${workout.tss}`
-      )
     }
 
     if (intensity === null || intensity === undefined) {
@@ -416,9 +413,6 @@ export async function calculateIntensityDistribution(
       } else if (intensity <= 200) {
         intensity = intensity / 100
       } else {
-        console.log(
-          `  Workout ${workout.id} (${workout.type}): Invalid IF=${intensity.toFixed(3)}, skipping`
-        )
         continue
       }
     }
@@ -438,8 +432,6 @@ export async function calculateIntensityDistribution(
     }
   }
 
-  console.log(`  Total time: ${totalTime}s`)
-
   // Convert to percentages
   if (totalTime > 0) {
     distribution.recovery = (distribution.recovery / totalTime) * 100
@@ -448,8 +440,6 @@ export async function calculateIntensityDistribution(
     distribution.threshold = (distribution.threshold / totalTime) * 100
     distribution.vo2max = (distribution.vo2max / totalTime) * 100
   }
-
-  console.log(`  Distribution (percentages):`, distribution)
 
   return distribution
 }
