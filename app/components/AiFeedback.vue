@@ -3,43 +3,75 @@
     <!-- Thumbs Up -->
     <UTooltip text="Helpful">
       <UButton
-        :icon="
-          feedback === 'THUMBS_UP' ? 'i-heroicons-hand-thumb-up-solid' : 'i-heroicons-hand-thumb-up'
-        "
         :color="feedback === 'THUMBS_UP' ? 'green' : 'gray'"
         variant="ghost"
         size="xs"
+        class="group/up"
         :loading="loading === 'THUMBS_UP'"
         @click="submitFeedback('THUMBS_UP')"
-      />
+      >
+        <template #leading>
+          <UIcon
+            v-if="feedback === 'THUMBS_UP'"
+            name="i-heroicons-hand-thumb-up-solid"
+            class="w-4 h-4 text-green-600"
+          />
+          <template v-else>
+            <UIcon name="i-heroicons-hand-thumb-up" class="w-4 h-4 group-hover/up:hidden" />
+            <UIcon
+              name="i-heroicons-hand-thumb-up-solid"
+              class="w-4 h-4 hidden group-hover/up:block text-green-600"
+            />
+          </template>
+        </template>
+      </UButton>
     </UTooltip>
 
     <!-- Thumbs Down -->
     <UTooltip text="Not helpful">
       <UButton
-        :icon="
-          feedback === 'THUMBS_DOWN'
-            ? 'i-heroicons-hand-thumb-down-solid'
-            : 'i-heroicons-hand-thumb-down'
-        "
         :color="feedback === 'THUMBS_DOWN' ? 'red' : 'gray'"
         variant="ghost"
         size="xs"
+        class="group/down"
         :loading="loading === 'THUMBS_DOWN'"
         @click="handleThumbsDown"
-      />
+      >
+        <template #leading>
+          <UIcon
+            v-if="feedback === 'THUMBS_DOWN'"
+            name="i-heroicons-hand-thumb-down-solid"
+            class="w-4 h-4 text-red-600"
+          />
+          <template v-else>
+            <UIcon name="i-heroicons-hand-thumb-down" class="w-4 h-4 group-hover/down:hidden" />
+            <UIcon
+              name="i-heroicons-hand-thumb-down-solid"
+              class="w-4 h-4 hidden group-hover/down:block text-red-600"
+            />
+          </template>
+        </template>
+      </UButton>
     </UTooltip>
 
     <!-- Usage Link -->
     <UTooltip v-if="llmUsageId && !hideUsageLink" text="View AI Log">
       <UButton
         :to="`/ai/logs/${llmUsageId}`"
-        icon="i-heroicons-document-text"
         color="gray"
         variant="ghost"
         size="xs"
         target="_blank"
-      />
+        class="group/log"
+      >
+        <template #leading>
+          <UIcon name="i-heroicons-document-text" class="w-4 h-4 group-hover/log:hidden" />
+          <UIcon
+            name="i-heroicons-document-text-solid"
+            class="w-4 h-4 hidden group-hover/log:block text-primary-500"
+          />
+        </template>
+      </UButton>
     </UTooltip>
 
     <!-- Feedback Modal -->

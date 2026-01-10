@@ -70,6 +70,14 @@
         }
       },
       {
+        label: 'Recommendations',
+        icon: 'i-lucide-sparkles',
+        to: '/recommendations',
+        onSelect: () => {
+          open.value = false
+        }
+      },
+      {
         label: 'Training Plan',
         icon: 'i-lucide-calendar',
         to: '/plan',
