@@ -6,6 +6,7 @@ import { getUserTimezone, getEndOfDayUTC } from '../server/utils/date'
 
 export const ingestIntervalsTask = task({
   id: 'ingest-intervals',
+  maxDuration: 900, // 15 minutes
   queue: userIngestionQueue,
   run: async (payload: { userId: string; startDate: string; endDate: string }) => {
     const { userId, startDate, endDate } = payload
