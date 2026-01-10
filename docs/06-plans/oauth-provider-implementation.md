@@ -1,6 +1,6 @@
 # OAuth 2.0 Identity Provider Implementation Plan
 
-**Status:** Draft
+**Status:** Completed
 **Target Version:** 0.6.0
 **Owner:** Engineering
 
@@ -339,16 +339,16 @@ Create `examples/oauth-client-demo/`:
 
 ## 9. Progress Tracker
 
-- [ ] **Schema**: Models added and migrated.
-- [ ] **Infra**: S3 Storage utility implemented.
-- [ ] **Infra**: Audit Logger implemented.
-- [ ] **UI**: Developer Portal (List/Create/Edit).
-- [ ] **UI**: Consent Screen.
-- [ ] **API**: Authorization Endpoint.
-- [ ] **API**: Token Endpoint.
-- [ ] **API**: UserInfo Endpoint.
-- [ ] **Security**: Unified Auth Guard (Session + Bearer).
-- [ ] **Security**: Scope validation logic.
-- [ ] **Feature**: Revoke Access (User Settings).
-- [ ] **Tooling**: CLI commands.
-- [ ] **Docs**: API Reference for Developers.
+- [x] **Schema**: Models added and migrated.
+- [x] **Infra**: S3 Storage utility implemented.
+- [x] **Infra**: Audit Logger implemented.
+- [x] **UI**: Developer Portal (List/Create/Edit).
+- [x] **UI**: Consent Screen.
+- [x] **API**: Authorization Endpoint.
+- [x] **API**: Token Endpoint.
+- [x] **API**: UserInfo Endpoint.
+- [x] **Security**: Unified Auth Guard (Session + Bearer).
+- [x] **Security**: Scope validation logic.
+- [x] **Feature**: Revoke Access (User Settings).
+- [x] **Tooling**: CLI commands.
+- [x] **Docs**: API Reference for Developers.

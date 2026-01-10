@@ -41,6 +41,7 @@
 
 ### Features
 
+- **auth:** implement oauth 2.0 identity provider with pkce and developer portal ([sha-placeholder](https://github.com/newpush/coach/commit/sha-placeholder))
 - **ai:** add ai usage detail page and fix gitignore for logs ([381d0f9](https://github.com/newpush/coach/commit/381d0f9707319dc9e86c23d7689e95260702db13))
 - **ai:** enhance athlete profile with HR zone distribution and custom zones ([1cf8be0](https://github.com/newpush/coach/commit/1cf8be00ee441b1547ec4e500ba3f555557158aa))
 - **ai:** include current training plan details in athlete profile prompt ([b4828df](https://github.com/newpush/coach/commit/b4828df1beb94642e141c651a1dd9f1f97b362ce))

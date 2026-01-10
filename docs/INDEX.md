@@ -49,6 +49,18 @@ Detailed documentation for specific application features.
 
 - [**Activity Recommendations**](./02-features/recommendations/activity-recommendations.md) - AI-powered daily workout advice.
 
+### Security & Auth
+
+- [**OAuth 2.0 Identity Provider**](./02-features/oauth-provider.md) - Integrating third-party apps with Coach Watts.
+
+## 👩‍💻 Developer API
+
+Documentation for building apps on top of Coach Watts.
+
+- [**Overview**](./developer/README.md) - Getting started.
+- [**Authentication**](./developer/authentication.md) - OAuth 2.0 guide.
+- [**Scopes**](./developer/scopes.md) - Permission reference.
+
 ## 🔌 03. Integrations
 
 External service connections and data sources.
