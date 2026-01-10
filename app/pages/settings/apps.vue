@@ -1,17 +1,23 @@
 <template>
-  <SettingsConnectedApps
-    :intervals-connected="intervalsConnected"
-    :whoop-connected="whoopConnected"
-    :whoop-ingest-workouts="whoopIngestWorkouts"
-    :withings-connected="withingsConnected"
-    :yazio-connected="yazioConnected"
-    :strava-connected="stravaConnected"
-    :hevy-connected="hevyConnected"
-    :syncing-providers="syncingProviders"
-    @disconnect="disconnectIntegration"
-    @sync="syncIntegration"
-    @update-setting="updateIntegrationSetting"
-  />
+  <div class="space-y-6">
+    <div>
+      <h2 class="text-2xl font-bold">Connected Apps</h2>
+      <p class="text-neutral-500">Manage your connected apps and integrations.</p>
+    </div>
+    <SettingsConnectedApps
+      :intervals-connected="intervalsConnected"
+      :whoop-connected="whoopConnected"
+      :whoop-ingest-workouts="whoopIngestWorkouts"
+      :withings-connected="withingsConnected"
+      :yazio-connected="yazioConnected"
+      :strava-connected="stravaConnected"
+      :hevy-connected="hevyConnected"
+      :syncing-providers="syncingProviders"
+      @disconnect="disconnectIntegration"
+      @sync="syncIntegration"
+      @update-setting="updateIntegrationSetting"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">

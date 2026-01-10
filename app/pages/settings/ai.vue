@@ -1,5 +1,12 @@
 <template>
   <div class="space-y-6">
+    <div>
+      <h2 class="text-2xl font-bold">AI Coach Settings</h2>
+      <p class="text-neutral-500">
+        Configure your AI coach preferences, personality, and data access.
+      </p>
+    </div>
+
     <!-- Three-column layout for settings, analytics, and charts -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <SettingsAiCoachSettings v-if="aiSettings" :settings="aiSettings" @save="saveAiSettings" />

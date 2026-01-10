@@ -42,6 +42,38 @@
       </div>
     </UCard>
 
+    <!-- OAuth Developer Portal Link -->
+    <UCard>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <div class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg shrink-0">
+            <UIcon
+              name="i-heroicons-code-bracket"
+              class="w-6 h-6 text-blue-600 dark:text-blue-400"
+            />
+          </div>
+          <div class="min-w-0">
+            <h3 class="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-widest">
+              OAuth Developer Portal
+            </h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Create and manage OAuth 2.0 applications for third-party integrations.
+            </p>
+          </div>
+        </div>
+        <UButton
+          to="/developer"
+          color="neutral"
+          variant="outline"
+          icon="i-heroicons-arrow-right"
+          size="sm"
+          class="font-bold shrink-0"
+        >
+          Open Portal
+        </UButton>
+      </div>
+    </UCard>
+
     <!-- API Keys List -->
     <UCard>
       <template #header>

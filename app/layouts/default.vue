@@ -200,6 +200,14 @@
           }
         },
         {
+          label: 'Authorized Apps',
+          icon: 'i-lucide-shield-check',
+          to: '/settings/authorized-apps',
+          onSelect: () => {
+            open.value = false
+          }
+        },
+        {
           label: 'AI Coach',
           icon: 'i-lucide-sparkles',
           to: '/settings/ai',
@@ -216,17 +224,17 @@
           }
         },
         {
-          label: 'Developer',
-          icon: 'i-lucide-code-2',
-          to: '/settings/developer',
+          label: 'Changelog',
+          icon: 'i-lucide-list',
+          to: '/settings/changelog',
           onSelect: () => {
             open.value = false
           }
         },
         {
-          label: 'Changelog',
-          icon: 'i-lucide-list',
-          to: '/settings/changelog',
+          label: 'Developer',
+          icon: 'i-lucide-code-2',
+          to: '/settings/developer',
           onSelect: () => {
             open.value = false
           }
