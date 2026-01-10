@@ -102,7 +102,6 @@ export default defineEventHandler(async (event) => {
     })
 
     // If we haven't completed an initial sync yet, or if it's explicitly marked as false
-    // @ts-expect-error - property exists in db but type not updated yet
     if (integration && integration.initialSyncCompleted === false) {
       isInitialSync = true
     }

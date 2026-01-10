@@ -1,4 +1,3 @@
-// @ts-expect-error - fit-file-parser types might be missing or incompatible
 import FitParser from 'fit-file-parser'
 import {
   calculateLapSplits,

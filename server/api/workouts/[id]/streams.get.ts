@@ -133,7 +133,6 @@ export default defineEventHandler(async (event) => {
         const step = workoutStream.time.length / TARGET_POINTS
 
         streamKeys.forEach((key) => {
-          // @ts-expect-error - Dynamic access to known keys
           const streamData = (processedStream as any)[key]
           if (streamData && Array.isArray(streamData)) {
             const sampled: any[] = []
@@ -143,7 +142,6 @@ export default defineEventHandler(async (event) => {
                 sampled.push(streamData[index])
               }
             }
-            // @ts-expect-error - Dynamic assignment to stream keys
             ;(processedStream as any)[key] = sampled
           }
         })
@@ -174,7 +172,6 @@ export default defineEventHandler(async (event) => {
       ]
 
       streamKeys.forEach((key) => {
-        // @ts-expect-error - Dynamic access to known keys
         const streamData = (processedStream as any)[key]
         if (streamData && Array.isArray(streamData)) {
           const sampled: any[] = []
@@ -184,7 +181,6 @@ export default defineEventHandler(async (event) => {
               sampled.push(streamData[index])
             }
           }
-          // @ts-expect-error - Dynamic assignment to stream keys
           ;(processedStream as any)[key] = sampled
         }
       })

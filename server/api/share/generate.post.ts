@@ -106,13 +106,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check for existing token
-  // @ts-expect-error - prisma client might need regeneration for newly added models
   let shareToken = await prisma.shareToken.findFirst({
     where: { userId, resourceType, resourceId }
   })
 
   if (!shareToken) {
-    // @ts-expect-error - prisma client might need regeneration for newly added models
     shareToken = await prisma.shareToken.create({
       data: {
         userId,

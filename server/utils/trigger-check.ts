@@ -2,6 +2,7 @@ import { runs } from '@trigger.dev/sdk/v3'
 
 export async function isTaskRunning(taskIdentifier: string, userId: string): Promise<boolean> {
   try {
+    // @ts-expect-error - SDK v3 types mismatch for filter params
     const activeRuns = await runs.list({
       filter: {
         taskIdentifier: [taskIdentifier],
