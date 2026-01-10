@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
     // Trigger the batch explanation generation job with per-user concurrency
     const handle = await tasks.trigger(
       'generate-score-explanations',
-      { userId: user.id },
+      { userId: user.id, force: true },
       { concurrencyKey: user.id }
     )
 

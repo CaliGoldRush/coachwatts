@@ -1,4 +1,5 @@
 import { logger, task } from '@trigger.dev/sdk/v3'
+import { v4 as uuidv4 } from 'uuid'
 import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { nutritionRepository } from '../server/utils/repositories/nutritionRepository'
@@ -56,8 +57,9 @@ async function generateNutritionExplanation(
   period: number,
   metric: string,
   summary: any,
-  timezone: string
-): Promise<TrendAnalysis> {
+  timezone: string,
+  previousRecommendations: any[] = []
+): Promise<{ analysis: TrendAnalysis; usageId?: string }> {
   // Fetch recent nutrition data for context
   const startDate = getStartOfDaysAgoUTC(timezone, period)
 
@@ -74,6 +76,19 @@ async function generateNutritionExplanation(
       waterMl: true
     }
   })
+
+  const previousContext =
+    previousRecommendations.length > 0
+      ? `
+PREVIOUS RECOMMENDATIONS (For Context):
+${previousRecommendations.map((r) => `- ${r.title}: ${r.description} (${r.priority})`).join('\n')}
+
+INSTRUCTIONS FOR REVIEW:
+1. Evaluate if recent data shows improvement on these specific points.
+2. If improved, acknowledge the progress.
+3. If persisting, escalate urgency or propose a different approach.
+4. Do not blindly repeat the same recommendation unless it is critical and unaddressed.`
+      : ''
 
   const prompt = `Analyze these nutrition trends for an endurance athlete:
 
@@ -95,6 +110,7 @@ ${nutrition
     return `- ${formatUserDate(n.date, timezone)}: ${n.calories || 0}kcal (P:${proteinPct}% C:${carbsPct}% F:${fatPct}%) Water: ${n.waterMl ? (n.waterMl / 1000).toFixed(1) : 0}L`
   })
   .join('\n')}
+${previousContext}
 
 Focus on "${getMetricDisplayName('nutrition', metric)}" and provide structured analysis with actionable nutrition improvements.`
 
@@ -142,12 +158,18 @@ Focus on "${getMetricDisplayName('nutrition', metric)}" and provide structured a
     required: ['executive_summary', 'sections', 'recommendations']
   }
 
-  return await generateStructuredAnalysis<TrendAnalysis>(prompt, schema, 'flash', {
+  let usageId: string | undefined
+  const analysis = await generateStructuredAnalysis<TrendAnalysis>(prompt, schema, 'flash', {
     userId,
     operation: 'nutrition_score_explanation',
     entityType: 'ScoreTrendExplanation',
-    entityId: undefined
+    entityId: undefined,
+    onUsageLogged: (id) => {
+      usageId = id
+    }
   })
+
+  return { analysis, usageId }
 }
 
 async function generateWorkoutExplanation(
@@ -155,8 +177,9 @@ async function generateWorkoutExplanation(
   period: number,
   metric: string,
   summary: any,
-  timezone: string
-): Promise<TrendAnalysis> {
+  timezone: string,
+  previousRecommendations: any[] = []
+): Promise<{ analysis: TrendAnalysis; usageId?: string }> {
   // Fetch recent workout data for context
   const startDate = getStartOfDaysAgoUTC(timezone, period)
 
@@ -177,6 +200,19 @@ async function generateWorkoutExplanation(
     }
   })
 
+  const previousContext =
+    previousRecommendations.length > 0
+      ? `
+PREVIOUS RECOMMENDATIONS (For Context):
+${previousRecommendations.map((r) => `- ${r.title}: ${r.description} (${r.priority})`).join('\n')}
+
+INSTRUCTIONS FOR REVIEW:
+1. Evaluate if recent data shows improvement on these specific points.
+2. If improved, acknowledge the progress.
+3. If persisting, escalate urgency or propose a different approach.
+4. Do not blindly repeat the same recommendation unless it is critical and unaddressed.`
+      : ''
+
   const prompt = `Analyze these workout trends for an endurance athlete:
 
 SUMMARY (Last ${period} days):
@@ -193,6 +229,7 @@ ${workouts
     return `- ${formatUserDate(w.date, timezone)}: ${w.title} (${w.type}) - ${Math.round(w.durationSec / 60)}min, TSS: ${w.tss?.toFixed(0) || 'N/A'}, Power: ${w.averageWatts || 'N/A'}W, HR: ${w.averageHr || 'N/A'}bpm, RPE: ${w.rpe || 'N/A'}, Feel: ${w.feel ? w.feel * 2 : 'N/A'}/10 (10=Strong, 2=Weak)`
   })
   .join('\n')}
+${previousContext}
 
 Focus on "${getMetricDisplayName('workout', metric)}" and provide structured analysis with actionable training improvements.`
 
@@ -240,12 +277,18 @@ Focus on "${getMetricDisplayName('workout', metric)}" and provide structured ana
     required: ['executive_summary', 'sections', 'recommendations']
   }
 
-  return await generateStructuredAnalysis<TrendAnalysis>(prompt, schema, 'flash', {
+  let usageId: string | undefined
+  const analysis = await generateStructuredAnalysis<TrendAnalysis>(prompt, schema, 'flash', {
     userId,
     operation: 'workout_score_explanation',
     entityType: 'ScoreTrendExplanation',
-    entityId: undefined
+    entityId: undefined,
+    onUsageLogged: (id) => {
+      usageId = id
+    }
   })
+
+  return { analysis, usageId }
 }
 
 async function calculateNutritionSummary(userId: string, period: number, timezone: string) {
@@ -313,8 +356,8 @@ async function calculateWorkoutSummary(userId: string, period: number, timezone:
 export const generateScoreExplanationsTask = task({
   id: 'generate-score-explanations',
   maxDuration: 600, // 10 minutes for generating all explanations
-  run: async (payload: { userId: string }) => {
-    const { userId } = payload
+  run: async (payload: { userId: string; force?: boolean }) => {
+    const { userId, force } = payload
 
     logger.log('='.repeat(60))
     logger.log('🎯 GENERATING SCORE EXPLANATIONS')
@@ -363,7 +406,7 @@ export const generateScoreExplanationsTask = task({
             }
           })
 
-          if (existing && existing.expiresAt > new Date()) {
+          if (!force && existing && existing.expiresAt > new Date()) {
             logger.log(
               `  ⏭️  ${period}d ${metric} - cached (expires ${existing.expiresAt.toISOString()})`
             )
@@ -372,15 +415,45 @@ export const generateScoreExplanationsTask = task({
           }
 
           logger.log(`  🔄 ${period}d ${metric}...`)
-          const analysis = await generateNutritionExplanation(
+
+          const previousRecommendations = existing?.analysisData
+            ? (existing.analysisData as any).recommendations
+            : []
+
+          const { analysis, usageId } = await generateNutritionExplanation(
             userId,
             period,
             metric,
             summary,
-            timezone
+            timezone,
+            previousRecommendations
           )
 
-          await prisma.scoreTrendExplanation.upsert({
+          // Assign IDs and save to history
+          const recommendationsWithIds = analysis.recommendations.map((rec) => ({
+            ...rec,
+            id: uuidv4()
+          }))
+          analysis.recommendations = recommendationsWithIds as any
+
+          if (recommendationsWithIds.length > 0) {
+            await prisma.recommendation.createMany({
+              data: recommendationsWithIds.map((rec) => ({
+                id: rec.id,
+                userId,
+                sourceType: 'nutrition',
+                metric,
+                period,
+                title: rec.title,
+                description: rec.description,
+                priority: rec.priority,
+                generatedAt: new Date(),
+                llmUsageId: usageId
+              }))
+            })
+          }
+
+          const explanation = await prisma.scoreTrendExplanation.upsert({
             where: {
               userId_type_period_metric: {
                 userId,
@@ -396,15 +469,24 @@ export const generateScoreExplanationsTask = task({
               metric,
               score,
               analysisData: analysis as any,
-              expiresAt
+              expiresAt,
+              llmUsageId: usageId
             },
             update: {
               score,
               analysisData: analysis as any,
               generatedAt: new Date(),
-              expiresAt
+              expiresAt,
+              llmUsageId: usageId
             }
           })
+
+          if (usageId) {
+            await prisma.llmUsage.update({
+              where: { id: usageId },
+              data: { entityId: explanation.id, entityType: 'ScoreTrendExplanation' }
+            })
+          }
 
           results.generated++
           results.details.push({
@@ -459,7 +541,7 @@ export const generateScoreExplanationsTask = task({
             }
           })
 
-          if (existing && existing.expiresAt > new Date()) {
+          if (!force && existing && existing.expiresAt > new Date()) {
             logger.log(
               `  ⏭️  ${period}d ${metric} - cached (expires ${existing.expiresAt.toISOString()})`
             )
@@ -468,15 +550,45 @@ export const generateScoreExplanationsTask = task({
           }
 
           logger.log(`  🔄 ${period}d ${metric}...`)
-          const analysis = await generateWorkoutExplanation(
+
+          const previousRecommendations = existing?.analysisData
+            ? (existing.analysisData as any).recommendations
+            : []
+
+          const { analysis, usageId } = await generateWorkoutExplanation(
             userId,
             period,
             metric,
             summary,
-            timezone
+            timezone,
+            previousRecommendations
           )
 
-          await prisma.scoreTrendExplanation.upsert({
+          // Assign IDs and save to history
+          const recommendationsWithIds = analysis.recommendations.map((rec) => ({
+            ...rec,
+            id: uuidv4()
+          }))
+          analysis.recommendations = recommendationsWithIds as any
+
+          if (recommendationsWithIds.length > 0) {
+            await prisma.recommendation.createMany({
+              data: recommendationsWithIds.map((rec) => ({
+                id: rec.id,
+                userId,
+                sourceType: 'workout',
+                metric,
+                period,
+                title: rec.title,
+                description: rec.description,
+                priority: rec.priority,
+                generatedAt: new Date(),
+                llmUsageId: usageId
+              }))
+            })
+          }
+
+          const explanation = await prisma.scoreTrendExplanation.upsert({
             where: {
               userId_type_period_metric: {
                 userId,
@@ -492,15 +604,24 @@ export const generateScoreExplanationsTask = task({
               metric,
               score,
               analysisData: analysis as any,
-              expiresAt
+              expiresAt,
+              llmUsageId: usageId
             },
             update: {
               score,
               analysisData: analysis as any,
               generatedAt: new Date(),
-              expiresAt
+              expiresAt,
+              llmUsageId: usageId
             }
           })
+
+          if (usageId) {
+            await prisma.llmUsage.update({
+              where: { id: usageId },
+              data: { entityId: explanation.id, entityType: 'ScoreTrendExplanation' }
+            })
+          }
 
           results.generated++
           results.details.push({

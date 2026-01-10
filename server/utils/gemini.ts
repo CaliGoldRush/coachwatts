@@ -61,9 +61,9 @@ async function logLlmUsage(params: {
   responsePreview?: string
   promptFull?: string
   responseFull?: string
-}): Promise<void> {
+}): Promise<string | undefined> {
   try {
-    await prisma.llmUsage.create({
+    const usage = await prisma.llmUsage.create({
       data: {
         userId: params.userId,
         provider: 'gemini',
@@ -87,9 +87,11 @@ async function logLlmUsage(params: {
         responseFull: params.responseFull
       }
     })
+    return usage.id
   } catch (error) {
     // Don't let logging errors break the main flow
     console.error('[Gemini] Failed to log LLM usage:', error)
+    return undefined
   }
 }
 
@@ -156,6 +158,7 @@ async function retryWithBackoff<T>(
     entityType?: string
     entityId?: string
     prompt: string
+    onUsageLogged?: (usageId: string) => void | Promise<void>
   }
 ): Promise<T> {
   let lastError: any
@@ -222,7 +225,7 @@ async function retryWithBackoff<T>(
             ? calculateCost(trackingParams.model, promptTokens, completionTokens)
             : undefined
 
-        await logLlmUsage({
+        const usageId = await logLlmUsage({
           userId: trackingParams.userId,
           model: trackingParams.model,
           modelType: trackingParams.modelType,
@@ -241,6 +244,10 @@ async function retryWithBackoff<T>(
           promptFull: trackingParams.prompt,
           responseFull: responseText
         })
+
+        if (usageId && trackingParams.onUsageLogged) {
+          await trackingParams.onUsageLogged(usageId)
+        }
       }
 
       return result
@@ -331,6 +338,7 @@ export interface LlmTrackingContext {
   operation: string
   entityType?: string
   entityId?: string
+  onUsageLogged?: (usageId: string) => void | Promise<void>
 }
 
 export async function generateCoachAnalysis(
@@ -348,13 +356,13 @@ export async function generateCoachAnalysis(
 
       return model.generateContent(prompt)
     },
-    `generateCoachAnalysis(${modelType})`,
     trackingContext
       ? {
           ...trackingContext,
           model: modelName,
           modelType,
-          prompt
+          prompt,
+          onUsageLogged: trackingContext.onUsageLogged
         }
       : undefined
   )
@@ -388,7 +396,8 @@ export async function generateStructuredAnalysis<T>(
           ...trackingContext,
           model: modelName,
           modelType,
-          prompt
+          prompt,
+          onUsageLogged: trackingContext.onUsageLogged
         }
       : undefined
   )
