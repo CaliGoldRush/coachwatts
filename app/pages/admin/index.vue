@@ -22,34 +22,48 @@
     <!-- Body -->
     <div class="p-6 space-y-8">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <UCard>
-          <template #header>
-            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Users</h3>
-          </template>
-          <p class="text-3xl font-bold text-gray-900 dark:text-white">
-            {{ stats?.totalUsers || 0 }}
-          </p>
-        </UCard>
+        <NuxtLink to="/admin/stats/users" class="block">
+          <UCard
+            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
+            <template #header>
+              <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Users</h3>
+            </template>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white">
+              {{ stats?.totalUsers || 0 }}
+            </p>
+          </UCard>
+        </NuxtLink>
 
-        <UCard>
-          <template #header>
-            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">
-              Total Workouts
-            </h3>
-          </template>
-          <p class="text-3xl font-bold text-gray-900 dark:text-white">
-            {{ stats?.totalWorkouts || 0 }}
-          </p>
-        </UCard>
+        <NuxtLink to="/admin/stats/workouts" class="block">
+          <UCard
+            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
+            <template #header>
+              <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                Total Workouts
+              </h3>
+            </template>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white">
+              {{ stats?.totalWorkouts || 0 }}
+            </p>
+          </UCard>
+        </NuxtLink>
 
-        <UCard>
-          <template #header>
-            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">AI Cost (MTD)</h3>
-          </template>
-          <p class="text-3xl font-bold text-gray-900 dark:text-white">
-            ${{ stats?.totalAiCost?.toFixed(2) || '0.00' }}
-          </p>
-        </UCard>
+        <NuxtLink to="/admin/stats/llm" class="block">
+          <UCard
+            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
+            <template #header>
+              <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                AI Cost (MTD)
+              </h3>
+            </template>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white">
+              ${{ stats?.totalAiCost?.toFixed(2) || '0.00' }}
+            </p>
+          </UCard>
+        </NuxtLink>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -193,15 +193,25 @@
                   <span v-else class="text-xs text-gray-400">No</span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <UButton
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-lucide-user-cog"
-                    label="Impersonate"
-                    size="xs"
-                    :loading="impersonating === user.id"
-                    @click="impersonateUser(user.id)"
-                  />
+                  <div class="flex justify-end gap-2">
+                    <UButton
+                      :to="`/admin/users/${user.id}`"
+                      color="white"
+                      variant="ghost"
+                      icon="i-lucide-eye"
+                      size="xs"
+                      aria-label="View Details"
+                    />
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-user-cog"
+                      label="Impersonate"
+                      size="xs"
+                      :loading="impersonating === user.id"
+                      @click="impersonateUser(user.id)"
+                    />
+                  </div>
                 </td>
               </tr>
             </tbody>

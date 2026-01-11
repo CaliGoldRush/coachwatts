@@ -88,11 +88,110 @@
 
     <!-- Body -->
     <div class="p-6 space-y-8">
+      <!-- Navigation Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <NuxtLink to="/admin/stats/users" class="block">
+          <UCard
+            class="h-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
+            <div class="flex flex-col items-center justify-center py-2 gap-2">
+              <UIcon name="i-lucide-users" class="w-8 h-8 text-purple-500" />
+              <span class="font-semibold text-sm">Users</span>
+            </div>
+          </UCard>
+        </NuxtLink>
+        <NuxtLink to="/admin/stats/llm" class="block">
+          <UCard
+            class="h-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
+            <div class="flex flex-col items-center justify-center py-2 gap-2">
+              <UIcon name="i-lucide-brain" class="w-8 h-8 text-emerald-500" />
+              <span class="font-semibold text-sm">LLM Intelligence</span>
+            </div>
+          </UCard>
+        </NuxtLink>
+        <NuxtLink to="/admin/stats/webhooks" class="block">
+          <UCard
+            class="h-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
+            <div class="flex flex-col items-center justify-center py-2 gap-2">
+              <UIcon name="i-lucide-webhook" class="w-8 h-8 text-amber-500" />
+              <span class="font-semibold text-sm">Webhooks</span>
+            </div>
+          </UCard>
+        </NuxtLink>
+        <NuxtLink to="/admin/stats/workouts" class="block">
+          <UCard
+            class="h-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
+            <div class="flex flex-col items-center justify-center py-2 gap-2">
+              <UIcon name="i-lucide-activity" class="w-8 h-8 text-blue-500" />
+              <span class="font-semibold text-sm">Workouts</span>
+            </div>
+          </UCard>
+        </NuxtLink>
+        <NuxtLink to="/admin/stats/developers" class="block">
+          <UCard
+            class="h-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
+            <div class="flex flex-col items-center justify-center py-2 gap-2">
+              <UIcon name="i-lucide-code" class="w-8 h-8 text-gray-500" />
+              <span class="font-semibold text-sm">Developers</span>
+            </div>
+          </UCard>
+        </NuxtLink>
+      </div>
+
       <div v-if="pending" class="flex items-center justify-center p-12">
         <UIcon name="i-lucide-loader-2" class="animate-spin h-8 w-8 text-gray-400" />
       </div>
 
       <template v-else>
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <UCard class="bg-blue-50/50 dark:bg-blue-900/10">
+            <div class="text-center">
+              <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">
+                Avg Workouts/Day
+              </div>
+              <div class="text-2xl font-bold">{{ stats?.avgWorkoutsPerDay?.toFixed(1) || 0 }}</div>
+            </div>
+          </UCard>
+          <UCard class="bg-purple-50/50 dark:bg-purple-900/10">
+            <div class="text-center">
+              <div class="text-xs font-bold text-purple-500 uppercase tracking-widest mb-1">
+                Users Joined (30d)
+              </div>
+              <div class="text-2xl font-bold">{{ stats?.totalUsersLast30Days || 0 }}</div>
+            </div>
+          </UCard>
+          <UCard class="bg-emerald-50/50 dark:bg-emerald-900/10">
+            <div class="text-center">
+              <div class="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-1">
+                Avg AI Cost/Call
+              </div>
+              <div class="text-2xl font-bold">${{ stats?.avgAiCostPerCall?.toFixed(4) || 0 }}</div>
+            </div>
+          </UCard>
+          <UCard class="bg-amber-50/50 dark:bg-amber-900/10">
+            <div class="text-center">
+              <div class="text-xs font-bold text-amber-500 uppercase tracking-widest mb-1">
+                Success Rate
+              </div>
+              <div class="text-2xl font-bold">{{ stats?.aiSuccessRate?.toFixed(1) || 0 }}%</div>
+            </div>
+          </UCard>
+          <UCard class="bg-purple-50/50 dark:bg-purple-900/10">
+            <div class="text-center">
+              <div class="text-xs font-bold text-purple-500 uppercase tracking-widest mb-1">
+                Total AI Calls
+              </div>
+              <div class="text-2xl font-bold">{{ stats?.totalAiCalls || 0 }}</div>
+            </div>
+          </UCard>
+        </div>
+
+        <!-- Charts -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <UCard>
             <template #header>
@@ -202,49 +301,6 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </UCard>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <UCard class="bg-blue-50/50 dark:bg-blue-900/10">
-            <div class="text-center">
-              <div class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">
-                Avg Workouts/Day
-              </div>
-              <div class="text-2xl font-bold">{{ stats?.avgWorkoutsPerDay?.toFixed(1) || 0 }}</div>
-            </div>
-          </UCard>
-          <UCard class="bg-purple-50/50 dark:bg-purple-900/10">
-            <div class="text-center">
-              <div class="text-xs font-bold text-purple-500 uppercase tracking-widest mb-1">
-                Users Joined (30d)
-              </div>
-              <div class="text-2xl font-bold">{{ stats?.totalUsersLast30Days || 0 }}</div>
-            </div>
-          </UCard>
-          <UCard class="bg-emerald-50/50 dark:bg-emerald-900/10">
-            <div class="text-center">
-              <div class="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-1">
-                Avg AI Cost/Call
-              </div>
-              <div class="text-2xl font-bold">${{ stats?.avgAiCostPerCall?.toFixed(4) || 0 }}</div>
-            </div>
-          </UCard>
-          <UCard class="bg-amber-50/50 dark:bg-amber-900/10">
-            <div class="text-center">
-              <div class="text-xs font-bold text-amber-500 uppercase tracking-widest mb-1">
-                Success Rate
-              </div>
-              <div class="text-2xl font-bold">{{ stats?.aiSuccessRate?.toFixed(1) || 0 }}%</div>
-            </div>
-          </UCard>
-          <UCard class="bg-purple-50/50 dark:bg-purple-900/10">
-            <div class="text-center">
-              <div class="text-xs font-bold text-purple-500 uppercase tracking-widest mb-1">
-                Total AI Calls
-              </div>
-              <div class="text-2xl font-bold">{{ stats?.totalAiCalls || 0 }}</div>
             </div>
           </UCard>
         </div>
