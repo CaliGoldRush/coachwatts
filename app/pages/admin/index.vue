@@ -10,6 +10,30 @@
     title: 'Admin Dashboard',
     meta: [{ name: 'description', content: 'Coach Watts system administration and overview.' }]
   })
+
+  // Helper to normalize bar heights
+  function getBarHeight(val: number, max: number) {
+    if (!max || max === 0) return '2px'
+    const pct = (val / max) * 100
+    // Ensure at least a visible pixel
+    return Math.max(pct, 2) + '%'
+  }
+
+  // Computed max values for scaling
+  const maxUsers = computed(() => {
+    if (!stats.value?.usersByDay) return 0
+    return Math.max(...stats.value.usersByDay.map((d: any) => d.count))
+  })
+
+  const maxWorkouts = computed(() => {
+    if (!stats.value?.workoutsByDay) return 0
+    return Math.max(...stats.value.workoutsByDay.map((d: any) => d.count))
+  })
+
+  const maxAiCost = computed(() => {
+    if (!stats.value?.aiCostHistory) return 0
+    return Math.max(...stats.value.aiCostHistory.map((d: any) => d.cost))
+  })
 </script>
 
 <template>
@@ -24,44 +48,83 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <NuxtLink to="/admin/stats/users" class="block">
           <UCard
-            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer relative overflow-hidden group"
           >
             <template #header>
               <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Users</h3>
             </template>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white">
+            <p class="text-3xl font-bold text-gray-900 dark:text-white relative z-10">
               {{ stats?.totalUsers || 0 }}
             </p>
+            <!-- Chart -->
+            <div
+              v-if="stats?.usersByDay"
+              class="absolute bottom-0 left-0 right-0 h-12 flex items-end justify-between px-1 gap-0.5 opacity-20 group-hover:opacity-40 transition-opacity"
+            >
+              <div
+                v-for="(day, idx) in stats.usersByDay"
+                :key="idx"
+                class="flex-1 bg-blue-500 rounded-t-sm transition-all duration-300"
+                :style="{ height: getBarHeight(day.count, maxUsers) }"
+                :title="`${day.date}: ${day.count} users`"
+              />
+            </div>
           </UCard>
         </NuxtLink>
 
         <NuxtLink to="/admin/stats/workouts" class="block">
           <UCard
-            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer relative overflow-hidden group"
           >
             <template #header>
               <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">
                 Total Workouts
               </h3>
             </template>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white">
+            <p class="text-3xl font-bold text-gray-900 dark:text-white relative z-10">
               {{ stats?.totalWorkouts || 0 }}
             </p>
+            <!-- Chart -->
+            <div
+              v-if="stats?.workoutsByDay"
+              class="absolute bottom-0 left-0 right-0 h-12 flex items-end justify-between px-1 gap-0.5 opacity-20 group-hover:opacity-40 transition-opacity"
+            >
+              <div
+                v-for="(day, idx) in stats.workoutsByDay"
+                :key="idx"
+                class="flex-1 bg-green-500 rounded-t-sm transition-all duration-300"
+                :style="{ height: getBarHeight(day.count, maxWorkouts) }"
+                :title="`${day.date}: ${day.count} workouts`"
+              />
+            </div>
           </UCard>
         </NuxtLink>
 
         <NuxtLink to="/admin/stats/llm" class="block">
           <UCard
-            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+            class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer relative overflow-hidden group"
           >
             <template #header>
               <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">
                 AI Cost (MTD)
               </h3>
             </template>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white">
+            <p class="text-3xl font-bold text-gray-900 dark:text-white relative z-10">
               ${{ stats?.totalAiCost?.toFixed(2) || '0.00' }}
             </p>
+            <!-- Chart -->
+            <div
+              v-if="stats?.aiCostHistory"
+              class="absolute bottom-0 left-0 right-0 h-12 flex items-end justify-between px-1 gap-0.5 opacity-20 group-hover:opacity-40 transition-opacity"
+            >
+              <div
+                v-for="(day, idx) in stats.aiCostHistory"
+                :key="idx"
+                class="flex-1 bg-purple-500 rounded-t-sm transition-all duration-300"
+                :style="{ height: getBarHeight(day.cost, maxAiCost) }"
+                :title="`${day.date}: $${day.cost.toFixed(4)}`"
+              />
+            </div>
           </UCard>
         </NuxtLink>
       </div>
