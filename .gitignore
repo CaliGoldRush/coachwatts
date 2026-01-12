@@ -44,4 +44,5 @@ application_default_credentials.json
 # Public Content
 content/social/
 gcs-key.json
+nanobanana-output/
 
