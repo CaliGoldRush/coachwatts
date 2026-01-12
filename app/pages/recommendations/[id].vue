@@ -403,20 +403,28 @@
       const maxAttempts = 30 // 60s
       const poll = setInterval(async () => {
         attempts++
-        await refresh()
+        try {
+          // Silent background refresh
+          const updatedRec = await $fetch<any>(`/api/recommendations/${recId}`)
+          if (rec.value) {
+            rec.value = updatedRec
+          }
 
-        if (rec.value?.implementationGuide) {
-          clearInterval(poll)
-          generatingGuide.value = false
-          toast.add({ title: 'Action Plan Ready', color: 'success' })
-        } else if (attempts >= maxAttempts) {
-          clearInterval(poll)
-          generatingGuide.value = false
-          toast.add({
-            title: 'Timeout',
-            description: 'Taking longer than expected.',
-            color: 'warning'
-          })
+          if (updatedRec?.implementationGuide) {
+            clearInterval(poll)
+            generatingGuide.value = false
+            toast.add({ title: 'Action Plan Ready', color: 'success' })
+          } else if (attempts >= maxAttempts) {
+            clearInterval(poll)
+            generatingGuide.value = false
+            toast.add({
+              title: 'Timeout',
+              description: 'Taking longer than expected.',
+              color: 'warning'
+            })
+          }
+        } catch (e) {
+          console.error('Polling error', e)
         }
       }, 2000)
     } catch (e) {
@@ -436,27 +444,42 @@
   async function togglePin() {
     if (!rec.value) return
     const newState = !rec.value.isPinned
+    const oldState = rec.value.isPinned
+
     try {
+      // Optimistic update
+      rec.value.isPinned = newState
+
       await $fetch(`/api/recommendations/${recId}`, {
         method: 'PATCH',
         body: { isPinned: newState }
       })
-      refresh()
+
       toast.add({ title: newState ? 'Pinned' : 'Unpinned', color: 'success' })
     } catch (e) {
+      // Revert on error
+      rec.value.isPinned = oldState
       toast.add({ title: 'Error', color: 'error' })
     }
   }
 
   async function updateStatus(status: string) {
+    if (!rec.value) return
+    const oldStatus = rec.value.status
+
     try {
+      // Optimistic update
+      rec.value.status = status
+
       await $fetch(`/api/recommendations/${recId}`, {
         method: 'PATCH',
         body: { status }
       })
-      refresh()
+
       toast.add({ title: 'Status updated', color: 'success' })
     } catch (e) {
+      // Revert on error
+      rec.value.status = oldStatus
       toast.add({ title: 'Error', color: 'error' })
     }
   }

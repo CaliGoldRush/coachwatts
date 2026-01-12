@@ -133,26 +133,29 @@
     }
   })
 
-  const menuItems = computed(() => [
-    [
-      {
-        label: props.recommendation.status === 'DISMISSED' ? 'Restore' : 'Dismiss',
-        icon:
-          props.recommendation.status === 'DISMISSED'
-            ? 'i-heroicons-arrow-uturn-left'
-            : 'i-heroicons-eye-slash',
-        click: () =>
-          emit(
-            'update-status',
-            props.recommendation,
-            props.recommendation.status === 'DISMISSED' ? 'ACTIVE' : 'DISMISSED'
-          )
-      },
-      {
-        label: 'View Details & History',
-        icon: 'i-heroicons-clock',
-        to: `/recommendations/${props.recommendation.id}`
-      }
+  const menuItems = computed(() => {
+    const isDismissed = props.recommendation.status === 'DISMISSED'
+    const isCompleted = props.recommendation.status === 'COMPLETED'
+
+    return [
+      [
+        {
+          label: isDismissed || isCompleted ? 'Restore to Active' : 'Dismiss',
+          icon:
+            isDismissed || isCompleted ? 'i-heroicons-arrow-uturn-left' : 'i-heroicons-eye-slash',
+          onSelect: () =>
+            emit(
+              'update-status',
+              props.recommendation,
+              isDismissed || isCompleted ? 'ACTIVE' : 'DISMISSED'
+            )
+        },
+        {
+          label: 'View Details & History',
+          icon: 'i-heroicons-clock',
+          to: `/recommendations/${props.recommendation.id}`
+        }
+      ]
     ]
-  ])
+  })
 </script>

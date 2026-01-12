@@ -40,14 +40,14 @@
     <template #body>
       <div class="p-4 sm:p-6 space-y-8">
         <!-- Pinned / Focus Section -->
-        <section v-if="pinnedRecs && pinnedRecs.length > 0">
+        <section v-if="sortedPinnedRecs && sortedPinnedRecs.length > 0">
           <div class="flex items-center gap-2 mb-4">
             <UIcon name="i-heroicons-paper-clip" class="w-5 h-5 text-primary-500" />
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">Focus Area</h2>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
             <RecommendationCard
-              v-for="rec in pinnedRecs"
+              v-for="rec in sortedPinnedRecs"
               :key="rec.id"
               :recommendation="rec"
               @toggle-pin="togglePin"
@@ -55,6 +55,21 @@
             />
           </div>
         </section>
+
+        <!-- Filter Toolbar -->
+        <div
+          class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800"
+        >
+          <div class="flex items-center gap-2">
+            <USelectMenu
+              v-model="selectedCategory"
+              :items="categories"
+              placeholder="All Categories"
+              class="w-48"
+              clear
+            />
+          </div>
+        </div>
 
         <!-- Current Advices Section -->
         <section>
@@ -68,13 +83,13 @@
             </div>
             <template v-else>
               <div
-                v-if="activeRecs?.length === 0"
+                v-if="sortedActiveRecs?.length === 0"
                 class="col-span-full py-8 text-center text-gray-500"
               >
                 No active recommendations. You're doing great!
               </div>
               <RecommendationCard
-                v-for="rec in activeRecs"
+                v-for="rec in sortedActiveRecs"
                 :key="rec.id"
                 :recommendation="rec"
                 @toggle-pin="togglePin"
@@ -85,7 +100,7 @@
         </section>
 
         <!-- History Section -->
-        <section v-if="historyRecs?.length > 0 || historyPending">
+        <section v-if="sortedHistoryRecs?.length > 0 || historyPending">
           <div
             class="flex items-center justify-between gap-2 mb-4 pt-4 border-t border-gray-100 dark:border-gray-800 cursor-pointer select-none"
             @click="isHistoryOpen = !isHistoryOpen"
@@ -93,8 +108,13 @@
             <div class="flex items-center gap-2">
               <UIcon name="i-heroicons-clock" class="w-5 h-5 text-gray-400" />
               <h2 class="text-xl font-bold text-gray-900 dark:text-white">History</h2>
-              <UBadge v-if="historyRecs?.length > 0" color="neutral" variant="subtle" size="sm">
-                {{ historyRecs.length }}
+              <UBadge
+                v-if="sortedHistoryRecs?.length > 0"
+                color="neutral"
+                variant="subtle"
+                size="sm"
+              >
+                {{ sortedHistoryRecs.length }}
               </UBadge>
             </div>
             <UButton
@@ -111,7 +131,7 @@
             </div>
             <template v-else>
               <RecommendationCard
-                v-for="rec in historyRecs"
+                v-for="rec in sortedHistoryRecs"
                 :key="rec.id"
                 :recommendation="rec"
                 @toggle-pin="togglePin"
@@ -185,8 +205,14 @@
   const clearing = ref(false)
   const isPolling = ref(false)
   const showClearModal = ref(false)
+  const selectedCategory = ref<string | null>(null)
   let pollInterval: NodeJS.Timeout | null = null
   let currentJobId: string | null = null
+
+  // Fetch Categories
+  const { data: categories, refresh: refreshCategories } = await useFetch(
+    '/api/recommendations/categories'
+  )
 
   // Polling Logic
   async function checkStatus() {
@@ -321,8 +347,9 @@
     pending: activePending,
     refresh: refreshActive
   } = await useFetch('/api/recommendations', {
-    query: { status: 'ACTIVE', isPinned: false },
-    key: 'active-recs'
+    query: { status: 'ACTIVE', isPinned: false, category: selectedCategory },
+    key: 'active-recs',
+    watch: [selectedCategory]
   })
 
   // Fetch History (Completed/Dismissed)
@@ -331,17 +358,49 @@
     pending: historyPending,
     refresh: refreshHistory
   } = await useFetch('/api/recommendations', {
-    query: { status: 'ALL' },
+    query: { status: 'ALL', category: selectedCategory },
     lazy: true,
-    key: 'history-recs'
+    key: 'history-recs',
+    watch: [selectedCategory]
   })
 
-  const historyRecs = computed(() => {
-    return allHistory.value?.filter((r: any) => r.status !== 'ACTIVE') || []
+  // Sorting Logic
+  const priorityWeight = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high':
+        return 3
+      case 'medium':
+        return 2
+      case 'low':
+        return 1
+      default:
+        return 0
+    }
+  }
+
+  const sortRecommendations = (recs: any[] | null) => {
+    if (!recs) return []
+    return [...recs].sort((a, b) => {
+      // First by priority
+      const weightA = priorityWeight(a.priority)
+      const weightB = priorityWeight(b.priority)
+      if (weightA !== weightB) return weightB - weightA
+
+      // Then by date (newest first)
+      return new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()
+    })
+  }
+
+  const sortedPinnedRecs = computed(() => sortRecommendations(pinnedRecs.value))
+  const sortedActiveRecs = computed(() => sortRecommendations(activeRecs.value))
+
+  const sortedHistoryRecs = computed(() => {
+    const history = allHistory.value?.filter((r: any) => r.status !== 'ACTIVE') || []
+    return sortRecommendations(history)
   })
 
   async function refreshAll() {
-    await Promise.all([refreshPinned(), refreshActive(), refreshHistory()])
+    await Promise.all([refreshPinned(), refreshActive(), refreshHistory(), refreshCategories()])
   }
 
   async function togglePin(rec: any) {
@@ -367,9 +426,13 @@
         body: { status }
       })
 
-      const action = status === 'COMPLETED' ? 'Marked as Done' : 'Dismissed'
+      let action = 'Updated'
+      if (status === 'COMPLETED') action = 'Marked as Done'
+      else if (status === 'DISMISSED') action = 'Dismissed'
+      else if (status === 'ACTIVE') action = 'Restored'
+
       toast.add({ title: action, color: 'success' })
-      refreshAll()
+      await refreshAll()
     } catch (e) {
       toast.add({ title: 'Error updating status', color: 'error' })
     }
