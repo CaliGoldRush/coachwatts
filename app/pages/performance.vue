@@ -40,7 +40,12 @@
             <h2 class="text-xl font-bold text-gray-900 dark:text-white uppercase tracking-tight">
               Activity Highlights
             </h2>
-            <USelect v-model="highlightsPeriod" :items="periodOptions" size="xs" />
+            <USelect
+              v-model="highlightsPeriod"
+              :items="periodOptions"
+              size="xs"
+              class="w-32 sm:w-36"
+            />
           </div>
           <ActivityHighlights :period="highlightsPeriod" />
         </div>
@@ -158,7 +163,7 @@
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
               Training Load & Form
             </h2>
-            <USelect v-model="pmcPeriod" :items="pmcPeriodOptions" />
+            <USelect v-model="pmcPeriod" :items="pmcPeriodOptions" class="w-32 sm:w-36" size="sm" />
           </div>
 
           <PMCChart :days="pmcPeriod" />
@@ -170,7 +175,12 @@
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
               Power Duration Curve
             </h2>
-            <USelect v-model="powerCurvePeriod" :items="periodOptions" />
+            <USelect
+              v-model="powerCurvePeriod"
+              :items="periodOptions"
+              class="w-32 sm:w-36"
+              size="sm"
+            />
           </div>
           <!-- Pass days to the updated component for Performance Page mode -->
           <PowerCurveChart :days="powerCurvePeriod" />
@@ -182,7 +192,12 @@
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
               Aerobic Efficiency Trend
             </h2>
-            <USelect v-model="efficiencyPeriod" :items="periodOptions" />
+            <USelect
+              v-model="efficiencyPeriod"
+              :items="periodOptions"
+              class="w-32 sm:w-36"
+              size="sm"
+            />
           </div>
           <EfficiencyTrendChart :days="efficiencyPeriod" />
         </div>
@@ -193,7 +208,12 @@
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
               Readiness & Performance
             </h2>
-            <USelect v-model="readinessPeriod" :items="periodOptions" />
+            <USelect
+              v-model="readinessPeriod"
+              :items="periodOptions"
+              class="w-32 sm:w-36"
+              size="sm"
+            />
           </div>
           <ReadinessCorrelationChart :days="readinessPeriod" />
         </div>
@@ -202,7 +222,7 @@
         <div class="space-y-6">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">FTP Evolution</h2>
-            <USelect v-model="ftpPeriod" :items="ftpPeriodOptions" />
+            <USelect v-model="ftpPeriod" :items="ftpPeriodOptions" class="w-32 sm:w-36" size="sm" />
           </div>
 
           <FTPEvolutionChart :months="ftpPeriod" />
@@ -214,7 +234,12 @@
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
               Intensity Distribution
             </h2>
-            <USelect v-model="distributionPeriod" :items="distributionPeriodOptions" />
+            <USelect
+              v-model="distributionPeriod"
+              :items="distributionPeriodOptions"
+              class="w-32 sm:w-36"
+              size="sm"
+            />
           </div>
 
           <UCard>
@@ -226,7 +251,12 @@
         <div class="space-y-6">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Workout Performance</h2>
-            <USelect v-model="selectedPeriod" :items="periodOptions" />
+            <USelect
+              v-model="selectedPeriod"
+              :items="periodOptions"
+              class="w-32 sm:w-36"
+              size="sm"
+            />
           </div>
 
           <div v-if="workoutLoading" class="flex justify-center py-12">
@@ -515,41 +545,45 @@
     ]
   })
 
-  const selectedPeriod = ref(30)
-  const highlightsPeriod = ref(30)
-  const efficiencyPeriod = ref(90)
-  const readinessPeriod = ref(30)
-  const powerCurvePeriod = ref(90)
+  const selectedPeriod = ref<number | string>(30)
+  const highlightsPeriod = ref<number | string>(30)
+  const efficiencyPeriod = ref<number | string>(90)
+  const readinessPeriod = ref<number | string>(30)
+  const powerCurvePeriod = ref<number | string>(90)
 
   const periodOptions = [
     { label: '7 Days', value: 7 },
     { label: '14 Days', value: 14 },
     { label: '30 Days', value: 30 },
-    { label: '90 Days', value: 90 }
+    { label: '90 Days', value: 90 },
+    { label: 'Year to Date', value: 'YTD' }
   ]
 
-  const pmcPeriod = ref(90)
+  const pmcPeriod = ref<number | string>(90)
   const pmcPeriodOptions = [
     { label: '30 Days', value: 30 },
     { label: '60 Days', value: 60 },
     { label: '90 Days', value: 90 },
-    { label: '180 Days', value: 180 }
+    { label: '180 Days', value: 180 },
+    { label: 'Year to Date', value: 'YTD' }
   ]
 
-  const ftpPeriod = ref(12)
+  const ftpPeriod = ref<number | string>(12)
   const ftpPeriodOptions = [
     { label: '3 Months', value: 3 },
     { label: '6 Months', value: 6 },
     { label: '12 Months', value: 12 },
-    { label: '24 Months', value: 24 }
+    { label: '24 Months', value: 24 },
+    { label: 'Year to Date', value: 'YTD' }
   ]
 
-  const distributionPeriod = ref(12)
+  const distributionPeriod = ref<number | string>(12)
   const distributionPeriodOptions = [
     { label: '4 Weeks', value: 4 },
     { label: '8 Weeks', value: 8 },
     { label: '12 Weeks', value: 12 },
-    { label: '24 Weeks', value: 24 }
+    { label: '24 Weeks', value: 24 },
+    { label: 'Year to Date', value: 'YTD' }
   ]
 
   interface AthleteProfile {

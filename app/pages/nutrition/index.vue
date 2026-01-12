@@ -93,7 +93,12 @@
         <div class="space-y-6">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Nutrition Quality</h2>
-            <USelect v-model="selectedPeriod" :items="periodOptions" />
+            <USelect
+              v-model="selectedPeriod"
+              :items="periodOptions"
+              class="w-32 sm:w-36"
+              size="sm"
+            />
           </div>
 
           <div v-if="nutritionScoresLoading" class="space-y-6">
@@ -611,12 +616,13 @@
   const itemsPerPage = 20
 
   // Period selection for nutrition scores
-  const selectedPeriod = ref(30)
+  const selectedPeriod = ref<number | string>(30)
   const periodOptions = [
     { label: '7 Days', value: 7 },
     { label: '14 Days', value: 14 },
     { label: '30 Days', value: 30 },
-    { label: '90 Days', value: 90 }
+    { label: '90 Days', value: 90 },
+    { label: 'Year to Date', value: 'YTD' }
   ]
 
   // Fetch nutrition score trends (renamed to avoid conflict with chart data)
