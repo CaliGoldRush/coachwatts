@@ -2,12 +2,13 @@ export default defineAppConfig({
   ui: {
     colors: {
       primary: 'green',
+      gray: 'neutral',
       neutral: 'zinc'
     },
     // Custom design tokens overrides
     card: {
       slots: {
-        root: 'rounded-xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-800',
+        // root: 'bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-800',
         body: 'p-4 sm:p-6',
         header: 'p-4 sm:p-6',
         footer: 'p-4 sm:p-6'
