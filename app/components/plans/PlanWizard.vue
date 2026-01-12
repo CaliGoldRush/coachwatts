@@ -3,7 +3,7 @@
     <!-- Scrollable Content -->
     <div class="flex-1 overflow-y-auto px-1 py-2 space-y-6">
       <!-- Progress Indicator -->
-      <div v-if="step <= 2" class="flex items-center justify-center gap-2 mb-4">
+      <div v-if="step <= 3" class="flex items-center justify-center gap-2 mb-4">
         <div class="flex items-center">
           <div
             class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
@@ -40,6 +40,28 @@
             :class="step >= 2 ? 'text-primary' : 'text-gray-500'"
           >
             Strategy
+          </div>
+        </div>
+        <div class="w-12 h-1 bg-gray-200 dark:bg-gray-800 rounded-full mx-2 overflow-hidden">
+          <div
+            class="h-full bg-primary transition-all duration-300"
+            :style="{ width: step >= 3 ? '100%' : '0%' }"
+          />
+        </div>
+        <div class="flex items-center">
+          <div
+            class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            :class="
+              step >= 3 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
+            "
+          >
+            3
+          </div>
+          <div
+            class="text-xs font-medium ml-2"
+            :class="step >= 3 ? 'text-primary' : 'text-gray-500'"
+          >
+            Details
           </div>
         </div>
       </div>
@@ -292,10 +314,42 @@
         </div>
       </div>
 
-      <!-- Step 3: Plan Preview (Blocks) -->
+      <!-- Step 3: Custom Instructions -->
       <div v-else-if="step === 3" class="space-y-6">
         <div class="flex items-center gap-3 mb-2">
-          <h3 class="text-xl font-semibold">Step 3: Review Your Plan</h3>
+          <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" @click="step = 2" />
+          <h3 class="text-xl font-semibold">Step 3: Custom Details</h3>
+        </div>
+
+        <div class="space-y-4">
+          <p class="text-sm text-muted">
+            Add any specific requirements, availability constraints, or personal preferences you'd
+            like the AI to consider when building your plan.
+          </p>
+
+          <UFormField label="Custom Instructions (Optional)">
+            <UTextarea
+              v-model="customInstructions"
+              placeholder="e.g. 'Plan with interval sessions on Tuesday and Thursday, long rides on the weekend, gym sessions on Monday and Friday, and keep Wednesday as a rest day.'"
+              :rows="6"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div class="bg-primary/5 p-4 rounded-lg flex items-start gap-3">
+            <UIcon name="i-heroicons-light-bulb" class="w-5 h-5 text-primary mt-0.5" />
+            <div class="text-xs text-primary/80 leading-relaxed">
+              <strong>Tip:</strong> Mentioning things like "No training on Fridays" or "Focus more
+              on climbing power" helps the AI tailor the plan to your lifestyle and goals.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Plan Preview (Blocks) -->
+      <div v-else-if="step === 4" class="space-y-6">
+        <div class="flex items-center gap-3 mb-2">
+          <h3 class="text-xl font-semibold">Step 4: Review Your Plan</h3>
         </div>
 
         <div v-if="generatedPlan" class="space-y-6">
@@ -393,6 +447,12 @@
       </template>
 
       <template v-else-if="step === 2">
+        <UButton size="xl" color="primary" icon="i-heroicons-arrow-right" @click="step = 3">
+          Next: Final Details
+        </UButton>
+      </template>
+
+      <template v-else-if="step === 3">
         <UButton
           size="xl"
           color="primary"
@@ -405,8 +465,8 @@
         </UButton>
       </template>
 
-      <template v-else-if="step === 3">
-        <UButton variant="ghost" @click="step = 2">Back</UButton>
+      <template v-else-if="step === 4">
+        <UButton variant="ghost" @click="step = 3">Back</UButton>
         <UButton
           size="xl"
           color="success"
@@ -462,9 +522,11 @@
     { value: 'Gym', label: 'Strength', icon: 'i-heroicons-trophy' } // Trophy or similar for strength
   ]
 
+  // Step 3 State
+  const customInstructions = ref('')
   const initializing = ref(false)
 
-  // Step 3 State
+  // Step 4 State
   const generatedPlan = ref<any>(null)
   const activating = ref(false)
 
@@ -613,12 +675,13 @@
           volumePreference: volumeBucket, // Keeping for backward compat if needed
           volumeHours: volumeHours.value, // New precise value
           strategy: strategy.value,
-          preferredActivityTypes: selectedActivityTypes.value
+          preferredActivityTypes: selectedActivityTypes.value,
+          customInstructions: customInstructions.value
         }
       })
 
       generatedPlan.value = response.plan
-      step.value = 3
+      step.value = 4
     } catch (error: any) {
       toast.add({
         title: 'Failed to generate plan',
