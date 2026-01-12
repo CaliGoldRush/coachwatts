@@ -182,6 +182,7 @@ ${
   todayMetric
     ? `- Recovery Score: ${todayMetric.recoveryScore ?? 'Unknown'}${todayMetric.recoveryScore !== null ? '%' : ''}
 - HRV (rMSSD): ${todayMetric.hrv ?? 'Unknown'} ms
+- HRV (SDNN): ${todayMetric.hrvSdnn ?? 'Unknown'} ms
 - Resting HR: ${todayMetric.restingHr ?? 'Unknown'} bpm
 - Sleep: ${todayMetric.sleepHours?.toFixed(1) ?? 'Unknown'} hours (Score: ${todayMetric.sleepScore ?? 'Unknown'}%)
 ${todayMetric.spO2 ? `- SpO2: ${todayMetric.spO2}%` : ''}`

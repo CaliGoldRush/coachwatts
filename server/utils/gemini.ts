@@ -508,6 +508,7 @@ export function buildMetricsSummary(metrics: any[]): string {
       // Recovery metrics
       if (m.recoveryScore !== null) parts.push(`Recovery ${m.recoveryScore}%`)
       if (m.hrv !== null) parts.push(`HRV (rMSSD) ${m.hrv}ms`)
+      if (m.hrvSdnn !== null && m.hrvSdnn !== undefined) parts.push(`HRV (SDNN) ${m.hrvSdnn}ms`)
       if (m.restingHr !== null) parts.push(`Resting HR ${m.restingHr}bpm`)
 
       // Sleep metrics

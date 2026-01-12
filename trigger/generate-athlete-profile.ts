@@ -546,9 +546,15 @@ export const generateAthleteProfileTask = task({
           ? recentWellness.filter((w) => w.hrv).reduce((sum, w) => sum + (w.hrv || 0), 0) /
             recentWellness.filter((w) => w.hrv).length
           : null
+      const avgHRVSdnn =
+        recentWellness.length > 0
+          ? recentWellness.filter((w) => w.hrvSdnn).reduce((sum, w) => sum + (w.hrvSdnn || 0), 0) /
+            recentWellness.filter((w) => w.hrvSdnn).length
+          : null
 
       const wellnessSummary = `Average Recovery: ${avgRecovery ? avgRecovery.toFixed(0) + '%' : 'N/A'}
 Average HRV (rMSSD): ${avgHRV ? avgHRV.toFixed(0) + ' ms' : 'N/A'}
+Average HRV (SDNN): ${avgHRVSdnn ? avgHRVSdnn.toFixed(0) + ' ms' : 'N/A'}
 Recent sleep: ${recentWellness
         .slice(0, 7)
         .map((w) => `${w.sleepHours?.toFixed(1) || 'N/A'}h`)
