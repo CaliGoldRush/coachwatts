@@ -1,5 +1,5 @@
 import { toZonedTime, fromZonedTime, format } from 'date-fns-tz'
-import { startOfDay, endOfDay, subDays } from 'date-fns'
+import { startOfDay, endOfDay, subDays, startOfYear } from 'date-fns'
 import { prisma } from './db'
 
 export const DEFAULT_TIMEZONE = 'UTC'
@@ -68,6 +68,19 @@ export function getStartOfDaysAgoUTC(
     return fromZonedTime(zonedStart, timezone)
   } catch (e) {
     return startOfDay(subDays(date, days))
+  }
+}
+
+/**
+ * Get the start of the current year in UTC for a specific timezone.
+ */
+export function getStartOfYearUTC(timezone: string, date: Date = new Date()): Date {
+  try {
+    const zonedDate = toZonedTime(date, timezone)
+    const zonedStart = startOfYear(zonedDate)
+    return fromZonedTime(zonedStart, timezone)
+  } catch (e) {
+    return startOfYear(date)
   }
 }
 
