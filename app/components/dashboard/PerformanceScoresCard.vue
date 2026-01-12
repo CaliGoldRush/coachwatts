@@ -71,7 +71,9 @@
         v-if="profileScores.lastUpdated"
         class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700"
       >
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tight text-center italic">
+        <p
+          class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight text-center italic"
+        >
           Analysis current as of {{ formatScoreDate(profileScores.lastUpdated) }}
         </p>
       </div>

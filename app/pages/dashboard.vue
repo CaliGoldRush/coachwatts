@@ -192,7 +192,7 @@
               variant="ghost"
               color="neutral"
               size="xs"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              class="text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
             >
               v{{ config.public.version }}+{{ config.public.commitHash }}
             </UButton>

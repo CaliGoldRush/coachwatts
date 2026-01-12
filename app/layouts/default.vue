@@ -269,7 +269,7 @@
       v-model:open="open"
       collapsible
       resizable
-      class="bg-elevated/25"
+      class="bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800"
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">

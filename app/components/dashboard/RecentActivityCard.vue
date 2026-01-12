@@ -62,7 +62,7 @@
               {{ item.title }}
             </p>
             <span
-              class="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap bg-white dark:bg-gray-900 px-2 py-0.5 rounded-full ring-1 ring-gray-100 dark:ring-gray-800"
+              class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest whitespace-nowrap bg-white dark:bg-gray-900 px-2 py-0.5 rounded-full ring-1 ring-gray-100 dark:ring-gray-800"
             >
               {{ formatActivityDate(item.date) }}
             </span>

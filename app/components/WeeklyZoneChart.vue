@@ -24,7 +24,9 @@
             {{ type === 'power' ? 'Power' : 'Heart Rate' }}
           </UButton>
         </div>
-        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+        <div
+          class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest"
+        >
           Intensity Distribution (Hrs)
         </div>
       </div>

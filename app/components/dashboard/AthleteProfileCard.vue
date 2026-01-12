@@ -68,7 +68,7 @@
             </UButton>
             <UIcon
               name="i-heroicons-chevron-right"
-              class="w-4 h-4 text-gray-400 group-hover:text-primary-500 transition-colors"
+              class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary-500 transition-colors"
             />
           </div>
         </div>
@@ -178,7 +178,7 @@
           </p>
           <UIcon
             name="i-heroicons-chevron-right"
-            class="w-4 h-4 text-gray-400 group-hover:text-primary-500 transition-colors"
+            class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary-500 transition-colors"
           />
         </div>
 
@@ -268,7 +268,7 @@
           </p>
           <UIcon
             name="i-heroicons-chevron-right"
-            class="w-4 h-4 text-gray-400 group-hover:text-primary-500 transition-colors"
+            class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary-500 transition-colors"
           />
         </div>
         <div class="grid grid-cols-3 gap-3">
@@ -380,7 +380,7 @@
           </div>
           <UIcon
             name="i-heroicons-chevron-right"
-            class="w-4 h-4 text-gray-400 group-hover:text-primary-500 transition-colors"
+            class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary-500 transition-colors"
           />
         </div>
         <div class="grid grid-cols-3 gap-4">
