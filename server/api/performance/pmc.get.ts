@@ -1,4 +1,5 @@
 import { getServerSession } from '../../utils/session'
+import { getUserTimezone, getStartOfYearUTC } from '../../utils/date'
 import type { PMCMetrics } from '../../utils/training-stress'
 import {
   calculatePMCForDateRange,
@@ -16,7 +17,7 @@ defineRouteMeta({
       {
         name: 'days',
         in: 'query',
-        schema: { type: 'integer', default: 90 }
+        schema: { oneOf: [{ type: 'integer' }, { type: 'string' }], default: 90 }
       }
     ],
     responses: {
@@ -96,8 +97,16 @@ export default defineEventHandler(async (event) => {
   // Ensure we include the full end date by setting to end of day
   endDate.setHours(23, 59, 59, 999)
 
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - days)
+  let startDate = new Date()
+
+  if (query.days === 'YTD') {
+    const timezone = await getUserTimezone(userId)
+    startDate = getStartOfYearUTC(timezone)
+  } else {
+    const days = parseInt(query.days as string) || 90
+    startDate.setDate(startDate.getDate() - days)
+  }
+
   startDate.setUTCHours(0, 0, 0, 0) // Start from beginning of the start day (UTC)
 
   // Get initial CTL/ATL values from before the date range

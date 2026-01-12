@@ -1,5 +1,7 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
+import { nutritionRepository } from '../../utils/repositories/nutritionRepository'
+import { getUserTimezone, getStartOfYearUTC } from '../../utils/date'
 
 defineRouteMeta({
   openAPI: {
@@ -54,7 +56,6 @@ export default defineEventHandler(async (event) => {
   }
 
   const query = getQuery(event)
-  const days = parseInt(query.days as string) || 14
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email }
@@ -67,8 +68,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - days)
+  let startDate = new Date()
+
+  if (query.days === 'YTD') {
+    const timezone = await getUserTimezone(user.id)
+    startDate = getStartOfYearUTC(timezone)
+  } else {
+    const days = parseInt(query.days as string) || 14
+    startDate.setDate(startDate.getDate() - days)
+  }
 
   const nutrition = (await nutritionRepository.getForUser(user.id, {
     startDate,

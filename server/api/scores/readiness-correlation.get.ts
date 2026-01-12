@@ -3,6 +3,7 @@ import { workoutRepository } from '../../utils/repositories/workoutRepository'
 import { getServerSession } from '../../utils/session'
 import { subDays, format, isSameDay } from 'date-fns'
 import { prisma } from '../../utils/db'
+import { getUserTimezone, getStartOfYearUTC } from '../../utils/date'
 
 defineRouteMeta({
   openAPI: {
@@ -13,7 +14,7 @@ defineRouteMeta({
       {
         name: 'days',
         in: 'query',
-        schema: { type: 'integer', default: 30 }
+        schema: { oneOf: [{ type: 'integer' }, { type: 'string' }], default: 30 }
       }
     ],
     responses: {
@@ -60,10 +61,17 @@ export default defineEventHandler(async (event) => {
 
   const userId = user.id
   const query = getQuery(event)
-  const days = Number(query.days) || 30
 
   const now = new Date()
-  const startDate = subDays(now, days)
+  let startDate = new Date()
+
+  if (query.days === 'YTD') {
+    const timezone = await getUserTimezone(userId)
+    startDate = getStartOfYearUTC(timezone)
+  } else {
+    const days = Number(query.days) || 30
+    startDate = subDays(now, days)
+  }
 
   // 1. Fetch workouts (Performance)
   const workouts = await workoutRepository.getForUser(userId, {

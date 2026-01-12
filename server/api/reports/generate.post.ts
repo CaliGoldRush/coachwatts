@@ -1,6 +1,7 @@
 import { getServerSession } from '../../utils/session'
 import { tasks } from '@trigger.dev/sdk/v3'
-import { getUserTimezone, getStartOfDaysAgoUTC } from '../../utils/date'
+import { prisma } from '../../utils/db'
+import { getUserTimezone, getStartOfDaysAgoUTC, getStartOfYearUTC } from '../../utils/date'
 
 defineRouteMeta({
   openAPI: {
@@ -100,6 +101,8 @@ export default defineEventHandler(async (event) => {
     if (customConfig.timeframeType === 'days') {
       const days = customConfig.days || 7
       dateRangeStart = getStartOfDaysAgoUTC(timezone, days)
+    } else if (customConfig.timeframeType === 'ytd') {
+      dateRangeStart = getStartOfYearUTC(timezone)
     } else if (customConfig.timeframeType === 'count') {
       // For count-based, we'll use a 90-day lookback to find the items
       dateRangeStart = getStartOfDaysAgoUTC(timezone, 90)

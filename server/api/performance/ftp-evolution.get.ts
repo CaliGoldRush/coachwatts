@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery, createError } from 'h3'
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
 import { userRepository } from '../../utils/repositories/userRepository'
+import { getUserTimezone, getStartOfYearUTC } from '../../utils/date'
 
 defineRouteMeta({
   openAPI: {
@@ -12,7 +13,7 @@ defineRouteMeta({
       {
         name: 'months',
         in: 'query',
-        schema: { type: 'integer', default: 12 }
+        schema: { oneOf: [{ type: 'integer' }, { type: 'string' }], default: 12 }
       }
     ],
     responses: {
@@ -65,7 +66,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const query = getQuery(event)
-  const months = parseInt(query.months as string) || 12
+  const userId = (session.user as any).id
 
   // Get user
   const user = await prisma.user.findUnique({
@@ -81,8 +82,15 @@ export default defineEventHandler(async (event) => {
 
   // Calculate date range
   const endDate = new Date()
-  const startDate = new Date()
-  startDate.setMonth(startDate.getMonth() - months)
+  let startDate = new Date()
+
+  if (query.months === 'YTD') {
+    const timezone = await getUserTimezone(userId)
+    startDate = getStartOfYearUTC(timezone)
+  } else {
+    const months = parseInt(query.months as string) || 12
+    startDate.setMonth(startDate.getMonth() - months)
+  }
 
   // Get workouts with FTP data, ordered by date
   // This gives us "snapshots" of FTP changes over time

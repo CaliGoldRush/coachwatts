@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery, createError } from 'h3'
 import { workoutRepository } from '../../utils/repositories/workoutRepository'
 import { getServerSession } from '../../utils/session'
 import { subDays, format } from 'date-fns'
+import { getUserTimezone, getStartOfYearUTC } from '../../utils/date'
 
 defineRouteMeta({
   openAPI: {
@@ -12,7 +13,7 @@ defineRouteMeta({
       {
         name: 'days',
         in: 'query',
-        schema: { type: 'integer', default: 90 }
+        schema: { oneOf: [{ type: 'integer' }, { type: 'string' }], default: 90 }
       }
     ],
     responses: {
@@ -59,10 +60,17 @@ export default defineEventHandler(async (event) => {
 
   const userId = user.id
   const query = getQuery(event)
-  const days = Number(query.days) || 90
 
   const now = new Date()
-  const startDate = subDays(now, days)
+  let startDate = new Date()
+
+  if (query.days === 'YTD') {
+    const timezone = await getUserTimezone(userId)
+    startDate = getStartOfYearUTC(timezone)
+  } else {
+    const days = Number(query.days) || 90
+    startDate = subDays(now, days)
+  }
 
   // Fetch workouts with power and HR data
   const workouts = await workoutRepository.getForUser(userId, {

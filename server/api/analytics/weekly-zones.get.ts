@@ -3,6 +3,7 @@ import { prisma } from '../../utils/db'
 import { userRepository } from '../../utils/repositories/userRepository'
 import { calculatePowerZones, calculateHrZones } from '../../utils/zones'
 import { getServerSession } from '../../utils/session'
+import { getUserTimezone, getStartOfYearUTC } from '../../utils/date'
 
 defineRouteMeta({
   openAPI: {
@@ -13,79 +14,64 @@ defineRouteMeta({
       {
         name: 'weeks',
         in: 'query',
-        schema: { type: 'integer', default: 12 }
+        schema: { oneOf: [{ type: 'integer' }, { type: 'string' }], default: 12 }
       }
-    ],
-    responses: {
-      200: {
-        description: 'Success',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                weeks: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      weekStart: { type: 'string' },
-                      powerZones: { type: 'array', items: { type: 'number' } },
-                      hrZones: { type: 'array', items: { type: 'number' } },
-                      totalDuration: { type: 'number' }
-                    }
-                  }
-                },
-                zoneLabels: {
-                  type: 'object',
-                  properties: {
-                    power: { type: 'array', items: { type: 'string' } },
-                    hr: { type: 'array', items: { type: 'string' } }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      401: { description: 'Unauthorized' }
-    }
+    ]
   }
 })
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
-  if (!session?.user?.id) {
+  if (!session) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
   const userId = (session.user as any).id
 
   const query = getQuery(event)
-  const weeks = parseInt(query.weeks as string) || 12
-
   const endDate = new Date()
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - weeks * 7)
+  let startDate = new Date()
+  let numWeeks = 0
+
+  if (query.weeks === 'YTD') {
+    const timezone = await getUserTimezone(userId)
+    startDate = getStartOfYearUTC(timezone)
+    // Calculate weeks since start of year
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
+    numWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7))
+  } else {
+    numWeeks = parseInt(query.weeks as string) || 12
+    startDate.setDate(startDate.getDate() - numWeeks * 7)
+  }
 
   // 1. Get user for zone definitions
   const user = await userRepository.getById(userId)
-  if (!user) throw createError({ statusCode: 404, message: 'User not found' })
+  if (!user) {
+    throw createError({ statusCode: 404, message: 'User not found' })
+  }
 
-  // 2. Fetch workouts with streams
+  // 2. Get workouts with streams
   const workouts = await prisma.workout.findMany({
     where: {
       userId,
-      isDuplicate: false,
-      date: { gte: startDate, lte: endDate },
-      streams: { isNot: null }
+      date: {
+        gte: startDate,
+        lte: endDate
+      }
     },
-    include: {
-      streams: true
-    },
-    orderBy: { date: 'asc' }
+    select: {
+      date: true,
+      ftp: true,
+      streams: {
+        select: {
+          time: true,
+          watts: true,
+          heartrate: true
+        }
+      }
+    }
   })
 
-  // 3. Prepare buckets
+  // 3. Initialize buckets
   const weeklyData = new Map<
     string,
     {
@@ -96,19 +82,11 @@ export default defineEventHandler(async (event) => {
     }
   >()
 
-  const getWeekStart = (date: Date) => {
-    const d = new Date(date)
-    const day = d.getDay()
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust to Monday
-    d.setDate(diff)
-    d.setHours(0, 0, 0, 0)
-    return d
-  }
-
   // Pre-fill weeks to ensure gaps are shown
-  for (let i = 0; i <= weeks; i++) {
+  for (let i = 0; i <= numWeeks; i++) {
     const d = new Date(startDate)
     d.setDate(d.getDate() + i * 7)
+
     const start = getWeekStart(d)
     const key = start.toISOString().split('T')[0]
     if (key) {
@@ -195,3 +173,12 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
+
+function getWeekStart(d: Date) {
+  const date = new Date(d)
+  const day = date.getDay()
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
+  date.setDate(diff)
+  date.setHours(0, 0, 0, 0)
+  return date
+}
