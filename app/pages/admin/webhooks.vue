@@ -87,6 +87,14 @@
         </template>
         <template #right>
           <UButton
+            to="/admin/stats/webhooks"
+            icon="i-heroicons-chart-bar"
+            color="neutral"
+            variant="ghost"
+            label="View Stats"
+            class="mr-2"
+          />
+          <UButton
             icon="i-heroicons-arrow-path"
             color="neutral"
             variant="ghost"

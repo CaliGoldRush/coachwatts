@@ -58,6 +58,37 @@ export default defineEventHandler(async (event) => {
     }
   })
 
+  // 5. Hourly Comparison (Today vs 3-Day Avg)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const threeDaysAgo = new Date(today)
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+
+  const hourlyRaw = await prisma.$queryRaw<{ hour: Date; count: bigint }[]>`
+    SELECT date_trunc('hour', "createdAt") as hour, COUNT(*) as count
+    FROM "WebhookLog"
+    WHERE "createdAt" >= ${threeDaysAgo}
+    GROUP BY date_trunc('hour', "createdAt")
+  `
+
+  const todayHourly = new Array(24).fill(0)
+  const pastThreeDaysHourly = new Array(24).fill(0)
+
+  hourlyRaw.forEach((row) => {
+    const d = new Date(row.hour)
+    const hour = d.getHours()
+    const count = Number(row.count)
+
+    if (d >= today) {
+      todayHourly[hour] += count
+    } else {
+      pastThreeDaysHourly[hour] += count
+    }
+  })
+
+  const averageHourly = pastThreeDaysHourly.map((total) => Math.round(total / 3))
+
   return {
     eventsByDay,
     statusCounts: statusCounts
@@ -66,6 +97,10 @@ export default defineEventHandler(async (event) => {
     providerCounts: providerCounts
       .map((p) => ({ provider: p.provider, count: p._count.id }))
       .sort((a, b) => b.count - a.count),
-    recentFailures
+    recentFailures,
+    hourlyComparison: {
+      today: todayHourly,
+      average: averageHourly
+    }
   }
 })

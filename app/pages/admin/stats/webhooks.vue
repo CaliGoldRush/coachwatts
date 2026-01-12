@@ -1,4 +1,6 @@
 <script setup lang="ts">
+  import WebhookVolumeComparisonChart from '~/components/admin/WebhookVolumeComparisonChart.vue'
+
   definePageMeta({
     layout: 'admin',
     middleware: ['auth', 'admin']
@@ -29,6 +31,20 @@
       </div>
 
       <template v-else>
+        <!-- Hourly Volume Comparison -->
+        <UCard>
+          <template #header>
+            <div class="flex justify-between items-center">
+              <h2 class="text-lg font-bold uppercase tracking-tight">Hourly Volume Comparison</h2>
+              <span class="text-xs text-gray-500">Today vs 3-Day Average</span>
+            </div>
+          </template>
+          <WebhookVolumeComparisonChart
+            v-if="stats?.hourlyComparison"
+            :data="stats.hourlyComparison"
+          />
+        </UCard>
+
         <!-- Daily Volume Chart -->
         <UCard>
           <template #header>
