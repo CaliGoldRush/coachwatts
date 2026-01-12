@@ -145,9 +145,14 @@
                 class="hover:opacity-100 transition-opacity"
               >
                 <img
+                  src="/images/logos/strava_powered_by_black.png"
+                  alt="Powered by Strava"
+                  class="h-6 w-auto opacity-75 hover:opacity-100 dark:hidden"
+                />
+                <img
                   src="/images/logos/strava_powered_by.png"
                   alt="Powered by Strava"
-                  class="h-6 w-auto opacity-75 hover:opacity-100"
+                  class="h-6 w-auto opacity-75 hover:opacity-100 hidden dark:block"
                 />
               </NuxtLink>
               <NuxtLink
@@ -213,6 +218,7 @@
                 Sign out
               </UButton>
             </div>
+            <ColorModeButton />
           </div>
         </div>
       </template>
