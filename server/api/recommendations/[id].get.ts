@@ -1,5 +1,6 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
+import { recommendationRepository } from '../../utils/repositories/recommendationRepository'
 
 defineRouteMeta({
   openAPI: {
@@ -29,9 +30,7 @@ export default defineEventHandler(async (event) => {
 
   if (!user) throw createError({ statusCode: 404, message: 'User not found' })
 
-  const rec = await prisma.recommendation.findUnique({
-    where: { id, userId: user.id }
-  })
+  const rec = await recommendationRepository.findById(id!, user.id)
 
   if (!rec) {
     throw createError({ statusCode: 404, message: 'Recommendation not found' })

@@ -1,6 +1,7 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
 import { generateStructuredAnalysis } from '../../utils/gemini'
+import { getUserAiSettings } from '../../utils/ai-settings'
 
 defineRouteMeta({
   openAPI: {
@@ -94,6 +95,8 @@ export default defineEventHandler(async (event) => {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
+  const aiSettings = await getUserAiSettings(user.id)
+
   // Get recent workouts
   const workouts = await prisma.workout.findMany({
     where: {
@@ -116,7 +119,8 @@ export default defineEventHandler(async (event) => {
     take: 10 // Last 10 workouts for context
   })
 
-  const prompt = `Analyze these workout performance trends:
+  const prompt = `You are a **${aiSettings.aiPersona}** expert coach analyzing workout performance trends.
+Adapt your analysis tone and insights to match your **${aiSettings.aiPersona}** persona.
 
 SUMMARY (Last ${days} days):
 - Total: ${summary.total} workouts
@@ -135,7 +139,8 @@ ${workouts
   })
   .join('\n')}
 
-Provide a structured analysis focusing on patterns and actionable insights.`
+Provide a structured analysis focusing on patterns and actionable insights.
+Maintain your **${aiSettings.aiPersona}** persona throughout.`
 
   const schema = {
     type: 'object',
@@ -196,12 +201,17 @@ Provide a structured analysis focusing on patterns and actionable insights.`
   }
 
   try {
-    const analysis = await generateStructuredAnalysis<TrendAnalysis>(prompt, schema, 'flash', {
-      userId: user.id,
-      operation: 'workout_trends_explanation',
-      entityType: 'Workout',
-      entityId: undefined // This is a trend analysis, not a specific entity
-    })
+    const analysis = await generateStructuredAnalysis<TrendAnalysis>(
+      prompt,
+      schema,
+      aiSettings.aiModelPreference,
+      {
+        userId: user.id,
+        operation: 'workout_trends_explanation',
+        entityType: 'Workout',
+        entityId: undefined // This is a trend analysis, not a specific entity
+      }
+    )
 
     return {
       analysis,

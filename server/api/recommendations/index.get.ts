@@ -1,5 +1,6 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
+import { recommendationRepository } from '../../utils/repositories/recommendationRepository'
 
 defineRouteMeta({
   openAPI: {
@@ -37,30 +38,13 @@ export default defineEventHandler(async (event) => {
   const user = await prisma.user.findUnique({ where: { email: session.user.email } })
   if (!user) throw createError({ statusCode: 404, message: 'User not found' })
 
-  const where: any = { userId: user.id }
-
-  if (status && status !== 'ALL') {
-    where.status = status
-  } else if (!status) {
-    // Default to active if not specified? Or all?
-    // Usually lists show active unless filter applied.
-    // Let's default to ALL if not specified to be safe for "History" view,
-    // but usually "Dashboard" wants ACTIVE.
-    // Let's leave it open if not specified.
-  }
-
-  if (query.isPinned !== undefined) {
-    where.isPinned = isPinned
-  }
-
-  if (metric) where.metric = metric
-  if (category) where.category = category
-  if (sourceType) where.sourceType = sourceType
-
-  const recommendations = await prisma.recommendation.findMany({
-    where,
-    orderBy: { generatedAt: 'desc' },
-    take: limit
+  const recommendations = await recommendationRepository.list(user.id, {
+    status,
+    isPinned: query.isPinned !== undefined ? isPinned : undefined,
+    metric,
+    category,
+    sourceType,
+    limit
   })
 
   return recommendations

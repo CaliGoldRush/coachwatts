@@ -1,6 +1,7 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
 import { generateStructuredAnalysis } from '../../utils/gemini'
+import { getUserAiSettings } from '../../utils/ai-settings'
 
 defineRouteMeta({
   openAPI: {
@@ -94,6 +95,8 @@ export default defineEventHandler(async (event) => {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
+  const aiSettings = await getUserAiSettings(user.id)
+
   // Get recent nutrition entries
   const nutrition = await prisma.nutrition.findMany({
     where: {
@@ -115,7 +118,8 @@ export default defineEventHandler(async (event) => {
     take: 10 // Last 10 days for context
   })
 
-  const prompt = `Analyze these nutrition trends for an endurance athlete:
+  const prompt = `You are a **${aiSettings.aiPersona}** expert nutrition coach analyzing trends for an endurance athlete.
+Adapt your analysis tone and insights to match your **${aiSettings.aiPersona}** persona.
 
 SUMMARY (Last ${days} days):
 - Total Days: ${summary.total}
@@ -136,7 +140,8 @@ ${nutrition
   })
   .join('\n')}
 
-Provide structured analysis focusing on patterns and actionable nutrition improvements.`
+Provide structured analysis focusing on patterns and actionable nutrition improvements.
+Maintain your **${aiSettings.aiPersona}** persona throughout.`
 
   const schema = {
     type: 'object',
@@ -197,12 +202,17 @@ Provide structured analysis focusing on patterns and actionable nutrition improv
   }
 
   try {
-    const analysis = await generateStructuredAnalysis<TrendAnalysis>(prompt, schema, 'flash', {
-      userId: user.id,
-      operation: 'nutrition_trends_explanation',
-      entityType: 'Nutrition',
-      entityId: undefined // This is a trend analysis, not a specific entity
-    })
+    const analysis = await generateStructuredAnalysis<TrendAnalysis>(
+      prompt,
+      schema,
+      aiSettings.aiModelPreference,
+      {
+        userId: user.id,
+        operation: 'nutrition_trends_explanation',
+        entityType: 'Nutrition',
+        entityId: undefined // This is a trend analysis, not a specific entity
+      }
+    )
 
     return {
       analysis,

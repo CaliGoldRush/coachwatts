@@ -2,6 +2,7 @@ import { getServerSession } from '../../utils/session'
 import { getUserTimezone, getUserLocalDate } from '../../utils/date'
 import { tasks } from '@trigger.dev/sdk/v3'
 import { prisma } from '../../utils/db'
+import { activityRecommendationRepository } from '../../utils/repositories/activityRecommendationRepository'
 
 defineRouteMeta({
   openAPI: {
@@ -49,17 +50,15 @@ export default defineEventHandler(async (event) => {
   const userFeedback = body?.userFeedback
 
   // Create a PENDING recommendation record immediately
-  const recommendation = await prisma.activityRecommendation.create({
-    data: {
-      userId,
-      date: today,
-      recommendation: 'proceed', // Placeholder
-      confidence: 0,
-      reasoning: 'Analysis in progress...',
-      status: 'PROCESSING'
-      // We could store the feedback in a new field if we want to persist it,
-      // but passing it to the job is sufficient for now.
-    }
+  const recommendation = await activityRecommendationRepository.create({
+    user: { connect: { id: userId } },
+    date: today,
+    recommendation: 'proceed', // Placeholder
+    confidence: 0,
+    reasoning: 'Analysis in progress...',
+    status: 'PROCESSING'
+    // We could store the feedback in a new field if we want to persist it,
+    // but passing it to the job is sufficient for now.
   })
 
   // Trigger background job with the recommendation ID

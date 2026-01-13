@@ -1,5 +1,6 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
+import { recommendationRepository } from '../../utils/repositories/recommendationRepository'
 
 defineRouteMeta({
   openAPI: {
@@ -17,15 +18,7 @@ export default defineEventHandler(async (event) => {
   const user = await prisma.user.findUnique({ where: { email: session.user.email } })
   if (!user) throw createError({ statusCode: 404, message: 'User not found' })
 
-  const categories = await prisma.recommendation.findMany({
-    where: { userId: user.id },
-    select: { category: true },
-    distinct: ['category']
-  })
+  const categories = await recommendationRepository.getCategories(user.id)
 
-  // Filter out nulls and sort
-  return categories
-    .map((c) => c.category)
-    .filter(Boolean)
-    .sort()
+  return categories.sort()
 })

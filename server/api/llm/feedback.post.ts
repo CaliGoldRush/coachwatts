@@ -35,5 +35,42 @@ export default defineEventHandler(async (event) => {
     }
   })
 
+  // Sync back to entity if exists and has the fields
+  if (llmUsage.entityType && llmUsage.entityId) {
+    try {
+      if (llmUsage.entityType === 'DailyCheckin') {
+        await prisma.dailyCheckin.update({
+          where: { id: llmUsage.entityId },
+          data: { feedback, feedbackText }
+        })
+      } else if (llmUsage.entityType === 'Wellness') {
+        await prisma.wellness.update({
+          where: { id: llmUsage.entityId },
+          data: { feedback, feedbackText }
+        })
+      } else if (llmUsage.entityType === 'Workout') {
+        await prisma.workout.update({
+          where: { id: llmUsage.entityId },
+          data: { feedback, feedbackText }
+        })
+      } else if (llmUsage.entityType === 'Nutrition') {
+        await prisma.nutrition.update({
+          where: { id: llmUsage.entityId },
+          data: { feedback, feedbackText }
+        })
+      } else if (llmUsage.entityType === 'Report') {
+        await prisma.report.update({
+          where: { id: llmUsage.entityId },
+          data: { feedback, feedbackText }
+        })
+      }
+    } catch (e) {
+      console.warn(
+        `[LlmFeedback] Failed to sync feedback back to ${llmUsage.entityType}:${llmUsage.entityId}`,
+        e
+      )
+    }
+  }
+
   return updated
 })

@@ -1,5 +1,6 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
+import { recommendationRepository } from '../../utils/repositories/recommendationRepository'
 import { z } from 'zod'
 
 const updateSchema = z.object({
@@ -25,11 +26,9 @@ export default defineEventHandler(async (event) => {
   if (!user) throw createError({ statusCode: 404, message: 'User not found' })
 
   // Verify ownership
-  const recommendation = await prisma.recommendation.findUnique({
-    where: { id }
-  })
+  const recommendation = await recommendationRepository.findById(id!, user.id)
 
-  if (!recommendation || recommendation.userId !== user.id) {
+  if (!recommendation) {
     throw createError({ statusCode: 404, message: 'Recommendation not found' })
   }
 
@@ -44,10 +43,7 @@ export default defineEventHandler(async (event) => {
     data.isPinned = result.data.isPinned
   }
 
-  const updated = await prisma.recommendation.update({
-    where: { id },
-    data
-  })
+  const updated = await recommendationRepository.update(id!, user.id, data)
 
   return updated
 })
