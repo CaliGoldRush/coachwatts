@@ -38,6 +38,7 @@ steps:
       - 'deploy'
     env:
       - DATABASE_URL=$_DATABASE_URL
+      - NPM_CONFIG_CACHE=/tmp/npm-cache
     id: Run Migrations
     waitFor: ['Buildpack']
 
