@@ -309,6 +309,22 @@
       </div>
     </template>
   </UModal>
+
+  <!-- Unlink Confirmation Modal -->
+  <UModal
+    v-model:open="showUnlinkConfirm"
+    title="Unlink Workout"
+    description="Are you sure you want to unlink this workout from the plan? The planned workout will be marked as pending."
+  >
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton color="neutral" variant="ghost" @click="showUnlinkConfirm = false">
+          Cancel
+        </UButton>
+        <UButton color="warning" :loading="isUnlinking" @click="executeUnlink"> Unlink </UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -333,22 +349,20 @@
   const isDeleting = ref(false)
   const isUnlinking = ref(false)
   const showDeleteConfirm = ref(false)
+  const showUnlinkConfirm = ref(false)
   const toast = useToast()
 
   function closeModal() {
     isOpen.value = false
   }
 
-  async function unlinkWorkout() {
+  function unlinkWorkout() {
     if (!props.workout?.id) return
+    showUnlinkConfirm.value = true
+  }
 
-    if (
-      !confirm(
-        'Are you sure you want to unlink this workout from the plan? The planned workout will be marked as pending.'
-      )
-    ) {
-      return
-    }
+  async function executeUnlink() {
+    if (!props.workout?.id) return
 
     isUnlinking.value = true
     try {
@@ -373,6 +387,7 @@
       })
     } finally {
       isUnlinking.value = false
+      showUnlinkConfirm.value = false
     }
   }
 

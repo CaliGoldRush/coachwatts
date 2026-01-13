@@ -368,6 +368,40 @@
       </div>
     </template>
   </UModal>
+
+  <!-- Confirm Mark Complete Modal -->
+  <UModal
+    v-model:open="showMarkCompleteConfirm"
+    title="Mark as Done"
+    description="Are you sure you want to mark this as done without linking an activity?"
+  >
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton color="neutral" variant="ghost" @click="showMarkCompleteConfirm = false">
+          Cancel
+        </UButton>
+        <UButton color="success" :loading="loading" @click="executeMarkCompleteWithoutActivity">
+          Confirm
+        </UButton>
+      </div>
+    </template>
+  </UModal>
+
+  <!-- Delete Confirmation Modal -->
+  <UModal
+    v-model:open="showDeleteConfirm"
+    title="Delete Planned Workout"
+    description="Are you sure you want to delete this planned workout?"
+  >
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton color="neutral" variant="ghost" @click="showDeleteConfirm = false">
+          Cancel
+        </UButton>
+        <UButton color="error" :loading="loading" @click="executeDelete"> Delete </UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -375,6 +409,7 @@
   import WorkoutMessagesTimeline from '~/components/workouts/WorkoutMessagesTimeline.vue'
 
   const { formatDate } = useFormat()
+  const toast = useToast()
 
   const props = defineProps<{
     plannedWorkout: any | null
@@ -399,6 +434,8 @@
   const loadingWorkouts = ref(false)
   const generating = ref(false)
   const showManualEntry = ref(false)
+  const showDeleteConfirm = ref(false)
+  const showMarkCompleteConfirm = ref(false)
 
   async function generateStructure() {
     if (!props.plannedWorkout) return
@@ -454,6 +491,8 @@
       selectedWorkoutId.value = null
       availableWorkouts.value = []
       showManualEntry.value = false
+      showDeleteConfirm.value = false
+      showMarkCompleteConfirm.value = false
       resetManualWorkout()
     }
   })
@@ -510,18 +549,23 @@
       closeModal()
     } catch (error: any) {
       console.error('Error marking complete:', error)
-      alert(error?.data?.message || 'Failed to mark workout complete')
+      toast.add({
+        title: 'Error',
+        description: error?.data?.message || 'Failed to mark workout complete',
+        color: 'error'
+      })
     } finally {
       loading.value = false
     }
   }
 
-  async function markCompleteWithoutActivity() {
+  function confirmMarkCompleteWithoutActivity() {
     if (!props.plannedWorkout) return
+    showMarkCompleteConfirm.value = true
+  }
 
-    if (!confirm('Are you sure you want to mark this as done without linking an activity?')) {
-      return
-    }
+  async function executeMarkCompleteWithoutActivity() {
+    if (!props.plannedWorkout) return
 
     loading.value = true
     try {
@@ -534,9 +578,14 @@
       closeModal()
     } catch (error: any) {
       console.error('Error marking complete:', error)
-      alert(error?.data?.message || 'Failed to mark workout complete')
+      toast.add({
+        title: 'Error',
+        description: error?.data?.message || 'Failed to mark workout complete',
+        color: 'error'
+      })
     } finally {
       loading.value = false
+      showMarkCompleteConfirm.value = false
     }
   }
 
@@ -569,18 +618,23 @@
       closeModal()
     } catch (error: any) {
       console.error('Error creating manual workout:', error)
-      alert(error?.data?.message || 'Failed to create manual workout')
+      toast.add({
+        title: 'Error',
+        description: error?.data?.message || 'Failed to create manual workout',
+        color: 'error'
+      })
     } finally {
       loading.value = false
     }
   }
 
-  async function confirmDelete() {
+  function confirmDelete() {
     if (!props.plannedWorkout) return
+    showDeleteConfirm.value = true
+  }
 
-    if (!confirm('Are you sure you want to delete this planned workout?')) {
-      return
-    }
+  async function executeDelete() {
+    if (!props.plannedWorkout) return
 
     loading.value = true
     try {
@@ -592,9 +646,14 @@
       closeModal()
     } catch (error: any) {
       console.error('Error deleting planned workout:', error)
-      alert(error?.data?.message || 'Failed to delete planned workout')
+      toast.add({
+        title: 'Error',
+        description: error?.data?.message || 'Failed to delete planned workout',
+        color: 'error'
+      })
     } finally {
       loading.value = false
+      showDeleteConfirm.value = false
     }
   }
 

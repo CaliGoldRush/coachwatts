@@ -20,7 +20,7 @@
             color="warning"
             variant="soft"
             :loading="clearingSchedule"
-            @click="confirmClearSchedule"
+            @click="isClearScheduleModalOpen = true"
           >
             Clear Future Workouts
           </UButton>
@@ -48,7 +48,7 @@
             color="warning"
             variant="soft"
             :loading="wipingProfiles"
-            @click="confirmWipeProfiles"
+            @click="isWipeProfilesModalOpen = true"
           >
             Wipe Profiles & Scores
           </UButton>
@@ -76,7 +76,7 @@
             color="warning"
             variant="soft"
             :loading="wipingAnalysis"
-            @click="confirmWipeAnalysis"
+            @click="isWipeAnalysisModalOpen = true"
           >
             Wipe AI Data
           </UButton>
@@ -101,12 +101,92 @@
           color="error"
           variant="outline"
           :loading="deletingAccount"
-          @click="confirmDeleteAccount"
+          @click="isDeleteAccountModalOpen = true"
         >
           Delete Account
         </UButton>
       </div>
     </UCard>
+
+    <!-- Clear Schedule Confirmation Modal -->
+    <UModal v-model:open="isClearScheduleModalOpen" title="Clear Future Schedule">
+      <template #body>
+        <p>
+          Are you sure? This will delete ALL future planned workouts from your schedule AND remove
+          them from Intervals.icu.
+        </p>
+      </template>
+
+      <template #footer>
+        <div class="flex gap-2 justify-end w-full">
+          <UButton color="gray" variant="ghost" @click="isClearScheduleModalOpen = false"
+            >Cancel</UButton
+          >
+          <UButton color="warning" :loading="clearingSchedule" @click="executeClearSchedule"
+            >Clear Future Workouts</UButton
+          >
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Wipe Profiles Confirmation Modal -->
+    <UModal v-model:open="isWipeProfilesModalOpen" title="Wipe Athlete Profiles">
+      <template #body>
+        <p>
+          Are you sure? This will permanently delete all AI athlete profiles and reset your
+          performance scores (Fitness, Recovery, etc.). You will need to regenerate them from the
+          dashboard.
+        </p>
+      </template>
+      <template #footer>
+        <div class="flex gap-2 justify-end w-full">
+          <UButton color="gray" variant="ghost" @click="isWipeProfilesModalOpen = false"
+            >Cancel</UButton
+          >
+          <UButton color="warning" :loading="wipingProfiles" @click="executeWipeProfiles"
+            >Wipe Profiles & Scores</UButton
+          >
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Wipe AI Analysis Confirmation Modal -->
+    <UModal v-model:open="isWipeAnalysisModalOpen" title="Wipe AI Analysis Data">
+      <template #body>
+        <p>
+          Are you sure? This will delete all AI-generated workout analyses, recommendations, and
+          reports. You can regenerate them individually.
+        </p>
+      </template>
+      <template #footer>
+        <div class="flex gap-2 justify-end w-full">
+          <UButton color="gray" variant="ghost" @click="isWipeAnalysisModalOpen = false"
+            >Cancel</UButton
+          >
+          <UButton color="warning" :loading="wipingAnalysis" @click="executeWipeAnalysis"
+            >Wipe AI Data</UButton
+          >
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Delete Account Confirmation Modal -->
+    <UModal v-model:open="isDeleteAccountModalOpen" title="Delete Account">
+      <template #body>
+        <p class="text-error font-semibold mb-2">Warning: This action is irreversible.</p>
+        <p>All your data including workouts, metrics, and reports will be permanently deleted.</p>
+      </template>
+      <template #footer>
+        <div class="flex gap-2 justify-end w-full">
+          <UButton color="gray" variant="ghost" @click="isDeleteAccountModalOpen = false"
+            >Cancel</UButton
+          >
+          <UButton color="error" :loading="deletingAccount" @click="executeDeleteAccount"
+            >Delete Account</UButton
+          >
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -117,16 +197,12 @@
   const wipingProfiles = ref(false)
   const wipingAnalysis = ref(false)
   const deletingAccount = ref(false)
+  const isClearScheduleModalOpen = ref(false)
+  const isWipeProfilesModalOpen = ref(false)
+  const isWipeAnalysisModalOpen = ref(false)
+  const isDeleteAccountModalOpen = ref(false)
 
-  async function confirmClearSchedule() {
-    if (
-      !confirm(
-        'Are you sure? This will delete ALL future planned workouts from your schedule AND remove them from Intervals.icu.'
-      )
-    ) {
-      return
-    }
-
+  async function executeClearSchedule() {
     clearingSchedule.value = true
     try {
       const result: any = await $fetch('/api/plans/workouts/future', {
@@ -138,6 +214,7 @@
         description: `Removed ${result.count} future planned workouts.`,
         color: 'success'
       })
+      isClearScheduleModalOpen.value = false
     } catch (error) {
       console.error('Failed to clear schedule', error)
       toast.add({
@@ -150,15 +227,7 @@
     }
   }
 
-  async function confirmWipeAnalysis() {
-    if (
-      !confirm(
-        'Are you sure? This will delete all AI-generated workout analyses, recommendations, and reports. You can regenerate them individually.'
-      )
-    ) {
-      return
-    }
-
+  async function executeWipeAnalysis() {
     wipingAnalysis.value = true
     try {
       const result: any = await $fetch('/api/profile/ai-analysis', {
@@ -170,6 +239,7 @@
         description: `Cleared ${result.counts.workouts} analyses and ${result.counts.recommendations} recommendations.`,
         color: 'success'
       })
+      isWipeAnalysisModalOpen.value = false
     } catch (error) {
       console.error('Failed to wipe AI data', error)
       toast.add({
@@ -182,15 +252,7 @@
     }
   }
 
-  async function confirmWipeProfiles() {
-    if (
-      !confirm(
-        'Are you sure? This will permanently delete all AI athlete profiles and reset your performance scores (Fitness, Recovery, etc.). You will need to regenerate them from the dashboard.'
-      )
-    ) {
-      return
-    }
-
+  async function executeWipeProfiles() {
     wipingProfiles.value = true
     try {
       const result: any = await $fetch('/api/profile/athlete-profiles', {
@@ -202,6 +264,7 @@
         description: `Removed ${result.count} profile records and reset scores.`,
         color: 'success'
       })
+      isWipeProfilesModalOpen.value = false
     } catch (error) {
       console.error('Failed to wipe profiles', error)
       toast.add({
@@ -214,15 +277,7 @@
     }
   }
 
-  async function confirmDeleteAccount() {
-    if (
-      !confirm(
-        'ARE YOU SURE? This action is irreversible. All your data including workouts, metrics, and reports will be permanently deleted.'
-      )
-    ) {
-      return
-    }
-
+  async function executeDeleteAccount() {
     deletingAccount.value = true
     try {
       await $fetch('/api/profile', {
