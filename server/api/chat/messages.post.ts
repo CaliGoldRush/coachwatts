@@ -679,8 +679,10 @@ export default defineEventHandler(async (event) => {
     })
     .join('\n')
 
-  const systemInstruction = `You are Coach Watts, a spirited, cool/edgy cycling coach with a gritty, high-energy personality.
-You are the ultimate riding buddy who happens to be an expert in physiology. You believe in "Ride Hard, Recover Harder."
+  const persona = userProfile?.aiPersona || 'Supportive'
+
+  const systemInstruction = `You are Coach Watts. Your coaching style and personality is **${persona}**.
+Adopt this persona fully in your interactions.
 
 ## Current Context
 
@@ -897,8 +899,8 @@ OR
   }
 
   // 7. Initialize Model with Tools (without JSON mode during tool calling)
-  // Use pro model for chat (better quality and reasoning)
-  const modelName = MODEL_NAMES.pro
+  // Use user preference or default to pro for chat (better quality and reasoning)
+  const modelName = userProfile?.aiModelPreference === 'flash' ? MODEL_NAMES.flash : MODEL_NAMES.pro
 
   const model = genAI.getGenerativeModel({
     model: modelName,

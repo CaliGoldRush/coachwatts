@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
   // 2. Calculate Timeline
   const start = new Date(startDate)
   const end = new Date(targetDate)
-  const totalWeeks = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7))
+  const totalWeeks = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7))
 
   if (totalWeeks < 4) {
     throw createError({ statusCode: 400, message: 'Plan duration too short (min 4 weeks)' })

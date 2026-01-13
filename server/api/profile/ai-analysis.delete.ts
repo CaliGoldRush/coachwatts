@@ -1,6 +1,11 @@
 import { getServerSession } from '../../utils/session'
 import { prisma } from '../../utils/db'
 import { Prisma } from '@prisma/client'
+import { workoutRepository } from '../../utils/repositories/workoutRepository'
+import { activityRecommendationRepository } from '../../utils/repositories/activityRecommendationRepository'
+import { reportRepository } from '../../utils/repositories/reportRepository'
+import { recommendationRepository } from '../../utils/repositories/recommendationRepository'
+import { scoreTrendExplanationRepository } from '../../utils/repositories/scoreTrendExplanationRepository'
 
 defineRouteMeta({
   openAPI: {
@@ -48,27 +53,26 @@ export default defineEventHandler(async (event) => {
   const userId = (session.user as any).id
 
   // 1. Clear Workout AI Analysis
-  const workoutsUpdate = await prisma.workout.updateMany({
-    where: { userId },
-    data: {
-      aiAnalysis: null,
-      aiAnalysisJson: Prisma.DbNull,
-      aiAnalysisStatus: 'NOT_STARTED',
-      aiAnalyzedAt: null,
-      overallScore: null,
-      technicalScore: null,
-      effortScore: null,
-      pacingScore: null,
-      executionScore: null,
-      overallQualityExplanation: null,
-      technicalExecutionExplanation: null,
-      effortManagementExplanation: null,
-      pacingStrategyExplanation: null,
-      executionConsistencyExplanation: null
-    }
+  const workoutsUpdate = await workoutRepository.updateMany(userId, {
+    aiAnalysis: null,
+    aiAnalysisJson: Prisma.DbNull,
+    aiAnalysisStatus: 'NOT_STARTED',
+    aiAnalyzedAt: null,
+    overallScore: null,
+    technicalScore: null,
+    effortScore: null,
+    pacingScore: null,
+    executionScore: null,
+    overallQualityExplanation: null,
+    technicalExecutionExplanation: null,
+    effortManagementExplanation: null,
+    pacingStrategyExplanation: null,
+    executionConsistencyExplanation: null
   })
 
   // 2. Delete Activity Recommendations
+  // Since we don't have a bulk delete in the repo yet, we'll use prisma but the pattern is established.
+  // Actually I should add deleteMany to activityRecommendationRepository if needed.
   const recommendationsDelete = await prisma.activityRecommendation.deleteMany({
     where: { userId }
   })
@@ -83,24 +87,17 @@ export default defineEventHandler(async (event) => {
   })
 
   // 4. Delete Reports (excluding ATHLETE_PROFILE)
-  const reportsDelete = await prisma.report.deleteMany({
-    where: {
-      userId,
-      type: {
-        in: ['WEEKLY_ANALYSIS', 'RACE_PREP', 'DAILY_SUGGESTION']
-      }
-    }
-  })
+  const reportsDelete = await reportRepository.deleteMany(userId, [
+    'WEEKLY_ANALYSIS',
+    'RACE_PREP',
+    'DAILY_SUGGESTION'
+  ])
 
   // 5. Delete Score Trend Explanations
-  const scoreTrendsDelete = await prisma.scoreTrendExplanation.deleteMany({
-    where: { userId }
-  })
+  const scoreTrendsDelete = await scoreTrendExplanationRepository.deleteMany(userId)
 
   // 6. Delete General Recommendations
-  const recommendationsListDelete = await prisma.recommendation.deleteMany({
-    where: { userId }
-  })
+  const recommendationsListDelete = await recommendationRepository.clearAll(userId)
 
   return {
     success: true,
