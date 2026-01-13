@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.5.12](https://github.com/newpush/coach/compare/v0.5.11...v0.5.12) (2026-01-13)
+
+### Bug Fixes
+
+- **api:** add missing getServerSession imports to plan and workout endpoints ([5ff13ac](https://github.com/newpush/coach/commit/5ff13acb748898758271a29feef52d991ffba87b))
+- **trigger:** remove unused constraints from training block generation ([df186d3](https://github.com/newpush/coach/commit/df186d38bd56e488771cb6934967d5bd5332e31d))
+- **types:** resolve all type errors and linting issues ([55d493a](https://github.com/newpush/coach/commit/55d493a3fe453b1e49e463d51a97ae2b0abc8ee6))
+- **types:** update trigger sdk retrieval method and modal click handler ([261942f](https://github.com/newpush/coach/commit/261942f2ad891e9e649ce3714122fa2c7a5beee8))
+
+### Features
+
+- **api:** add checkin and support endpoints and update chat/plans ([fbe6dd5](https://github.com/newpush/coach/commit/fbe6dd50d12beff2a01dc8579f8c660cbf57e3c6))
+- **api:** support custom instructions in plan initialization and generation ([9a2473a](https://github.com/newpush/coach/commit/9a2473ad68ee97c2b9ea71b92675b83c83702358))
+- **assets:** add apple watch logo and update attribution rules ([6f70187](https://github.com/newpush/coach/commit/6f70187bccbe9650ac5e027da49406ebe429de2a))
+- **cli:** add stream analysis and resync commands ([4ff80ba](https://github.com/newpush/coach/commit/4ff80ba62b2caf67737aeaba754ca48c2e735143))
+- **components:** add confirmation modals for destructive actions ([54d7999](https://github.com/newpush/coach/commit/54d79991ebf2d59f9a887c5f6352a53c81feab12))
+- **components:** add custom instructions step to plan wizard ([595a0ed](https://github.com/newpush/coach/commit/595a0ed361a0e9d07fc8a1bc0ed20a025f6d4410))
+- **components:** add daily checkin modal and update plan wizard ([33956cb](https://github.com/newpush/coach/commit/33956cbaa606d337bd502e080e210601bca29cf8))
+- **components:** add stream charts components ([3e70676](https://github.com/newpush/coach/commit/3e7067623163bf764763c8a3c7771e9126292821))
+- **pages:** add confirmation modals for plan management ([af80be4](https://github.com/newpush/coach/commit/af80be40806ba95ebf58204a6f6546a54efea340))
+- **pages:** update pages with new features and add checkin store ([a465388](https://github.com/newpush/coach/commit/a465388a7db363ee354e38c898465037b8947f68))
+- **plans:** add plan status endpoint and improve training block generation alignment ([c1a2dfd](https://github.com/newpush/coach/commit/c1a2dfdfc0b04f84b90e9587eeac52c33e003232))
+- **plans:** update plan dashboard with generation polling and coach notes ([22c628d](https://github.com/newpush/coach/commit/22c628d96f43962d86863932762599bf82b6e965))
+- **prisma:** add columns to Recommendation and TrainingPlan tables ([4952f4e](https://github.com/newpush/coach/commit/4952f4e8edc28db7b1efe57e1aa708a2dbb5b111))
+- **schema:** add custom instructions field to training plan model ([ef12c9b](https://github.com/newpush/coach/commit/ef12c9bdea618bcaeba12572172ea104994a5bad))
+- **trigger:** update jobs with ai persona and repository pattern ([91c2e9c](https://github.com/newpush/coach/commit/91c2e9cf77bb637549e70d09b22cbaf8750f7da1))
+- **ui:** add interactive glossary tooltips to recommendations ([236ec5a](https://github.com/newpush/coach/commit/236ec5acc9541124131021c770c6e4e57c7ac606))
+- **ui:** update attribution rules and workout page for zwift ([2be4991](https://github.com/newpush/coach/commit/2be4991cde7054fd63d13167b73e4d06f20d0469))
+- **ui:** update data attribution component and workout page display ([cdfd372](https://github.com/newpush/coach/commit/cdfd3727403da586d7ac6d8775efe7cab0ae6ed0))
+
 ## [0.5.11](https://github.com/newpush/coach/compare/v0.5.10...v0.5.11) (2026-01-12)
 
 ### Bug Fixes
