@@ -1,26 +1,5 @@
----
 steps:
-  - name: 'node:20-alpine'
-    env:
-      - NODE_OPTIONS=--max-old-space-size=4096
-      - DATABASE_URL=$_DATABASE_URL
-    args:
-      - '-c'
-      - |
-        npm install
-        npx prisma generate
-    id: Install Dependencies
-    entrypoint: sh
-  - name: 'node:20-alpine'
-    env:
-      - DATABASE_URL=$_DATABASE_URL
-      - NODE_OPTIONS=--max-old-space-size=4096
-    args:
-      - '-c'
-      - |
-        npx prisma migrate deploy
-    id: Run Migrations
-    entrypoint: sh
+  # STEP 1: Build and Publish the image FIRST
   - name: gcr.io/k8s-skaffold/pack
     env:
       - GOOGLE_ENTRYPOINT=$_ENTRYPOINT
@@ -37,6 +16,7 @@ steps:
       - '--network=cloudbuild'
       - '--path=.'
       - '--publish'
+      - '--cache-image=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/cache-image:latest'
       - '--env=GOOGLE_ENTRYPOINT'
       - '--env=NODE_OPTIONS=--max-old-space-size=4096'
       - '--env=DATABASE_URL'
@@ -45,6 +25,23 @@ steps:
       - '--env=COMMIT_SHA'
     id: Buildpack
     entrypoint: pack
+
+  # STEP 2: Run Migrations using the image we just built
+  # This reuses the image, saving time and ensuring consistency.
+  - name: >-
+      $_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA
+    entrypoint: launcher # Uses the Buildpack launcher to run the command
+    args:
+      - 'npx'
+      - 'prisma'
+      - 'migrate'
+      - 'deploy'
+    env:
+      - DATABASE_URL=$_DATABASE_URL
+    id: Run Migrations
+    waitFor: ['Buildpack']
+
+  # STEP 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     args:
       - run
@@ -60,22 +57,26 @@ steps:
       - '--quiet'
     id: Deploy
     entrypoint: gcloud
+
 options:
   machineType: E2_HIGHCPU_32
+  diskSizeGb: 200
   substitutionOption: ALLOW_LOOSE
   logging: CLOUD_LOGGING_ONLY
+
+# (Substitutions and Tags remain the same)
 substitutions:
-  _DATABASE_URL: 'postgresql://user:password@host:5432/database?sslmode=require'
   _TRIGGER_ID: c23590c6-8413-459f-ac72-35d1a09cfceb
-  _SERVICE_NAME: coach-preview
-  _AR_PROJECT_ID: coach-app-481412
-  _ENTRYPOINT: node .output/server/index.mjs
-  _PLATFORM: managed
-  _AR_HOSTNAME: europe-west4-docker.pkg.dev
-  _NUXT_AUTH_ORIGIN: 'https://coachwatts.com/api/auth'
-  _DEPLOY_REGION: europe-west4
-  _SENTRY_AUTH_TOKEN: ''
+  _DATABASE_URL: 'postgresql://user:password@host:5432/database?sslmode=require'
   _AR_REPOSITORY: cloud-run-source-deploy
+  _NUXT_AUTH_ORIGIN: 'https://coachwatts.com/api/auth'
+  _AR_PROJECT_ID: coach-app-481412
+  _AR_HOSTNAME: europe-west4-docker.pkg.dev
+  _ENTRYPOINT: node .output/server/index.mjs
+  _SENTRY_AUTH_TOKEN: ''
+  _DEPLOY_REGION: europe-west4
+  _PLATFORM: managed
+  _SERVICE_NAME: coach-preview
 tags:
   - gcp-cloud-build-deploy-cloud-run
   - gcp-cloud-build-deploy-cloud-run-managed
