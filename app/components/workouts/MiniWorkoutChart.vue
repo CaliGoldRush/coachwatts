@@ -25,12 +25,27 @@
   })
 
   function getStepStyle(step: any) {
-    const powerPercent = (step.power?.value || 0) * 100
-    const height = Math.min(powerPercent, 120) // Scale to 120% max, cap visually
-    // Use relative width based on duration
     const widthPercent = (step.durationSeconds / totalDuration.value) * 100
     const color = getStepColor(step.type)
+    const maxScale = 1.2 // 120% is top of chart
 
+    // Intensity range (ramp) support
+    const range = step.power?.range || step.heartRate?.range
+    if (range) {
+      const startH = Math.max(Math.min(range.start / maxScale, 1) * 100, 10)
+      const endH = Math.max(Math.min(range.end / maxScale, 1) * 100, 10)
+
+      return {
+        height: '100%',
+        width: `${widthPercent}%`,
+        backgroundColor: color,
+        clipPath: `polygon(0% ${100 - startH}%, 100% ${100 - endH}%, 100% 100%, 0% 100%)`
+      }
+    }
+
+    // Flat intensity support
+    const value = step.power?.value || step.heartRate?.value || 0
+    const height = Math.min((value * 100) / maxScale, 100)
     return {
       height: `${Math.max(height, 10)}%`, // Minimum height for visibility
       width: `${widthPercent}%`,

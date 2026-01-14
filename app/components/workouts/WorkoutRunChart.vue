@@ -59,8 +59,18 @@
                   <div class="font-semibold">{{ step.name }}</div>
                   <div class="text-[10px] opacity-80 mt-1">
                     {{ formatDuration(step.durationSeconds) }} @
-                    <span v-if="step.heartRate?.value">
+                    <span v-if="step.heartRate?.range">
+                      {{ Math.round(step.heartRate.range.start * 100) }}-{{
+                        Math.round(step.heartRate.range.end * 100)
+                      }}% LTHR
+                    </span>
+                    <span v-else-if="step.heartRate?.value">
                       {{ Math.round(step.heartRate.value * 100) }}% LTHR
+                    </span>
+                    <span v-else-if="step.power?.range">
+                      {{ Math.round(step.power.range.start * 100) }}-{{
+                        Math.round(step.power.range.end * 100)
+                      }}% Power
                     </span>
                     <span v-else-if="step.power?.value">
                       {{ Math.round(step.power.value * 100) }}% Power
@@ -112,11 +122,21 @@
             </div>
             <div class="text-right">
               <div class="text-sm font-bold whitespace-nowrap">
-                <span v-if="step.heartRate?.value">
-                  {{ Math.round(step.heartRate.value * 100) }}% LTHR
+                <span v-if="step.heartRate?.range">
+                  {{ Math.round(step.heartRate.range.start * 100) }}-{{
+                    Math.round(step.heartRate.range.end * 100)
+                  }}%
+                </span>
+                <span v-else-if="step.heartRate?.value">
+                  {{ Math.round(step.heartRate.value * 100) }}%
+                </span>
+                <span v-else-if="step.power?.range">
+                  {{ Math.round(step.power.range.start * 100) }}-{{
+                    Math.round(step.power.range.end * 100)
+                  }}%
                 </span>
                 <span v-else-if="step.power?.value">
-                  {{ Math.round(step.power.value * 100) }}% Power
+                  {{ Math.round(step.power.value * 100) }}%
                 </span>
                 <span v-else> {{ getInferredIntensity(step) * 100 }}% (Est) </span>
               </div>
@@ -213,8 +233,16 @@
 
   // Functions
   function getStepIntensity(step: any): number {
-    if (step.heartRate?.value) return step.heartRate.value
-    if (step.power?.value) return step.power.value
+    const hr = step.heartRate?.range
+      ? (step.heartRate.range.start + step.heartRate.range.end) / 2
+      : step.heartRate?.value
+    if (hr) return hr
+
+    const pwr = step.power?.range
+      ? (step.power.range.start + step.power.range.end) / 2
+      : step.power?.value
+    if (pwr) return pwr
+
     return getInferredIntensity(step)
   }
 
@@ -228,6 +256,20 @@
     const intensity = getStepIntensity(step)
     const color = getStepColor(intensity)
     const maxScale = 1.2 // 120% is top of chart
+
+    const range = step.heartRate?.range || step.power?.range
+    if (range) {
+      const startH = Math.min(range.start / maxScale, 1) * 100
+      const endH = Math.min(range.end / maxScale, 1) * 100
+
+      return {
+        height: '100%',
+        width: `${width}%`,
+        backgroundColor: color,
+        clipPath: `polygon(0% ${100 - startH}%, 100% ${100 - endH}%, 100% 100%, 0% 100%)`,
+        minWidth: '2px'
+      }
+    }
 
     const height = Math.min(intensity / maxScale, 1) * 100
 
