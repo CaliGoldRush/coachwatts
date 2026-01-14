@@ -699,6 +699,8 @@
     try {
       // Determine range
       // startDate.value is YYYY-MM-DD. Treat as UTC date for query consistency with DB.
+      if (!startDate.value) return
+
       const start = new Date(startDate.value)
       let end = new Date(start)
 

@@ -77,7 +77,7 @@
             color="neutral"
             variant="ghost"
             :loading="pending"
-            @click="refresh"
+            @click="() => refresh()"
           />
         </template>
       </UDashboardNavbar>
@@ -155,7 +155,7 @@
                     {{ row.ipAddress || '-' }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <UPopover mode="hover">
+                    <UPopover>
                       <UButton
                         v-if="row.metadata"
                         color="neutral"
