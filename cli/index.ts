@@ -11,6 +11,7 @@ import backfillCommand from './backfill'
 import oauthCommand from './oauth'
 import statsCommand from './stats'
 import usersCommand from './users'
+import geminiCommand from './gemini'
 
 const program = new Command()
 
@@ -25,6 +26,7 @@ program.addCommand(backfillCommand)
 program.addCommand(oauthCommand)
 program.addCommand(statsCommand)
 program.addCommand(usersCommand)
+program.addCommand(geminiCommand)
 
 program.parse(process.argv)
 
