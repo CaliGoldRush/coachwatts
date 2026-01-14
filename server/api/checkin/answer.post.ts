@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { checkinId, answers } = body
+  const { checkinId, answers, userNotes } = body
   // answers: Record<string, "YES" | "NO">
 
   if (!checkinId || !answers) {
@@ -34,7 +34,8 @@ export default defineEventHandler(async (event) => {
   })
 
   const updatedCheckin = await dailyCheckinRepository.update(checkinId, {
-    questions: updatedQuestions
+    questions: updatedQuestions,
+    userNotes: userNotes || undefined
   })
 
   return updatedCheckin

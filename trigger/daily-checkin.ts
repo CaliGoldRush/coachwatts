@@ -273,10 +273,14 @@ ${pastCheckins
   .map((c) => {
     const qs = c.questions as any[]
     const dateStr = formatUserDate(c.date, userTimezone, 'yyyy-MM-dd')
-    return (
+    let output =
       `Date: ${dateStr}\n` +
       qs.map((q) => `- Q: ${q.text} -> A: ${q.answer || 'No Answer'}`).join('\n')
-    )
+
+    if (c.userNotes) {
+      output += `\n- User Notes: "${c.userNotes}"`
+    }
+    return output
   })
   .join('\n\n')}
 `

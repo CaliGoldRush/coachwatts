@@ -32,7 +32,8 @@ export const dailyCheckinRepository = {
       orderBy: { date: 'desc' },
       select: {
         date: true,
-        questions: true
+        questions: true,
+        userNotes: true
       }
     })
   },
@@ -47,7 +48,8 @@ export const dailyCheckinRepository = {
       take: limit,
       select: {
         date: true,
-        questions: true
+        questions: true,
+        userNotes: true
       }
     })
   },

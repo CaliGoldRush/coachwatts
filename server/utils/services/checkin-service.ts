@@ -23,18 +23,27 @@ export async function getCheckinHistoryContext(
       // Only include questions that have an answer
       const answeredQuestions = qs.filter((q) => q.answer)
 
-      if (answeredQuestions.length === 0) return null
+      if (answeredQuestions.length === 0 && !c.userNotes) return null
 
       const dateStr = formatUserDate(c.date, timezone, 'yyyy-MM-dd')
-      const qa = answeredQuestions
-        .map(
-          (q) => `  * Q: "${q.text}"
+      let content = ''
+
+      if (answeredQuestions.length > 0) {
+        content += answeredQuestions
+          .map(
+            (q) => `  * Q: "${q.text}"
     A: ${q.answer}`
-        )
-        .join('\n')
+          )
+          .join('\n')
+      }
+
+      if (c.userNotes) {
+        if (content) content += '\n'
+        content += `  * User Notes: "${c.userNotes}"`
+      }
 
       return `[${dateStr}]
-${qa}`
+${content}`
     })
     .filter(Boolean)
     .join('\n\n')
