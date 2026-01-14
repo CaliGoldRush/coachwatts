@@ -489,7 +489,7 @@
                       v-if="getTextFromMessage(message)"
                       class="prose prose-sm dark:prose-invert max-w-none"
                     >
-                      <MDC :value="getTextFromMessage(message)" :components="{}" />
+                      <MDC :value="getTextFromMessage(message)" />
                     </div>
 
                     <!-- Inline charts -->
