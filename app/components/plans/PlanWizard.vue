@@ -10,7 +10,7 @@
         <!-- Step 1 -->
         <div class="flex items-center flex-shrink-0">
           <div
-            class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
             :class="
               step >= 1 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
             "
@@ -36,7 +36,7 @@
         <!-- Step 2 -->
         <div class="flex items-center flex-shrink-0">
           <div
-            class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
             :class="
               step >= 2 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
             "
@@ -62,7 +62,7 @@
         <!-- Step 3 -->
         <div class="flex items-center flex-shrink-0">
           <div
-            class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
             :class="
               step >= 3 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
             "
@@ -88,7 +88,7 @@
         <!-- Step 4 -->
         <div class="flex items-center flex-shrink-0">
           <div
-            class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
             :class="
               step >= 4 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
             "
@@ -114,7 +114,7 @@
         <!-- Step 5 -->
         <div class="flex items-center flex-shrink-0">
           <div
-            class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
             :class="
               step >= 5 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
             "
@@ -413,13 +413,13 @@
                 class="bg-gray-50 dark:bg-gray-800/50 p-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center"
               >
                 <span class="text-xs font-medium uppercase text-muted ml-2">Workouts</span>
-                <UButton
-                  size="xs"
-                  color="neutral"
-                  variant="ghost"
-                  @click="anchorWorkoutIds = independentWorkouts.map((w) => w.id)"
-                  >Select All</UButton
-                >
+                <UButton size="xs" color="neutral" variant="ghost" @click="toggleSelectAll">
+                  {{
+                    anchorWorkoutIds.length === independentWorkouts.length
+                      ? 'Unselect All'
+                      : 'Select All'
+                  }}
+                </UButton>
               </div>
               <div class="max-h-60 overflow-y-auto p-2 space-y-1">
                 <div
@@ -829,6 +829,14 @@
       anchorWorkoutIds.value = anchorWorkoutIds.value.filter((i) => i !== id)
     } else {
       anchorWorkoutIds.value.push(id)
+    }
+  }
+
+  function toggleSelectAll() {
+    if (anchorWorkoutIds.value.length === independentWorkouts.value.length) {
+      anchorWorkoutIds.value = []
+    } else {
+      anchorWorkoutIds.value = independentWorkouts.value.map((w) => w.id)
     }
   }
 
