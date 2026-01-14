@@ -23,7 +23,7 @@
       }
     },
     {
-      label: 'Application Stats',
+      label: 'Statistics',
       icon: 'i-lucide-bar-chart-3',
       to: '/admin/stats',
       defaultOpen: route.path.includes('stats'),
@@ -74,25 +74,32 @@
       ]
     },
     {
+      label: 'Logs',
+      icon: 'i-lucide-scroll-text',
+      defaultOpen: route.path.includes('logs') || route.path.includes('webhooks'),
+      children: [
+        {
+          label: 'Audit Logs',
+          icon: 'i-lucide-scroll-text',
+          to: '/admin/audit-logs',
+          onSelect: () => {
+            isOpen.value = false
+          }
+        },
+        {
+          label: 'Webhook Logs',
+          icon: 'i-lucide-webhook',
+          to: '/admin/webhooks',
+          onSelect: () => {
+            isOpen.value = false
+          }
+        }
+      ]
+    },
+    {
       label: 'Database Health',
       icon: 'i-lucide-database',
       to: '/admin/database',
-      onSelect: () => {
-        isOpen.value = false
-      }
-    },
-    {
-      label: 'Audit Logs',
-      icon: 'i-lucide-scroll-text',
-      to: '/admin/audit-logs',
-      onSelect: () => {
-        isOpen.value = false
-      }
-    },
-    {
-      label: 'Webhook Logs',
-      icon: 'i-lucide-webhook',
-      to: '/admin/webhooks',
       onSelect: () => {
         isOpen.value = false
       }
