@@ -36,7 +36,9 @@ const findAnyCommand = new Command('find-any')
       if (llmByEntity) {
         console.log(chalk.green(`Found in LlmUsage (by entityId: ${id})`))
         console.log(llmByEntity)
-        console.log(chalk.blue(`Run 'cw:cli debug llm-request ${llmByEntity.id} --prod' to see full prompt.`))
+        console.log(
+          chalk.blue(`Run 'cw:cli debug llm-request ${llmByEntity.id} --prod' to see full prompt.`)
+        )
         return
       }
 
@@ -46,7 +48,7 @@ const findAnyCommand = new Command('find-any')
         console.log(report)
         return
       }
-      
+
       const rec = await prisma.activityRecommendation.findUnique({ where: { id } })
       if (rec) {
         console.log(chalk.green('Found in ActivityRecommendation'))
@@ -60,17 +62,23 @@ const findAnyCommand = new Command('find-any')
         console.log(workout)
         return
       }
-      
+
+      const plannedWorkout = await prisma.plannedWorkout.findUnique({ where: { id } })
+      if (plannedWorkout) {
+        console.log(chalk.green('Found in PlannedWorkout'))
+        console.log(plannedWorkout)
+        return
+      }
+
       // Also check if it matches a shareToken (unlikely but possible)
       const share = await prisma.shareToken.findFirst({ where: { token: id } })
       if (share) {
-         console.log(chalk.green('Found in ShareToken (token value)'))
-         console.log(share)
-         return
+        console.log(chalk.green('Found in ShareToken (token value)'))
+        console.log(share)
+        return
       }
 
       console.log(chalk.red('Not found in checked tables.'))
-
     } catch (error) {
       console.error('Error:', error)
     } finally {
