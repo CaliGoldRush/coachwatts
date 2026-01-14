@@ -82,6 +82,14 @@
       }
     },
     {
+      label: 'Audit Logs',
+      icon: 'i-lucide-scroll-text',
+      to: '/admin/audit-logs',
+      onSelect: () => {
+        isOpen.value = false
+      }
+    },
+    {
       label: 'Webhook Logs',
       icon: 'i-lucide-webhook',
       to: '/admin/webhooks',
