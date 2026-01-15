@@ -65,6 +65,8 @@
 
         <!-- Dashboard Grid (Connected User) -->
         <div v-else class="p-3 sm:p-6 space-y-4 sm:space-y-8">
+          <DashboardSystemMessageCard />
+
           <DashboardMissingDataBanner
             v-if="missingFields.length > 0"
             :missing-fields="missingFields"
