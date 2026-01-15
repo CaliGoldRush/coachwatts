@@ -1,5 +1,6 @@
 import { defineEventHandler, createError } from 'h3'
 import { getServerSession } from '../../../utils/session'
+import os from 'os'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
@@ -12,6 +13,12 @@ export default defineEventHandler(async (event) => {
     if (!value) return value
     const strVal = String(value)
     const upperKey = key.toUpperCase()
+
+    // Explicit exceptions (safe to show)
+    if (upperKey === 'TRIGGER_API_URL') {
+      return strVal
+    }
+
     // Heuristic for secrets
     if (
       upperKey.includes('SECRET') ||
@@ -51,11 +58,27 @@ export default defineEventHandler(async (event) => {
   const safePrivateConfig: Record<string, any> = {}
   for (const key in config) {
     if (['public', 'app', 'nitro'].includes(key)) continue // Skip internals/public
-    // @ts-expect-error - Iterate over dynamic config keys
     safePrivateConfig[key] = maskValue(key, config[key])
   }
 
+  // 3. System Information
+  const systemInfo = {
+    hostname: os.hostname(),
+    platform: os.platform(),
+    arch: os.arch(),
+    release: os.release(),
+    type: os.type(),
+    uptime: os.uptime(), // Seconds
+    totalmem: os.totalmem(),
+    freemem: os.freemem(),
+    cpus: os.cpus().length,
+    loadavg: os.loadavg(),
+    nodeVersion: process.version,
+    memoryUsage: process.memoryUsage()
+  }
+
   return {
+    system: systemInfo,
     env: safeEnv,
     runtimeConfig: {
       public: safePublicConfig,

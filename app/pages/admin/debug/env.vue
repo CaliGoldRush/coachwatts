@@ -5,6 +5,7 @@
   })
 
   type EnvResponse = {
+    system: Record<string, any>
     env: Record<string, string>
     runtimeConfig: {
       public: Record<string, any>
@@ -21,13 +22,34 @@
 
     const rows = []
 
+    // System Info
+    if (data.value.system) {
+      for (const [key, value] of Object.entries(data.value.system)) {
+        let displayValue = value
+        if (key === 'uptime') {
+          const hours = Math.floor(Number(value) / 3600)
+          const minutes = Math.floor((Number(value) % 3600) / 60)
+          displayValue = `${hours}h ${minutes}m (${value}s)`
+        } else if (key === 'totalmem' || key === 'freemem') {
+          displayValue = `${(Number(value) / 1024 / 1024 / 1024).toFixed(2)} GB`
+        } else if (typeof value === 'object') {
+          displayValue = JSON.stringify(value)
+        }
+        rows.push({
+          key: `system.${key}`,
+          value: displayValue,
+          type: 'System Info',
+          class: 'text-purple-500 font-bold'
+        })
+      }
+    }
+
     // System Env
     if (data.value.env) {
       for (const [key, value] of Object.entries(data.value.env)) {
         rows.push({ key, value, type: 'System Env', class: 'text-gray-500' })
       }
     }
-
     // Public Config
     if (data.value.runtimeConfig?.public) {
       for (const [key, value] of Object.entries(data.value.runtimeConfig.public)) {

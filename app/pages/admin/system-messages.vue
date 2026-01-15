@@ -302,7 +302,7 @@
       toast.add({ title: 'Saved successfully' })
     } catch (e) {
       console.error(e)
-      toast.add({ title: 'Error saving', color: 'red' })
+      toast.add({ title: 'Error saving', color: 'error' })
     } finally {
       saving.value = false
     }

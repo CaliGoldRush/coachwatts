@@ -35,10 +35,10 @@
   }
 
   const statusColor = computed(() => {
-    if (!result.value) return 'gray'
-    if (result.value.success) return 'green'
-    if (result.value.status >= 400 && result.value.status < 500) return 'orange'
-    return 'red'
+    if (!result.value) return 'neutral'
+    if (result.value.success) return 'success'
+    if (result.value.status >= 400 && result.value.status < 500) return 'warning'
+    return 'error'
   })
 </script>
 

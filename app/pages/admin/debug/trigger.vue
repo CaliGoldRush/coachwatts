@@ -5,10 +5,26 @@
   })
 
   const loading = ref<string | null>(null)
+
   const result = ref<{ success: boolean; runId?: string; runUrl?: string; error?: any } | null>(
     null
   )
+
   const toast = useToast()
+
+  // Fetch Trigger config
+
+  const { data: envData } = await useFetch<any>('/api/admin/debug/env')
+
+  const triggerConfig = computed(() => {
+    const env = envData.value?.env || {}
+
+    return {
+      apiUrl: env.TRIGGER_API_URL,
+
+      projectRef: env.TRIGGER_PROJECT_REF
+    }
+  })
 
   async function triggerTask(taskName: string) {
     loading.value = taskName
@@ -41,6 +57,45 @@
 
     <template #body>
       <div class="p-6 space-y-6">
+        <UCard>
+          <template #header>
+            <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
+              Configuration
+            </h3>
+          </template>
+
+          <dl class="divide-y divide-gray-100 dark:divide-gray-800">
+            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+              <dt class="text-sm font-medium leading-6 text-gray-900 dark:text-white">API URL</dt>
+              <dd
+                class="mt-1 text-sm leading-6 text-gray-700 dark:text-gray-400 sm:col-span-2 sm:mt-0 font-mono"
+              >
+                <span
+                  v-if="triggerConfig.apiUrl"
+                  class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
+                  >{{ triggerConfig.apiUrl }}</span
+                >
+                <span v-else class="text-gray-500 italic">Not Set (Defaults to Cloud)</span>
+              </dd>
+            </div>
+            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+              <dt class="text-sm font-medium leading-6 text-gray-900 dark:text-white">
+                Project Ref
+              </dt>
+              <dd
+                class="mt-1 text-sm leading-6 text-gray-700 dark:text-gray-400 sm:col-span-2 sm:mt-0 font-mono"
+              >
+                <span
+                  v-if="triggerConfig.projectRef"
+                  class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
+                  >{{ triggerConfig.projectRef }}</span
+                >
+                <span v-else class="text-red-500 italic">Not Set</span>
+              </dd>
+            </div>
+          </dl>
+        </UCard>
+
         <UCard>
           <template #header>
             <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
