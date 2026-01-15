@@ -22,10 +22,10 @@
 
   // Map message types to UI props
   const typeConfig: Record<string, { color: string; icon: string }> = {
-    INFO: { color: 'primary', icon: 'i-heroicons-information-circle' },
-    WARNING: { color: 'orange', icon: 'i-heroicons-exclamation-triangle' },
-    ERROR: { color: 'red', icon: 'i-heroicons-exclamation-circle' },
-    SUCCESS: { color: 'green', icon: 'i-heroicons-check-circle' }
+    INFO: { color: 'info', icon: 'i-heroicons-information-circle' },
+    WARNING: { color: 'warning', icon: 'i-heroicons-exclamation-triangle' },
+    ERROR: { color: 'error', icon: 'i-heroicons-exclamation-circle' },
+    SUCCESS: { color: 'success', icon: 'i-heroicons-check-circle' }
   }
 
   const color = computed(() => (typeConfig[message.value?.type]?.color || 'primary') as any)
