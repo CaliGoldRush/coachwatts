@@ -153,7 +153,7 @@
                   <UFormField label="Type" name="type" required>
                     <USelect
                       v-model="state.type"
-                      :options="['INFO', 'WARNING', 'ERROR', 'SUCCESS']"
+                      :items="['INFO', 'WARNING', 'ERROR', 'SUCCESS']"
                       class="w-full"
                     />
                   </UFormField>
