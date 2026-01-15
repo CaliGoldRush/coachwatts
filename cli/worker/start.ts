@@ -21,7 +21,10 @@ export const startCommand = new Command('start')
     }
 
     const connection = connectionString
-      ? new IORedis(connectionString, { maxRetriesPerRequest: null })
+      ? new IORedis(connectionString, {
+          maxRetriesPerRequest: null,
+          password: process.env.REDIS_PASSWORD || undefined
+        })
       : new IORedis({
           host: process.env.REDIS_HOST || 'localhost',
           port: parseInt(process.env.REDIS_PORT || '6379'),

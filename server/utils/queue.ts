@@ -13,7 +13,10 @@ const connectionString = process.env.REDIS_URL
 
 // Create a Redis connection instance
 const connection = connectionString
-  ? new IORedis(connectionString, { maxRetriesPerRequest: null })
+  ? new IORedis(connectionString, {
+      maxRetriesPerRequest: null,
+      password: process.env.REDIS_PASSWORD || undefined
+    })
   : new IORedis(redisOptions)
 
 export const webhookQueue = new Queue('webhookQueue', { connection })
