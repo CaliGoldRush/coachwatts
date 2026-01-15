@@ -10,6 +10,7 @@ import { calculateProjectedPMC, getCurrentFitnessSummary } from '../server/utils
 import { analyzeWellness } from '../server/utils/services/wellness-analysis'
 import { getCheckinHistoryContext } from '../server/utils/services/checkin-service'
 import { getUserAiSettings } from '../server/utils/ai-settings'
+import { generateAthleteProfileTask } from './generate-athlete-profile'
 
 const recommendationSchema = {
   type: 'object',
@@ -87,7 +88,62 @@ export const recommendTodayActivityTask = task({
 
     const userTimezone = user?.timezone || 'UTC'
 
-    // 2. Calculate Effective Today based on User's Timezone
+    // 2. CHECK PROFILE FRESHNESS
+    const latestProfile = await prisma.report.findFirst({
+      where: { userId, type: 'ATHLETE_PROFILE', status: 'COMPLETED' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true }
+    })
+
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
+    const isProfileFresh = latestProfile && latestProfile.createdAt > twelveHoursAgo
+
+    if (!isProfileFresh) {
+      logger.log('Stale or missing athlete profile. Triggering refresh before recommendation.', {
+        userId,
+        lastProfileDate: latestProfile?.createdAt
+      })
+
+      // Create a new report placeholder for the profile generation
+      const report = await prisma.report.create({
+        data: {
+          userId,
+          type: 'ATHLETE_PROFILE',
+          status: 'QUEUED',
+          title: 'Athlete Profile (Auto-refresh for Recommendation)',
+          dateRangeStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days back
+          dateRangeEnd: new Date()
+        }
+      })
+
+      // Trigger the profile generation, which will then chain the recommendation
+      await generateAthleteProfileTask.trigger(
+        {
+          userId,
+          reportId: report.id,
+          triggerRecommendation: true
+        },
+        { concurrencyKey: userId }
+      )
+
+      // Update the current recommendation status to show it's waiting for the profile
+      if (recommendationId) {
+        await activityRecommendationRepository.update(recommendationId, userId, {
+          status: 'PENDING',
+          reasoning: 'Waiting for athlete profile to update...'
+        })
+      }
+
+      // Stop this run; the chained run will take over
+      return {
+        success: true,
+        message: 'Profile stale, regeneration triggered.'
+      }
+    }
+
+    logger.log('Athlete profile is fresh, proceeding with recommendation.')
+
+    // 3. Calculate Effective Today based on User's Timezone
     // This fixes issues where server time (UTC) might be ahead/behind user's local "Today"
     const effectiveDate = getUserLocalDate(userTimezone)
     const payloadDateObj = new Date(payloadDate)
