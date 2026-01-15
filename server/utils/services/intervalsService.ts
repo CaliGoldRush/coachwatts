@@ -378,5 +378,96 @@ export const IntervalsService = {
         externalId: { in: externalIds }
       }
     })
+  },
+
+  /**
+   * Process a single webhook event.
+   */
+  async processWebhookEvent(userId: string, type: string, intervalEvent: any) {
+    // Determine sync range
+    let startDate: Date
+    let endDate: Date = new Date()
+    // Cap endDate at end of today (service will handle historical cap logic too)
+    endDate.setHours(23, 59, 59, 999)
+
+    switch (type) {
+      case 'ACTIVITY_UPLOADED':
+      case 'ACTIVITY_ANALYZED':
+        // Sync last 2 days
+        startDate = new Date()
+        startDate.setDate(startDate.getDate() - 2)
+        await IntervalsService.syncActivities(userId, startDate, endDate)
+        break
+
+      case 'ACTIVITY_UPDATED': {
+        const activityDateStr =
+          intervalEvent.activity?.start_date_local || intervalEvent.activity?.start_date
+        if (activityDateStr) {
+          const actDate = new Date(activityDateStr)
+          startDate = new Date(actDate)
+          startDate.setDate(startDate.getDate() - 1)
+          endDate = new Date(actDate)
+          endDate.setDate(endDate.getDate() + 1)
+        } else {
+          startDate = new Date()
+          startDate.setDate(startDate.getDate() - 2)
+        }
+        await IntervalsService.syncActivities(userId, startDate, endDate)
+        break
+      }
+
+      case 'WELLNESS_UPDATED':
+        startDate = new Date()
+        startDate.setDate(startDate.getDate() - 2)
+        await IntervalsService.syncWellness(userId, startDate, endDate)
+        break
+
+      case 'FITNESS_UPDATED': {
+        const records = intervalEvent.records || []
+        if (records.length > 0) {
+          const dates = records.map((r: any) => new Date(r.id).getTime())
+          startDate = new Date(Math.min(...dates))
+          endDate = new Date(Math.max(...dates))
+        } else {
+          startDate = new Date()
+          startDate.setDate(startDate.getDate() - 2)
+        }
+        await IntervalsService.syncWellness(userId, startDate, endDate)
+        break
+      }
+
+      case 'ACTIVITY_DELETED': {
+        const deletedActivityId = intervalEvent.activity?.id || intervalEvent.id
+        if (deletedActivityId) {
+          await IntervalsService.deleteActivity(userId, deletedActivityId.toString())
+        }
+        // Sync a brief range to ensure metrics (CTL/ATL) are updated
+        startDate = new Date()
+        startDate.setDate(startDate.getDate() - 1)
+        await IntervalsService.syncActivities(userId, startDate, endDate)
+        break
+      }
+
+      case 'CALENDAR_UPDATED': {
+        const deletedEvents = intervalEvent.deleted_events || []
+        if (deletedEvents.length > 0) {
+          const deletedIds = deletedEvents.map((id: any) => id.toString())
+          await IntervalsService.deletePlannedWorkouts(userId, deletedIds)
+        }
+
+        // Sync wider range for calendar
+        startDate = new Date()
+        startDate.setDate(startDate.getDate() - 3)
+        endDate = new Date()
+        endDate.setDate(endDate.getDate() + 28)
+        await IntervalsService.syncPlannedWorkouts(userId, startDate, endDate)
+        break
+      }
+
+      default:
+        console.log(`[IntervalsService] Unhandled webhook event type: ${type}`)
+        return { handled: false, message: `Unhandled event type: ${type}` }
+    }
+    return { handled: true, message: `Processed ${type}` }
   }
 }
