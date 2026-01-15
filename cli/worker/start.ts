@@ -33,14 +33,21 @@ export const startCommand = new Command('start')
 
     // Redis Connection Logging
     connection.on('connect', () => {
-      const host = connection.options.host || 'localhost'
-      const port = connection.options.port || '6379'
-      const hasPassword = !!connection.options.password
-      console.log(
-        chalk.green(`✔ Redis connected `) +
-          chalk.gray(`(${host}:${port}${hasPassword ? ' with password' : ''})
-`)
-      )
+      const options = connection.options
+      const host = options.host
+      const port = options.port
+      const family = options.family
+      const db = options.db
+      const hasPassword = !!options.password
+      const tls = !!options.tls
+
+      console.log(chalk.green(`✔ Redis connected`))
+      console.log(chalk.gray(`  Host: ${host}`))
+      console.log(chalk.gray(`  Port: ${port}`))
+      console.log(chalk.gray(`  Family: IPv${family}`))
+      console.log(chalk.gray(`  Database: ${db}`))
+      console.log(chalk.gray(`  TLS: ${tls ? 'Yes' : 'No'}`))
+      console.log(chalk.gray(`  Password: ${hasPassword ? 'Yes' : 'No'}`))
     })
     connection.on('ready', () => console.log(chalk.green.bold('✔ Redis ready to accept commands')))
     connection.on('error', (err) => console.error(chalk.red.bold('✘ Redis connection error:'), err))
