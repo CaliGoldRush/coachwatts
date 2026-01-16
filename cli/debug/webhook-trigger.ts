@@ -18,13 +18,13 @@ const triggerWebhookCommand = new Command('trigger')
     let baseUrl = options.url
     if (!baseUrl) {
       if (options.prod) {
-        baseUrl = process.env.PUBLIC_SITE_URL_PROD || process.env.NUXT_PUBLIC_SITE_URL
+        baseUrl = process.env.PUBLIC_SITE_URL_PROD
         if (!baseUrl) {
           console.error(chalk.red('PUBLIC_SITE_URL_PROD is not defined in .env'))
           process.exit(1)
         }
       } else {
-        baseUrl = 'http://localhost:3000'
+        baseUrl = process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
       }
     }
 
