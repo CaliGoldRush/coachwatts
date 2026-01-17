@@ -458,10 +458,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Generate comprehensive training context for last 14 days
-  const fourteenDaysAgo = new Date()
-  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14)
+  const fourteenDaysAgo = new Date(todayDate)
+  fourteenDaysAgo.setUTCDate(todayDate.getUTCDate() - 14)
 
-  const trainingContext = await generateTrainingContext(userId, fourteenDaysAgo, new Date(), {
+  const trainingContext = await generateTrainingContext(userId, fourteenDaysAgo, todayDate, {
     includeZones: false, // Skip expensive zone calculation for chat context
     period: 'Last 14 Days',
     timezone: userProfile?.timezone || 'UTC'

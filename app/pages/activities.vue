@@ -745,18 +745,7 @@
 </template>
 
 <script setup lang="ts">
-  import {
-    startOfMonth,
-    endOfMonth,
-    startOfWeek,
-    endOfWeek,
-    eachDayOfInterval,
-    format,
-    addMonths,
-    subMonths,
-    isSameMonth,
-    getISOWeek
-  } from 'date-fns'
+  import { format, isSameMonth, getISOWeek } from 'date-fns'
   import { useStorage } from '@vueuse/core'
   import type { CalendarActivity } from '../../types/calendar'
   import WorkoutMatcher from '~/components/workouts/WorkoutMatcher.vue'
@@ -802,17 +791,27 @@
     refresh
   } = await useFetch<CalendarActivity[]>('/api/calendar', {
     query: computed(() => {
-      const start = formatDateUTC(
-        startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 }),
-        'yyyy-MM-dd'
-      )
-      const end = formatDateUTC(
-        endOfWeek(endOfMonth(currentDate.value), { weekStartsOn: 1 }),
-        'yyyy-MM-dd'
-      )
+      // Manual UTC start/end calculation to match calendarWeeks
+      const year = currentDate.value.getUTCFullYear()
+      const month = currentDate.value.getUTCMonth()
+      const monthStart = new Date(Date.UTC(year, month, 1))
+
+      // Start of week (Monday)
+      const dayOfWeek = monthStart.getUTCDay()
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+      const start = new Date(monthStart)
+      start.setUTCDate(monthStart.getUTCDate() + diffToMonday)
+
+      // End of month -> End of week
+      const monthEnd = new Date(Date.UTC(year, month + 1, 0))
+      const endDayOfWeek = monthEnd.getUTCDay()
+      const diffToSunday = endDayOfWeek === 0 ? 0 : 7 - endDayOfWeek
+      const end = new Date(monthEnd)
+      end.setUTCDate(monthEnd.getUTCDate() + diffToSunday)
+
       return {
-        startDate: start,
-        endDate: end
+        startDate: formatDateUTC(start, 'yyyy-MM-dd'),
+        endDate: formatDateUTC(end, 'yyyy-MM-dd')
       }
     }),
     watch: [currentDate]
@@ -895,18 +894,37 @@
 
   // Calendar Logic
   const calendarWeeks = computed(() => {
-    const start = startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 })
-    const end = endOfWeek(endOfMonth(currentDate.value), { weekStartsOn: 1 })
+    // Generate dates based on UTC to avoid browser timezone shifts
+    // 1. Get start of month in UTC
+    const year = currentDate.value.getUTCFullYear()
+    const month = currentDate.value.getUTCMonth()
+    const monthStart = new Date(Date.UTC(year, month, 1))
 
-    const days = eachDayOfInterval({ start, end })
+    // 2. Find start of week (Monday)
+    // getUTCDay: 0=Sun, 1=Mon...
+    const dayOfWeek = monthStart.getUTCDay()
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // Adjust to Monday
+    const start = new Date(monthStart)
+    start.setUTCDate(monthStart.getUTCDate() + diffToMonday)
+
+    // 3. Find end of month and end of week
+    const monthEnd = new Date(Date.UTC(year, month + 1, 0))
+    const endDayOfWeek = monthEnd.getUTCDay()
+    const diffToSunday = endDayOfWeek === 0 ? 0 : 7 - endDayOfWeek
+    const end = new Date(monthEnd)
+    end.setUTCDate(monthEnd.getUTCDate() + diffToSunday)
+
     const weeks = []
     let currentWeek = []
 
-    for (const day of days) {
+    // Iterate day by day in UTC
+    const dayIterator = new Date(start)
+    while (dayIterator <= end) {
+      // Create a stable copy for the cell
+      const day = new Date(dayIterator)
+
       const dayStr = formatDateUTC(day, 'yyyy-MM-dd')
       const dayActivities = (activities.value || []).filter((a) => {
-        // IMPORTANT: Use UTC formatting for planned workouts (date-only)
-        // and local formatting for completed workouts (timestamps)
         const dateStr =
           a.source === 'planned'
             ? formatDateUTC(a.date, 'yyyy-MM-dd')
@@ -914,16 +932,23 @@
         return dateStr === dayStr
       })
 
+      // Check if other month based on UTC month index
+      // currentDate.value is already UTC midnight User Local Date
+      const isOtherMonth = day.getUTCMonth() !== currentDate.value.getUTCMonth()
+
       currentWeek.push({
         date: day,
         activities: dayActivities,
-        isOtherMonth: !isSameMonth(day, currentDate.value)
+        isOtherMonth
       })
 
       if (currentWeek.length === 7) {
         weeks.push(currentWeek)
         currentWeek = []
       }
+
+      // Next day
+      dayIterator.setUTCDate(dayIterator.getUTCDate() + 1)
     }
 
     return weeks
@@ -935,11 +960,17 @@
 
   // Navigation
   function nextMonth() {
-    currentDate.value = addMonths(currentDate.value, 1)
+    // Add 1 month in UTC
+    const next = new Date(currentDate.value)
+    next.setUTCMonth(next.getUTCMonth() + 1)
+    currentDate.value = next
   }
 
   function prevMonth() {
-    currentDate.value = subMonths(currentDate.value, 1)
+    // Sub 1 month in UTC
+    const prev = new Date(currentDate.value)
+    prev.setUTCMonth(prev.getUTCMonth() - 1)
+    currentDate.value = prev
   }
 
   function goToToday() {
@@ -947,7 +978,7 @@
   }
 
   function isTodayDate(date: Date) {
-    return date.getTime() === getUserLocalDate().getTime()
+    return formatDateUTC(date, 'yyyy-MM-dd') === formatDateUTC(getUserLocalDate(), 'yyyy-MM-dd')
   }
 
   // Helpers

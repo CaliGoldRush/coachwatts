@@ -415,7 +415,9 @@
   }
 
   const isToday = computed(() => {
-    return props.date.getTime() === getUserLocalDate().getTime()
+    return (
+      formatDateUTC(props.date, 'yyyy-MM-dd') === formatDateUTC(getUserLocalDate(), 'yyyy-MM-dd')
+    )
   })
 
   // Get nutrition data from any activity on this day (they all have same nutrition data)

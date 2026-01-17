@@ -477,7 +477,7 @@
 
   const userStore = useUserStore()
   const integrationStore = useIntegrationStore()
-  const { formatDate, getUserLocalDate } = useFormat()
+  const { formatDate, formatDateUTC, getUserLocalDate } = useFormat()
   const { checkProfileStale, checkWellnessStale } = useDataStatus()
 
   defineEmits(['open-wellness', 'open-training-load'])
@@ -561,8 +561,8 @@
     yesterday.setDate(yesterday.getDate() - 1)
 
     const dStr = formatDate(date, 'yyyy-MM-dd')
-    const tStr = formatDate(today, 'yyyy-MM-dd')
-    const yStr = formatDate(yesterday, 'yyyy-MM-dd')
+    const tStr = formatDateUTC(today, 'yyyy-MM-dd')
+    const yStr = formatDateUTC(yesterday, 'yyyy-MM-dd')
 
     if (dStr === tStr) return 'today'
     if (dStr === yStr) return 'yesterday'
