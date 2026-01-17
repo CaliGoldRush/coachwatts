@@ -294,7 +294,7 @@ export default defineEventHandler(async (event) => {
     if (userProfile.restingHr) metrics.push(`Resting HR: ${userProfile.restingHr} bpm`)
     if (userProfile.weight) {
       const weightUnit = userProfile.weightUnits === 'Pounds' ? 'lbs' : 'kg'
-      metrics.push(`Weight: ${userProfile.weight}${weightUnit}`)
+      metrics.push(`Weight: ${userProfile.weight.toFixed(2)}${weightUnit}`)
       if (userProfile.ftp && userProfile.weightUnits !== 'Pounds') {
         metrics.push(`W/kg: ${(userProfile.ftp / userProfile.weight).toFixed(2)}`)
       }

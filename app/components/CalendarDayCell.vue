@@ -47,7 +47,7 @@
           </span>
           <span v-if="dayWellness.weight != null" class="flex items-center gap-0.5">
             <UIcon name="i-heroicons-scale" class="w-2.5 h-2.5" />
-            <span class="font-medium">{{ dayWellness.weight.toFixed(1) }}</span>
+            <span class="font-medium">{{ dayWellness.weight.toFixed(2) }}</span>
           </span>
         </button>
       </div>

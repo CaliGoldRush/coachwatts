@@ -309,7 +309,7 @@
             <div class="flex items-center gap-2">
               <div class="text-sm font-bold text-gray-900 dark:text-white">
                 <template v-if="userStore.profile.weight"
-                  >{{ userStore.profile.weight }}kg</template
+                  >{{ userStore.profile.weight.toFixed(2) }}kg</template
                 >
                 <UButton
                   v-else
