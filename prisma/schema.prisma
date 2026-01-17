@@ -54,7 +54,9 @@ model User {
   country       String?
   timezone      String?
   
-  // Custom Zones
+  // LEGACY: The following fields are deprecated and will be removed once
+  // the SportSettings migration is fully verified in production.
+  // Use sportSettingsRepository to access zones instead.
   hrZones       Json?     // Array of { name, min, max }
   powerZones    Json?     // Array of { name, min, max }
 
@@ -131,7 +133,70 @@ model User {
   // System Message Dismissals
   systemMessageDismissals UserSystemMessageDismissal[]
 
+  // Sport Specific Settings (from Intervals.icu)
+  sportSettings SportSettings[]
+
   @@index([createdAt])
+}
+
+// --------------------------------------
+// Sport Specific Settings
+// --------------------------------------
+
+model SportSettings {
+  id        String   @id @default(cuid())
+  userId    String
+  
+  name      String?  // e.g. "Road Cycling" or "Default"
+  types     String[] // e.g. ["Ride", "VirtualRide"]
+  isDefault Boolean  @default(false)
+  
+  // Power Settings
+  ftp       Int?
+  indoorFtp Int?
+  wPrime          Int?
+  powerZones      Json?    // Array of { min, max, name, ?color }
+  
+  // Extended Power Settings
+  eFtp            Int?
+  eWPrime         Int?
+  pMax            Int?
+  ePMax           Int?
+  powerSpikeThreshold Int? // Percentage (e.g. 20 for 20%)
+  eftpMinDuration Int?     // seconds
+
+  // Heart Rate Settings
+  lthr            Int?
+  maxHr           Int?
+  hrZones         Json?    // Array of { min, max, name, ?color }
+  
+  // Extended HR Settings
+  restingHr       Int?     // Sport-specific resting HR
+  hrLoadType      String?  // "HRSS", "AVG_HR", "HR_ZONES"
+
+  // Pace Settings
+  thresholdPace   Float?   // m/s
+  paceZones       Json?    // Array of { min, max, name, ?color }
+  
+  // General Settings
+  warmupTime      Int?     // minutes
+  cooldownTime    Int?     // minutes
+  loadPreference  String?  // "POWER_HR_PACE", "HR_POWER_PACE", etc.
+  
+  // Zone Configuration (Methodology)
+  zoneConfiguration Json?  // Store the recipe (e.g. "Coggan 7 Zone", percentages) if available
+
+  // Source Metadata
+  source          String   @default("intervals") // "intervals", "manual"
+  externalId      String?  // ID from Intervals.icu (from sportSettings.id)
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, source, externalId])
+  @@index([userId])
 }
 
 // --------------------------------------
