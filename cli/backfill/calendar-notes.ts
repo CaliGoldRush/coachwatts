@@ -4,7 +4,6 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import pg from 'pg'
 import { normalizeIntervalsCalendarNote } from '../../server/utils/intervals'
-import { calendarNoteRepository } from '../../server/utils/repositories/calendarNoteRepository'
 
 const backfillCalendarNotesCommand = new Command('calendar-notes')
 
@@ -34,6 +33,7 @@ backfillCalendarNotesCommand
       console.log(chalk.cyan('🔍 DRY RUN mode enabled. No changes will be saved.'))
     }
 
+    // Initialize LOCAL instance for this script to ensure we use the correct DB
     const pool = new pg.Pool({ connectionString })
     const adapter = new PrismaPg(pool)
     const prisma = new PrismaClient({ adapter })
@@ -92,13 +92,18 @@ backfillCalendarNotesCommand
               )
             )
           } else {
-            // 1. Upsert to CalendarNote using repository
-            await calendarNoteRepository.upsert(
-              workout.userId,
-              'intervals',
-              normalizedNote.externalId,
-              normalizedNote
-            )
+            // 1. Upsert to CalendarNote using LOCAL prisma instance
+            await prisma.calendarNote.upsert({
+              where: {
+                userId_source_externalId: {
+                  userId: workout.userId,
+                  source: 'intervals',
+                  externalId: normalizedNote.externalId
+                }
+              },
+              create: normalizedNote as any,
+              update: normalizedNote as any
+            })
 
             // 2. Delete from PlannedWorkout
             await prisma.plannedWorkout.delete({
