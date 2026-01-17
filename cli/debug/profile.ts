@@ -90,6 +90,9 @@ debugProfileCommand
       const user = await prisma.user.findFirst({
         where: {
           OR: [{ id: identifier }, { email: identifier }]
+        },
+        include: {
+          sportSettings: true
         }
       })
 
@@ -113,8 +116,27 @@ debugProfileCommand
       console.log(`Height:  ${user.height} ${user.heightUnits}`)
       console.log(`FTP:     ${user.ftp} W`)
       console.log(`Max HR:  ${user.maxHr} bpm`)
-      console.log(`HR Zones: ${JSON.stringify(user.hrZones || 'Default')}`)
-      console.log(`Power Zones: ${JSON.stringify(user.powerZones || 'Default')}`)
+      console.log(chalk.gray(`Legacy HR Zones: ${JSON.stringify(user.hrZones || 'Default')}`))
+      console.log(chalk.gray(`Legacy Power Zones: ${JSON.stringify(user.powerZones || 'Default')}`))
+
+      if (user.sportSettings && user.sportSettings.length > 0) {
+        console.log(chalk.bold('\n-- Sport Settings --'))
+        user.sportSettings.forEach((s) => {
+          console.log(chalk.green(`\n[${s.name}] ${s.isDefault ? '(Default)' : ''}`))
+          console.log(`  Types: ${s.types.join(', ')}`)
+          console.log(`  FTP:   ${s.ftp} W`)
+          console.log(`  LTHR:  ${s.lthr} bpm`)
+          console.log(`  MaxHR: ${s.maxHr} bpm`)
+          console.log(
+            `  HR Zones: ${s.hrZones ? JSON.stringify(s.hrZones).substring(0, 100) + '...' : 'null'}`
+          )
+          console.log(
+            `  Pwr Zones: ${s.powerZones ? JSON.stringify(s.powerZones).substring(0, 100) + '...' : 'null'}`
+          )
+        })
+      } else {
+        console.log(chalk.yellow('\n-- No Sport Settings Found --'))
+      }
 
       console.log(chalk.bold('\n-- System --'))
       console.log(`Created: ${user.createdAt.toISOString()}`)

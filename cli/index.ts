@@ -12,6 +12,7 @@ import oauthCommand from './oauth'
 import statsCommand from './stats'
 import usersCommand from './users'
 import geminiCommand from './gemini'
+import llmCommand from './llm'
 
 const program = new Command()
 
@@ -27,6 +28,7 @@ program.addCommand(oauthCommand)
 program.addCommand(statsCommand)
 program.addCommand(usersCommand)
 program.addCommand(geminiCommand)
+program.addCommand(llmCommand)
 
 program.parse(process.argv)
 

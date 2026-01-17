@@ -14,6 +14,8 @@ import findAnyCommand from './find-any'
 import plannedCommand from './planned'
 import goalsCommand from './goals'
 import intervalsTypesCommand from './intervals-types'
+import calendarNotesCommand from './calendar-notes'
+import verifyLazyProfileCommand from './verify-lazy-profile'
 
 const debugCommand = new Command('debug')
 
@@ -34,5 +36,7 @@ debugCommand
   .addCommand(plannedCommand)
   .addCommand(goalsCommand)
   .addCommand(intervalsTypesCommand)
+  .addCommand(calendarNotesCommand)
+  .addCommand(verifyLazyProfileCommand)
 
 export default debugCommand
