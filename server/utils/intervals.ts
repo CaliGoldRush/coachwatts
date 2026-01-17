@@ -1,4 +1,5 @@
 import type { Integration } from '@prisma/client'
+import { formatUserDate } from './date'
 
 function getIntervalsHeaders(integration: Integration): Record<string, string> {
   // If we have a scope or refresh token, it's an OAuth integration
@@ -506,17 +507,18 @@ export async function fetchIntervalsAthleteProfile(integration: Integration) {
   }
 
   const athlete = await athleteResponse.json()
+  const timezone = athlete.timezone || 'UTC'
 
   // Fetch recent wellness data (last 7 days)
   const today = new Date()
-  const sevenDaysAgo = new Date(today)
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
   const wellnessData: any[] = []
   for (let i = 0; i < 7; i++) {
+    // Use the user's timezone to calculate "7 days ago" correctly relative to their day
     const date = new Date(today)
     date.setDate(date.getDate() - i)
-    const dateStr = date.toISOString().split('T')[0]
+    // Format in user's timezone to ensure we ask for the correct calendar day
+    const dateStr = formatUserDate(date, timezone, 'yyyy-MM-dd')
 
     try {
       const wellnessResponse = await fetchWithRetry(

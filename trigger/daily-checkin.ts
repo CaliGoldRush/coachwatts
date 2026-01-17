@@ -4,7 +4,7 @@ import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
 import { dailyCheckinRepository } from '../server/utils/repositories/dailyCheckinRepository'
-import { formatUserDate, formatDateUTC } from '../server/utils/date'
+import { formatUserDate, formatDateUTC, getUserLocalDate } from '../server/utils/date'
 import { calculateProjectedPMC, getCurrentFitnessSummary } from '../server/utils/training-stress'
 import { getUserAiSettings } from '../server/utils/ai-settings'
 
@@ -181,10 +181,14 @@ export const generateDailyCheckinTask = task({
 
     const userTimezone = user?.timezone || 'UTC'
 
+    // Normalize today to represent the user's local calendar day at UTC midnight
+    // This ensures PMC calculation aligns with database dates
+    const todayNormalized = getUserLocalDate(userTimezone, today)
+
     // Calculate Projected PMC Trends
     const projectedMetrics = calculateProjectedPMC(
-      today,
-      new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
+      todayNormalized,
+      new Date(todayNormalized.getTime() + 7 * 24 * 60 * 60 * 1000),
       currentFitness.ctl,
       currentFitness.atl,
       futureWorkouts
