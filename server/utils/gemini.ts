@@ -416,7 +416,7 @@ export function buildWorkoutSummary(workouts: any[], timezone?: string): string 
     .map((w, idx) => {
       const dateStr = timezone
         ? formatUserDate(w.date, timezone, 'MMM d, yyyy')
-        : new Date(w.date).toLocaleDateString()
+        : w.date.toISOString().split('T')[0]
 
       const lines = [
         `### Workout ${idx + 1}: ${w.title}`,
@@ -514,7 +514,7 @@ export function buildMetricsSummary(metrics: any[], timezone?: string): string {
     .map((m) => {
       const dateStr = timezone
         ? formatUserDate(m.date, timezone, 'MMM d, yyyy')
-        : new Date(m.date).toLocaleDateString()
+        : m.date.toISOString().split('T')[0]
 
       const parts = [`**${dateStr}**:`]
 

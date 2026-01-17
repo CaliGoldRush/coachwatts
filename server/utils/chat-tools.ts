@@ -1328,10 +1328,12 @@ async function getPerformanceMetrics(userId: string, timezone: string, args: any
       // Assuming week starts on Monday
       const localDateStr = formatUserDate(w.date, timezone, 'yyyy-MM-dd')
       const parts = localDateStr.split('-')
-      const d = new Date(parseInt(parts[0]!), parseInt(parts[1]!) - 1, parseInt(parts[2]!))
-      const day = d.getDay()
-      const diff = d.getDate() - day + (day == 0 ? -6 : 1) // adjust when day is sunday
-      d.setDate(diff)
+      const d = new Date(
+        Date.UTC(parseInt(parts[0]!), parseInt(parts[1]!) - 1, parseInt(parts[2]!))
+      )
+      const day = d.getUTCDay()
+      const diff = d.getUTCDate() - day + (day == 0 ? -6 : 1) // adjust when day is sunday
+      d.setUTCDate(diff)
       const weekKey = d.toISOString().split('T')[0] // Use local date YYYY-MM-DD as key
 
       if (weekKey) {

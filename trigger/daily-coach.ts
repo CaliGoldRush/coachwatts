@@ -251,8 +251,8 @@ CRITICAL INSTRUCTIONS:
         userId,
         type: 'DAILY_SUGGESTION',
         status: 'COMPLETED',
-        dateRangeStart: today,
-        dateRangeEnd: today,
+        dateRangeStart: todayDateOnly,
+        dateRangeEnd: todayDateOnly,
         modelVersion: aiSettings.aiModelPreference,
         suggestions: suggestion as any
       }

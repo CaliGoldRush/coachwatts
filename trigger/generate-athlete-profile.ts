@@ -623,7 +623,7 @@ Recent sleep: ${recentWellness
                 }
                 if (daysToTarget) goalInfo += `\n  Timeline: ${daysToTarget} days remaining`
                 if (g.eventDate)
-                  goalInfo += `\n  Event: ${g.eventType || 'race'} on ${new Date(g.eventDate).toLocaleDateString()} (${daysToEvent} days)`
+                  goalInfo += `\n  Event: ${g.eventType || 'race'} on ${formatUserDate(g.eventDate, timezone)} (${daysToEvent} days)`
                 if (g.aiContext) goalInfo += `\n  Context: ${g.aiContext}`
 
                 return goalInfo

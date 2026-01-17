@@ -516,7 +516,7 @@ export async function fetchIntervalsAthleteProfile(integration: Integration) {
   for (let i = 0; i < 7; i++) {
     // Use the user's timezone to calculate "7 days ago" correctly relative to their day
     const date = new Date(today)
-    date.setDate(date.getDate() - i)
+    date.setUTCDate(date.getDate() - i)
     // Format in user's timezone to ensure we ask for the correct calendar day
     const dateStr = formatUserDate(date, timezone, 'yyyy-MM-dd')
 
@@ -734,7 +734,7 @@ export async function fetchIntervalsWellness(
       console.error(`Error fetching wellness for ${dateStr}:`, error)
     }
 
-    currentDate.setDate(currentDate.getDate() + 1)
+    currentDate.setUTCDate(currentDate.getDate() + 1)
   }
 
   return wellness

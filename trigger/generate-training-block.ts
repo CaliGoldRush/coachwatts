@@ -158,7 +158,7 @@ export const generateTrainingBlockTask = task({
     if (athleteProfileReport?.analysisJson) {
       const profile = athleteProfileReport.analysisJson as any
       athleteProfileContext = `
-DETAILED ATHLETE ANALYSIS (Generated ${new Date(athleteProfileReport.createdAt).toLocaleDateString()}):
+DETAILED ATHLETE ANALYSIS (Generated ${formatUserDate(athleteProfileReport.createdAt, timezone)}):
 Training Characteristics:
 ${profile.training_characteristics?.training_style || 'No data'}
 Strengths: ${profile.training_characteristics?.strengths?.join(', ') || 'None listed'}
