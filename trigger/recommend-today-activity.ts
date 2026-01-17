@@ -5,6 +5,7 @@ import { workoutRepository } from '../server/utils/repositories/workoutRepositor
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
 import { activityRecommendationRepository } from '../server/utils/repositories/activityRecommendationRepository'
 import { recommendationRepository } from '../server/utils/repositories/recommendationRepository'
+import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { formatUserDate, getUserLocalDate, formatDateUTC } from '../server/utils/date'
 import { calculateProjectedPMC, getCurrentFitnessSummary } from '../server/utils/training-stress'
 import { analyzeWellness } from '../server/utils/services/wellness-analysis'
@@ -80,9 +81,7 @@ export const recommendTodayActivityTask = task({
         weight: true,
         maxHr: true,
         timezone: true,
-        lthr: true,
-        hrZones: true,
-        powerZones: true
+        lthr: true
       }
     })
 
@@ -180,7 +179,8 @@ export const recommendTodayActivityTask = task({
       currentPlan,
       upcomingEvents,
       currentFitness,
-      focusedRecommendations
+      focusedRecommendations,
+      sportSettings
     ] = await Promise.all([
       // Today's planned workout
       prisma.plannedWorkout.findFirst({
@@ -278,7 +278,10 @@ export const recommendTodayActivityTask = task({
       getCurrentFitnessSummary(userId),
 
       // Pinned/Focused recommendations
-      recommendationRepository.list(userId, { isPinned: true, status: 'ACTIVE' })
+      recommendationRepository.list(userId, { isPinned: true, status: 'ACTIVE' }),
+
+      // Sport Settings (New centralized system)
+      sportSettingsRepository.getByUserId(userId)
     ])
 
     // --- CHECK FOR AND RUN WELLNESS ANALYSIS IF MISSING ---
@@ -393,6 +396,15 @@ Note: No structured athlete profile available yet. Generate one for better recom
 `
     }
 
+    // Add Sport Specific Profiles to context
+    if (sportSettings.length > 0) {
+      athleteContext += `\nSPORT SPECIFIC SETTINGS:\n`
+      for (const s of sportSettings) {
+        const types = s.isDefault ? 'Fallback/Generic' : s.types.join(', ')
+        athleteContext += `- **${s.name || (s.isDefault ? 'Default' : 'Profile')}** (${types}): FTP=${s.ftp || 'N/A'}W, LTHR=${s.lthr || 'N/A'}bpm, MaxHR=${s.maxHr || 'N/A'}bpm\n`
+      }
+    }
+
     // Add goals context
     if (activeGoals.length > 0) {
       athleteContext += `
@@ -468,18 +480,37 @@ ${projectedMetrics
 `
     }
 
-    // Build zone definitions
+    // Build zone definitions based on today's activity type
     let zoneDefinitions = ''
-    if (user?.hrZones && Array.isArray(user.hrZones)) {
-      zoneDefinitions += '**User HR Zones:**\n'
-      user.hrZones.forEach((z: any) => {
-        zoneDefinitions += `- ${z.name}: ${z.min}-${z.max} bpm\n`
-      })
+    let activeProfile = sportSettings.find((s) => s.isDefault)
+    if (plannedWorkout?.type) {
+      const match = sportSettings.find((s) => !s.isDefault && s.types.includes(plannedWorkout.type))
+      if (match) activeProfile = match
     }
-    // Also explicitly list Z2 if lthr is present
-    if (user?.lthr) {
-      zoneDefinitions += `\n**Reference LTHR:** ${user.lthr} bpm\n`
-      zoneDefinitions += `**Zone 2 (LTHR-based):** ${Math.round(user.lthr * 0.8)}-${Math.round(user.lthr * 0.9)} bpm (80-90% LTHR)\n`
+
+    if (activeProfile) {
+      zoneDefinitions += `**Applicable Zones for ${plannedWorkout?.type || 'Today'} (Profile: ${activeProfile.name}):**\n`
+
+      if (activeProfile.hrZones && Array.isArray(activeProfile.hrZones)) {
+        zoneDefinitions += '*Heart Rate Zones:*\n'
+        activeProfile.hrZones.forEach((z: any) => {
+          zoneDefinitions += `- ${z.name}: ${z.min}-${z.max} bpm\n`
+        })
+      }
+
+      if (activeProfile.powerZones && Array.isArray(activeProfile.powerZones)) {
+        zoneDefinitions += '*Power Zones:*\n'
+        activeProfile.powerZones.forEach((z: any) => {
+          zoneDefinitions += `- ${z.name}: ${z.min}-${z.max} Watts\n`
+        })
+      }
+
+      if (activeProfile.lthr) {
+        zoneDefinitions += `\n**Reference LTHR:** ${activeProfile.lthr} bpm\n`
+      }
+      if (activeProfile.ftp) {
+        zoneDefinitions += `**Reference FTP:** ${activeProfile.ftp} Watts\n`
+      }
     }
 
     // Build Wellness Analysis Context
@@ -594,14 +625,14 @@ IMPORTANT: The user has explicitly provided this feedback. You MUST take it into
 }
 
 CRITICAL INSTRUCTIONS:
-1. ALWAYS use the user's custom zones defined below.
+1. ALWAYS use the user's specific zones defined below for the relevant activity type.
 2. PRIORITIZE the "CURRENT ATHLETE STATUS (Source of Truth)" metrics above for any fitness assessment.
 3. IGNORE any conflicting TSB/CTL values found in the "ATHLETE PROFILE" section if they differ from the Source of Truth, as they may be stale summaries.
 4. Refer to the "PROJECTED FITNESS TRENDS" for future state, but base your primary decision on the current TSB and recovery metrics.
 
 ${zoneDefinitions}
 
-When suggesting modifications (e.g. "Ride in Zone 2"), target ONLY the user's defined Z2 range. Never use generic percentages - always reference the user's custom zones first.
+When suggesting modifications (e.g. "Ride in Zone 2"), target ONLY the user's defined Z2 range for this specific sport. Never use generic percentages - always reference the provided zones first.
 
 TASK:
 Analyze whether the athlete should proceed with today's planned workout or modify it based on their current recovery state, recent training load, AND FUTURE PLANS. 

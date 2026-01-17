@@ -4,6 +4,7 @@ import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
 import { nutritionRepository } from '../server/utils/repositories/nutritionRepository'
+import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { userReportsQueue } from './queues'
 import {
   generateTrainingContext,
@@ -390,7 +391,8 @@ export const generateAthleteProfileTask = task({
         recentReports,
         recentRecommendations,
         activeGoals,
-        currentPlan
+        currentPlan,
+        sportSettings
       ] = await Promise.all([
         prisma.user.findUnique({
           where: { id: userId },
@@ -399,8 +401,7 @@ export const generateAthleteProfileTask = task({
             weight: true,
             maxHr: true,
             dob: true,
-            lthr: true,
-            hrZones: true
+            lthr: true
           }
         }),
         workoutRepository.getForUser(userId, {
@@ -500,7 +501,9 @@ export const generateAthleteProfileTask = task({
             totalTSS: true,
             planJson: true
           }
-        })
+        }),
+        // Fetch Sport Settings
+        sportSettingsRepository.getByUserId(userId)
       ])
 
       logger.log('Data fetched', {
@@ -508,26 +511,24 @@ export const generateAthleteProfileTask = task({
         wellnessRecords: recentWellness.length,
         reportsCount: recentReports.length,
         recommendationsCount: recentRecommendations.length,
-        activeGoals: activeGoals.length
+        activeGoals: activeGoals.length,
+        sportProfiles: sportSettings.length
       })
 
-      // Build HR Zone Definitions
-      let hrZoneDefinitions = ''
-      if (user?.lthr) {
-        hrZoneDefinitions += `**User HR Zone Definitions (from profile/settings):**\n`
-        hrZoneDefinitions += `- LTHR: ${user.lthr} bpm\n`
-        if (user.hrZones && Array.isArray(user.hrZones)) {
-          user.hrZones.forEach((z: any) => {
-            hrZoneDefinitions += `- ${z.name}: ${z.min}-${z.max} bpm\n`
-          })
-        } else {
-          // Fallback if no custom zones but LTHR exists
-          hrZoneDefinitions += `- Z1 Recovery: <${Math.round(user.lthr * 0.81)} bpm (<81% LTHR)\n`
-          hrZoneDefinitions += `- Z2 Aerobic: ${Math.round(user.lthr * 0.81)}-${Math.round(user.lthr * 0.9)} bpm (81-90% LTHR)\n`
-          hrZoneDefinitions += `- Z3 Tempo: ${Math.round(user.lthr * 0.9)}-${Math.round(user.lthr * 0.94)} bpm (90-94% LTHR)\n`
-          hrZoneDefinitions += `- Z4 Threshold: ${Math.round(user.lthr * 0.94)}-${Math.round(user.lthr * 1.0)} bpm (94-100% LTHR)\n`
-          hrZoneDefinitions += `- Z5+ VO2 Max: >${Math.round(user.lthr * 1.0)} bpm (>100% LTHR)\n`
+      // Build Multi-Sport Zone Definitions
+      let sportSettingsContext = '\nSPORT SPECIFIC SETTINGS & ZONES:\n'
+      for (const s of sportSettings) {
+        const typeLabel = s.isDefault ? 'Fallback/Generic' : s.types.join(', ')
+        sportSettingsContext += `### Profile: ${s.name || (s.isDefault ? 'Default' : 'Sport')} (${typeLabel})\n`
+        sportSettingsContext += `- FTP: ${s.ftp || 'N/A'}W, LTHR: ${s.lthr || 'N/A'}bpm, MaxHR: ${s.maxHr || 'N/A'}bpm\n`
+
+        if (s.hrZones && Array.isArray(s.hrZones)) {
+          sportSettingsContext += `  - Heart Rate Zones: ${s.hrZones.map((z: any) => `${z.name}(${z.min}-${z.max})`).join(', ')}\n`
         }
+        if (s.powerZones && Array.isArray(s.powerZones)) {
+          sportSettingsContext += `  - Power Zones: ${s.powerZones.map((z: any) => `${z.name}(${z.min}-${z.max})`).join(', ')}\n`
+        }
+        sportSettingsContext += '\n'
       }
 
       // Build workout insights from AI analysis
@@ -695,7 +696,7 @@ USER PROFILE:
 
 ${formattedContext}
 
-${hrZoneDefinitions}
+${sportSettingsContext}
 
 WORKOUT INSIGHTS (from AI analysis):
 ${workoutInsights || 'No detailed workout analysis available'}

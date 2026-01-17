@@ -2,6 +2,7 @@ import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateStructuredAnalysis, buildWorkoutSummary } from '../server/utils/gemini'
 import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
+import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { userReportsQueue } from './queues'
 import { getUserTimezone, formatUserDate, getStartOfDaysAgoUTC } from '../server/utils/date'
 
@@ -95,20 +96,37 @@ const analysisSchema = {
   required: ['type', 'title', 'executive_summary', 'sections']
 }
 
-function buildAnalysisPrompt(workouts: any[], user: any, timezone: string) {
+function buildAnalysisPrompt(workouts: any[], user: any, timezone: string, sportSettings?: any) {
   const dateRange =
     workouts.length > 0
       ? `${formatUserDate(workouts[workouts.length - 1].date, timezone)} - ${formatUserDate(workouts[0].date, timezone)}`
       : 'Unknown'
 
-  return `You are a friendly, supportive cycling coach analyzing your athlete's recent training progression.
+  let prompt = `You are a friendly, supportive cycling coach analyzing your athlete's recent training progression.
 
 USER PROFILE:
 - FTP: ${user?.ftp || 'Unknown'} watts
 - Weight: ${user?.weight || 'Unknown'} kg
 - Max HR: ${user?.maxHr || 'Unknown'} bpm
 - W/kg: ${user?.ftp && user?.weight ? (user.ftp / user.weight).toFixed(2) : 'Unknown'}
+`
 
+  if (sportSettings) {
+    if (sportSettings.hrZones && Array.isArray(sportSettings.hrZones)) {
+      prompt += '\nHeart Rate Zones:\n'
+      sportSettings.hrZones.forEach((z: any) => {
+        prompt += `- ${z.name}: ${z.min}-${z.max} bpm\n`
+      })
+    }
+    if (sportSettings.powerZones && Array.isArray(sportSettings.powerZones)) {
+      prompt += '\nPower Zones:\n'
+      sportSettings.powerZones.forEach((z: any) => {
+        prompt += `- ${z.name}: ${z.min}-${z.max} W\n`
+      })
+    }
+  }
+
+  prompt += `
 RECENT WORKOUTS (Last 3 Cycling Sessions):
 ${buildWorkoutSummary(workouts, timezone)}
 
@@ -135,6 +153,8 @@ OUTPUT: Generate a structured JSON analysis with:
 - Metrics summary with aggregate data
 
 Be specific with numbers and trends. Highlight both strengths and areas for improvement.`
+
+  return prompt
 }
 
 function convertStructuredToMarkdown(analysis: any): string {
@@ -247,8 +267,11 @@ export const analyzeLast3WorkoutsTask = task({
         select: { ftp: true, weight: true, maxHr: true }
       })
 
+      // Fetch Sport Specific Settings (Cycling)
+      const sportSettings = await sportSettingsRepository.getForActivityType(userId, 'Ride')
+
       // Build the analysis prompt
-      const prompt = buildAnalysisPrompt(workouts, user, timezone)
+      const prompt = buildAnalysisPrompt(workouts, user, timezone, sportSettings)
 
       logger.log('Generating structured analysis with Gemini Flash')
 

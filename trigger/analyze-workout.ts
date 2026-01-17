@@ -2,6 +2,7 @@ import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateCoachAnalysis, generateStructuredAnalysis } from '../server/utils/gemini'
 import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
+import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { userAnalysisQueue } from './queues'
 import { getUserTimezone, formatUserDate } from '../server/utils/date'
 import { getUserAiSettings } from '../server/utils/ai-settings'
@@ -277,6 +278,12 @@ export const analyzeWorkoutTask = task({
       const timezone = await getUserTimezone(workout.userId)
       const aiSettings = await getUserAiSettings(workout.userId)
 
+      // Fetch Sport Specific Settings
+      const sportSettings = await sportSettingsRepository.getForActivityType(
+        workout.userId,
+        workout.type || ''
+      )
+
       logger.log('Using AI settings', {
         model: aiSettings.aiModelPreference,
         persona: aiSettings.aiPersona
@@ -286,7 +293,12 @@ export const analyzeWorkoutTask = task({
       const workoutData = buildWorkoutAnalysisData(workout)
 
       // Generate the prompt
-      const prompt = buildWorkoutAnalysisPrompt(workoutData, timezone, aiSettings.aiPersona)
+      const prompt = buildWorkoutAnalysisPrompt(
+        workoutData,
+        timezone,
+        aiSettings.aiPersona,
+        sportSettings
+      )
 
       logger.log(`Generating structured analysis with Gemini (${aiSettings.aiModelPreference})`)
 
@@ -635,7 +647,8 @@ function getAnalysisSectionsGuidance(
 function buildWorkoutAnalysisPrompt(
   workoutData: any,
   timezone: string,
-  persona: string = 'Supportive'
+  persona: string = 'Supportive',
+  sportSettings?: any
 ): string {
   const formatMetric = (value: any, decimals = 1) => {
     return value !== undefined && value !== null ? Number(value).toFixed(decimals) : 'N/A'
@@ -662,6 +675,27 @@ function buildWorkoutAnalysisPrompt(
     coachType = 'strength and conditioning coach'
   }
 
+  let zoneDefinitions = ''
+  if (sportSettings) {
+    zoneDefinitions += `\n## Defined Training Zones (Reference)\n`
+    if (sportSettings.ftp) zoneDefinitions += `- **FTP**: ${sportSettings.ftp} W\n`
+    if (sportSettings.lthr) zoneDefinitions += `- **LTHR**: ${sportSettings.lthr} bpm\n`
+
+    if (sportSettings.hrZones && Array.isArray(sportSettings.hrZones)) {
+      zoneDefinitions += '- **Heart Rate Zones**:\n'
+      sportSettings.hrZones.forEach((z: any) => {
+        zoneDefinitions += `  - ${z.name}: ${z.min}-${z.max} bpm\n`
+      })
+    }
+
+    if (sportSettings.powerZones && Array.isArray(sportSettings.powerZones)) {
+      zoneDefinitions += '- **Power Zones**:\n'
+      sportSettings.powerZones.forEach((z: any) => {
+        zoneDefinitions += `  - ${z.name}: ${z.min}-${z.max} W\n`
+      })
+    }
+  }
+
   let prompt = `You are an expert ${coachType} analyzing a workout.
 Your persona is: **${persona}**. Adapt your tone and feedback style accordingly.
 
@@ -673,6 +707,8 @@ Your persona is: **${persona}**. Adapt your tone and feedback style accordingly.
 - **Type**: ${workoutType}
 - **Duration**: ${workoutData.duration_m} minutes (${workoutData.duration_s}s)
 `
+  // Add zone definitions to context
+  prompt += zoneDefinitions
 
   if (workoutData.distance_m) {
     prompt += `- **Distance**: ${(workoutData.distance_m / 1000).toFixed(2)} km\n`

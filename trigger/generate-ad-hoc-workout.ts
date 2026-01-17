@@ -3,6 +3,7 @@ import { generateStructuredAnalysis, buildWorkoutSummary } from '../server/utils
 import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
+import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { getUserTimezone, getStartOfDaysAgoUTC, formatUserDate } from '../server/utils/date'
 
 const adHocWorkoutSchema = {
@@ -45,39 +46,42 @@ export const generateAdHocWorkoutTask = task({
     })
 
     // Fetch Data
-    const [todayMetric, recentWorkouts, user, athleteProfile, activeGoals] = await Promise.all([
-      wellnessRepository.getByDate(userId, today),
-      workoutRepository.getForUser(userId, {
-        startDate: getStartOfDaysAgoUTC(timezone, 7),
-        limit: 10,
-        orderBy: { date: 'desc' },
-        includeDuplicates: false
-      }),
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { ftp: true, weight: true, maxHr: true, aiPersona: true }
-      }),
-      prisma.report.findFirst({
-        where: { userId, type: 'ATHLETE_PROFILE', status: 'COMPLETED' },
-        orderBy: { createdAt: 'desc' },
-        select: { analysisJson: true }
-      }),
-      prisma.goal.findMany({
-        where: {
-          userId,
-          status: 'ACTIVE'
-        },
-        orderBy: { priority: 'desc' },
-        select: {
-          title: true,
-          type: true,
-          description: true,
-          targetDate: true,
-          eventDate: true,
-          priority: true
-        }
-      })
-    ])
+    const [todayMetric, recentWorkouts, user, athleteProfile, activeGoals, sportSettings] =
+      await Promise.all([
+        wellnessRepository.getByDate(userId, today),
+        workoutRepository.getForUser(userId, {
+          startDate: getStartOfDaysAgoUTC(timezone, 7),
+          limit: 10,
+          orderBy: { date: 'desc' },
+          includeDuplicates: false
+        }),
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { ftp: true, weight: true, maxHr: true, aiPersona: true }
+        }),
+        prisma.report.findFirst({
+          where: { userId, type: 'ATHLETE_PROFILE', status: 'COMPLETED' },
+          orderBy: { createdAt: 'desc' },
+          select: { analysisJson: true }
+        }),
+        prisma.goal.findMany({
+          where: {
+            userId,
+            status: 'ACTIVE'
+          },
+          orderBy: { priority: 'desc' },
+          select: {
+            title: true,
+            type: true,
+            description: true,
+            targetDate: true,
+            eventDate: true,
+            priority: true
+          }
+        }),
+        // Fetch settings for requested type or default to Ride
+        sportSettingsRepository.getForActivityType(userId, preferences?.type || 'Ride')
+      ])
 
     // Build Context
     let context = `Athlete: FTP ${user?.ftp || 250}W. Persona: ${user?.aiPersona || 'Supportive'}.`
@@ -85,6 +89,22 @@ export const generateAdHocWorkoutTask = task({
       context += `\nRecovery: ${todayMetric.recoveryScore || 'Unknown'}%. Sleep: ${todayMetric.sleepHours || 0}h.`
     }
     context += `\nRecent Workouts: ${recentWorkouts.length > 0 ? buildWorkoutSummary(recentWorkouts) : 'None'}.`
+
+    if (sportSettings) {
+      context += `\n\nDEFINED ZONES (Use these for intensity):`
+      if (sportSettings.hrZones && Array.isArray(sportSettings.hrZones)) {
+        context += '\nHeart Rate:\n'
+        sportSettings.hrZones.forEach((z: any) => {
+          context += `- ${z.name}: ${z.min}-${z.max} bpm\n`
+        })
+      }
+      if (sportSettings.powerZones && Array.isArray(sportSettings.powerZones)) {
+        context += '\nPower:\n'
+        sportSettings.powerZones.forEach((z: any) => {
+          context += `- ${z.name}: ${z.min}-${z.max} W\n`
+        })
+      }
+    }
 
     if (athleteProfile?.analysisJson) {
       const p = athleteProfile.analysisJson as any

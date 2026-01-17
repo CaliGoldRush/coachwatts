@@ -1,8 +1,10 @@
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateStructuredAnalysis } from '../server/utils/gemini'
+import { getUserAiSettings } from '../server/utils/ai-settings'
 import { prisma } from '../server/utils/db'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
+import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { generateTrainingContext } from '../server/utils/training-metrics'
 import { userBackgroundQueue } from './queues'
 import {
@@ -196,11 +198,12 @@ export const generateWeeklyPlanTask = task({
       currentPlan,
       athleteProfile,
       activeGoals,
-      existingPlannedWorkouts
+      existingPlannedWorkouts,
+      sportSettings
     ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: { ftp: true, weight: true, maxHr: true }
+        select: { ftp: true, weight: true, maxHr: true, lthr: true }
       }),
       prisma.trainingAvailability.findMany({
         where: { userId },
@@ -281,7 +284,10 @@ export const generateWeeklyPlanTask = task({
           tss: true,
           targetArea: true
         }
-      })
+      }),
+
+      // Sport Specific Settings
+      sportSettingsRepository.getByUserId(userId)
     ])
 
     // Split into Anchors and Context
@@ -309,7 +315,8 @@ export const generateWeeklyPlanTask = task({
       recentWellnessCount: recentWellness.length,
       hasExistingPlan: !!currentPlan,
       hasAthleteProfile: !!athleteProfile,
-      activeGoals: activeGoals.length
+      activeGoals: activeGoals.length,
+      sportProfiles: sportSettings.length
     })
 
     // Build availability summary
@@ -478,11 +485,35 @@ ${profile.recommendations_summary?.action_items?.length ? `Priority Actions:\n${
     } else {
       athleteContext = `
 USER BASIC INFO:
-- FTP: ${user?.ftp || 'Unknown'} watts
+- Global FTP: ${user?.ftp || 'Unknown'} watts
 - Weight: ${user?.weight || 'Unknown'} kg
-- Max HR: ${user?.maxHr || 'Unknown'} bpm
+- Global Max HR: ${user?.maxHr || 'Unknown'} bpm
 Note: No structured athlete profile available yet. Consider generating one for better personalized planning.
 `
+    }
+
+    // Add Sport Specific Settings & Thresholds
+    if (sportSettings.length > 0) {
+      athleteContext += '\nSPORT SPECIFIC SETTINGS & THRESHOLDS:\n'
+      athleteContext +=
+        'The athlete has different thresholds for different sports. Use these when planning specific activities.\n'
+      for (const s of sportSettings) {
+        const types = s.isDefault ? 'Fallback' : s.types.join(', ')
+        athleteContext += `- **${s.name || (s.isDefault ? 'Default' : 'Sport')}** (${types}): FTP=${s.ftp || 'N/A'}W, LTHR=${s.lthr || 'N/A'}bpm, MaxHR=${s.maxHr || 'N/A'}bpm\n`
+
+        if (s.hrZones && Array.isArray(s.hrZones)) {
+          athleteContext +=
+            '  * HR Zones: ' +
+            s.hrZones.map((z: any) => `${z.name} (${z.min}-${z.max})`).join(', ') +
+            '\n'
+        }
+        if (s.powerZones && Array.isArray(s.powerZones)) {
+          athleteContext +=
+            '  * Power Zones: ' +
+            s.powerZones.map((z: any) => `${z.name} (${z.min}-${z.max})`).join(', ') +
+            '\n'
+        }
+      }
     }
 
     // Add goals context
@@ -594,6 +625,7 @@ INSTRUCTIONS:
    - If User Instructions are absent/minimal, aim for progressive overload based on the current phase.
    - Weekly TSS target: ${Math.round(currentWeeklyTSS)} - ${targetMaxTSS} (unless overridden by instructions).
 6. **CONTEXT**: Consider the "Current Planned Workouts" to understand what the user is replacing or modifying.
+7. **MULTI-SPORT THRESHOLDS**: When planning a specific sport (e.g. Run), refer to the sport-specific FTP/LTHR if provided in the context.
 
 Create a structured, progressive plan for the next ${daysToPlann} days.
 Maintain your **${aiSettings.aiPersona}** persona throughout the plan's reasoning and descriptions.`

@@ -5,6 +5,7 @@ import { userReportsQueue } from './queues'
 import { syncPlannedWorkoutToIntervals } from '../server/utils/intervals-sync'
 import { WorkoutConverter } from '../server/utils/workout-converter'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
+import { sportSettingsRepository } from '../server/utils/repositories/sportSettingsRepository'
 import { getUserTimezone } from '../server/utils/date'
 
 const workoutStructureSchema = {
@@ -101,10 +102,9 @@ export const generateStructuredWorkoutTask = task({
           select: {
             ftp: true,
             lthr: true,
-            hrZones: true,
-            powerZones: true,
             aiPersona: true,
-            name: true
+            name: true,
+            maxHr: true
           }
         },
         trainingWeek: {
@@ -125,6 +125,12 @@ export const generateStructuredWorkoutTask = task({
 
     if (!workout) throw new Error('Workout not found')
 
+    // Fetch Sport Specific Settings
+    const sportSettings = await sportSettingsRepository.getForActivityType(
+      workout.userId,
+      workout.type || ''
+    )
+
     // Build context
     const persona = workout.user.aiPersona || 'Supportive'
     const goal =
@@ -143,18 +149,32 @@ export const generateStructuredWorkoutTask = task({
       orderBy: { date: 'desc' }
     })
 
+    // Resolve Metrics
+    const ftp = sportSettings?.ftp || workout.user.ftp || 250
+    const lthr = sportSettings?.lthr || workout.user.lthr || 160
+    const maxHr = sportSettings?.maxHr || workout.user.maxHr || 190
+
     // Build zone definitions
     let zoneDefinitions = ''
-    if (workout.user.hrZones && Array.isArray(workout.user.hrZones)) {
-      zoneDefinitions += '**User HR Zones:**\n'
-      workout.user.hrZones.forEach((z: any) => {
+    if (sportSettings?.hrZones && Array.isArray(sportSettings.hrZones)) {
+      zoneDefinitions += `**${workout.type} Heart Rate Zones:**\n`
+      sportSettings.hrZones.forEach((z: any) => {
         zoneDefinitions += `- ${z.name}: ${z.min}-${z.max} bpm\n`
       })
     }
-    // Also explicitly list Z2 if lthr is present
-    if (workout.user.lthr) {
-      zoneDefinitions += `\n**Reference LTHR:** ${workout.user.lthr} bpm\n`
-      zoneDefinitions += `**Zone 2 (LTHR-based):** ${Math.round(workout.user.lthr * 0.8)}-${Math.round(workout.user.lthr * 0.9)} bpm (80-90% LTHR)\n`
+
+    if (sportSettings?.powerZones && Array.isArray(sportSettings.powerZones)) {
+      zoneDefinitions += `\n**${workout.type} Power Zones:**\n`
+      sportSettings.powerZones.forEach((z: any) => {
+        zoneDefinitions += `- ${z.name}: ${z.min}-${z.max} Watts\n`
+      })
+    }
+
+    if (lthr) {
+      zoneDefinitions += `\n**Reference LTHR:** ${lthr} bpm\n`
+    }
+    if (ftp) {
+      zoneDefinitions += `**Reference FTP:** ${ftp} Watts\n`
     }
 
     const prompt = `Design a structured ${workout.type} workout for ${workout.user.name || 'Athlete'}.
@@ -163,8 +183,8 @@ export const generateStructuredWorkoutTask = task({
     DURATION: ${Math.round((workout.durationSec || 3600) / 60)} minutes
     INTENSITY: ${workout.workIntensity || 'Moderate'}
     DESCRIPTION: ${workout.description || 'No specific description'}
-    USER FTP: ${workout.user.ftp || 250}W
-    USER LTHR: ${workout.user.lthr || 'Unknown'} bpm
+    USER FTP: ${ftp}W
+    USER LTHR: ${lthr} bpm
     TYPE: ${workout.type}
     
     CONTEXT:
@@ -176,11 +196,11 @@ export const generateStructuredWorkoutTask = task({
     RECENT WORKOUTS:
     ${buildWorkoutSummary(recentWorkouts, timezone)}
 
-    CRITICAL: ALWAYS use the user's custom zones defined below.
+    CRITICAL: ALWAYS use the user's specific zones defined below for this activity type.
 
     ${zoneDefinitions}
 
-    When generating "[Zone 2]" workouts, target ONLY the user's defined Z2 range. Never use generic percentages - always reference the user's custom zones first.
+    When generating "[Zone 2]" workouts, target ONLY the user's defined Z2 range for this specific sport. Never use generic percentages - always reference the provided zones first.
     
     INSTRUCTIONS:
     - Create a JSON structure defining the exact steps (Warmup, Intervals, Rest, Cooldown).
