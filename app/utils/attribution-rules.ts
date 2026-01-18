@@ -22,8 +22,8 @@ export const ATTRIBUTION_RULES: Record<string, AttributionRule> = {
     logoLight: '/images/logos/strava_powered_by.png',
     logoDark: '/images/logos/strava_powered_by.png', // Strava usually has a single "Powered by" asset
     requiresDeviceName: false,
-    textFormat: () => '', // Text is embedded in the logo
-    logoHeightClass: 'h-8' // Strava logo often needs to be slightly larger to be legible
+    textFormat: () => '',
+    logoHeightClass: 'h-6' // Normalized to h-6 for consistency in lists
   },
   zwift: {
     logoLight: '/images/logos/zwift_dark.webp',

@@ -1041,12 +1041,16 @@
                       class="block p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors"
                     >
                       <div class="flex items-center justify-between">
-                        <div>
-                          <div class="font-medium text-gray-900 dark:text-white">
+                        <div class="min-w-0 flex-1">
+                          <div class="font-medium text-gray-900 dark:text-white truncate">
                             {{ workout.canonicalWorkout.title }}
                           </div>
-                          <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                          <div class="text-xs text-gray-500 mt-1">
                             {{ formatDate(workout.canonicalWorkout.date) }}
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-4 ml-4 shrink-0">
+                          <div class="w-48 flex justify-end">
                             <UiDataAttribution
                               v-if="
                                 [
@@ -1072,8 +1076,8 @@
                               {{ workout.canonicalWorkout.source }}
                             </span>
                           </div>
+                          <UIcon name="i-heroicons-arrow-right" class="w-4 h-4 text-gray-400" />
                         </div>
-                        <UIcon name="i-heroicons-arrow-right" class="w-4 h-4 text-gray-400" />
                       </div>
                     </NuxtLink>
                   </div>
@@ -1118,10 +1122,17 @@
                   class="block p-3 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors"
                 >
                   <div class="flex items-center justify-between">
-                    <div>
-                      <div class="font-medium text-gray-900 dark:text-white">{{ dup.title }}</div>
-                      <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                    <div class="min-w-0 flex-1">
+                      <div class="font-medium text-gray-900 dark:text-white truncate">
+                        {{ dup.title }}
+                      </div>
+                      <div class="text-xs text-gray-500 mt-1">
                         {{ formatDate(dup.date) }}
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-4 ml-4 shrink-0">
+                      <UBadge color="warning" variant="subtle" size="xs">Duplicate</UBadge>
+                      <div class="w-48 flex justify-end">
                         <UiDataAttribution
                           v-if="
                             [
@@ -1147,9 +1158,6 @@
                           {{ dup.source }}
                         </span>
                       </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <UBadge color="warning" variant="subtle" size="xs">Duplicate</UBadge>
                       <UIcon name="i-heroicons-arrow-right" class="w-4 h-4 text-gray-400" />
                     </div>
                   </div>
