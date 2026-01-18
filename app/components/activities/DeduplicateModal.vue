@@ -162,7 +162,7 @@
                     </div>
                   </div>
                   <UBadge
-                    color="green"
+                    color="success"
                     variant="subtle"
                     size="xs"
                     class="shrink-0 w-[75px] justify-center"
@@ -249,7 +249,7 @@
                       </div>
                     </div>
                     <UBadge
-                      color="amber"
+                      color="warning"
                       variant="subtle"
                       size="xs"
                       class="shrink-0 w-[75px] justify-center"
