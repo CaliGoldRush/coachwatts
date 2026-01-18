@@ -1047,7 +1047,25 @@
                           </div>
                           <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
                             {{ formatDate(workout.canonicalWorkout.date) }}
+                            <UiDataAttribution
+                              v-if="
+                                [
+                                  'strava',
+                                  'garmin',
+                                  'zwift',
+                                  'apple_health',
+                                  'whoop',
+                                  'intervals',
+                                  'withings',
+                                  'hevy'
+                                ].includes(workout.canonicalWorkout.source)
+                              "
+                              :provider="workout.canonicalWorkout.source"
+                              :device-name="workout.canonicalWorkout.deviceName"
+                              mode="minimal"
+                            />
                             <span
+                              v-else
                               :class="getSourceBadgeClass(workout.canonicalWorkout.source)"
                               class="py-0 px-1.5 text-[10px]"
                             >
@@ -1104,7 +1122,25 @@
                       <div class="font-medium text-gray-900 dark:text-white">{{ dup.title }}</div>
                       <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
                         {{ formatDate(dup.date) }}
+                        <UiDataAttribution
+                          v-if="
+                            [
+                              'strava',
+                              'garmin',
+                              'zwift',
+                              'apple_health',
+                              'whoop',
+                              'intervals',
+                              'withings',
+                              'hevy'
+                            ].includes(dup.source)
+                          "
+                          :provider="dup.source"
+                          :device-name="dup.deviceName"
+                          mode="minimal"
+                        />
                         <span
+                          v-else
                           :class="getSourceBadgeClass(dup.source)"
                           class="py-0 px-1.5 text-[10px]"
                         >
