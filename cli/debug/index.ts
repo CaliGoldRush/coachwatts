@@ -1,13 +1,13 @@
 import { Command } from 'commander'
 import webhookCommand from './webhook'
-import webhookTriggerCommand from './webhook-trigger'
+import triggerCommand from './webhook-trigger'
 import profileCommand from './profile'
 import workoutCommand from './workout'
 import userStatsCommand from './user-stats'
 import llmRequestCommand from './llm-request'
 import athleteCommand from './athlete'
 import trainingLoadCommand from './training-load'
-import debugWellnessCommand from './wellness'
+import wellnessCommand from './wellness'
 import recommendationsCommand from './recommendations'
 import analyzeStreamsCommand from './analyze-streams'
 import findAnyCommand from './find-any'
@@ -16,27 +16,27 @@ import goalsCommand from './goals'
 import intervalsTypesCommand from './intervals-types'
 import calendarNotesCommand from './calendar-notes'
 import verifyLazyProfileCommand from './verify-lazy-profile'
+import deduplicateCommand from './deduplicate' // Importing from where I created it, but logically should move file.
 
-const debugCommand = new Command('debug')
+const debugCommand = new Command('debug').description('Debugging utilities')
 
-debugCommand
-  .description('Debugging utilities')
-  .addCommand(webhookCommand)
-  .addCommand(webhookTriggerCommand)
-  .addCommand(profileCommand)
-  .addCommand(workoutCommand)
-  .addCommand(userStatsCommand)
-  .addCommand(llmRequestCommand)
-  .addCommand(athleteCommand)
-  .addCommand(trainingLoadCommand)
-  .addCommand(debugWellnessCommand)
-  .addCommand(recommendationsCommand)
-  .addCommand(analyzeStreamsCommand)
-  .addCommand(findAnyCommand)
-  .addCommand(plannedCommand)
-  .addCommand(goalsCommand)
-  .addCommand(intervalsTypesCommand)
-  .addCommand(calendarNotesCommand)
-  .addCommand(verifyLazyProfileCommand)
+debugCommand.addCommand(webhookCommand)
+debugCommand.addCommand(triggerCommand)
+debugCommand.addCommand(profileCommand)
+debugCommand.addCommand(workoutCommand)
+debugCommand.addCommand(userStatsCommand)
+debugCommand.addCommand(llmRequestCommand)
+debugCommand.addCommand(athleteCommand)
+debugCommand.addCommand(trainingLoadCommand)
+debugCommand.addCommand(wellnessCommand)
+debugCommand.addCommand(recommendationsCommand)
+debugCommand.addCommand(analyzeStreamsCommand)
+debugCommand.addCommand(findAnyCommand)
+debugCommand.addCommand(plannedCommand)
+debugCommand.addCommand(goalsCommand)
+debugCommand.addCommand(intervalsTypesCommand)
+debugCommand.addCommand(calendarNotesCommand)
+debugCommand.addCommand(verifyLazyProfileCommand)
+debugCommand.addCommand(deduplicateCommand)
 
 export default debugCommand
