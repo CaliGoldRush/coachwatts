@@ -35,7 +35,7 @@ const profileUpdateSchema = z.object({
     .array(
       z.object({
         id: z.string().optional(),
-        name: z.string().optional(),
+        name: z.string().nullable().optional(),
         types: z.array(z.string()),
         isDefault: z.boolean().optional(),
 
@@ -56,7 +56,7 @@ const profileUpdateSchema = z.object({
         maxHr: z.number().nullable().optional(),
         hrZones: z.any().optional(),
         restingHr: z.number().nullable().optional(),
-        hrLoadType: z.string().optional(),
+        hrLoadType: z.string().nullable().optional(),
 
         // Pace
         thresholdPace: z.number().nullable().optional(),
@@ -64,7 +64,7 @@ const profileUpdateSchema = z.object({
         // General
         warmupTime: z.number().nullable().optional(),
         cooldownTime: z.number().nullable().optional(),
-        loadPreference: z.string().optional(),
+        loadPreference: z.string().nullable().optional(),
 
         // Metadata
         source: z.string().optional(),
