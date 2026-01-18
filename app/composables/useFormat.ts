@@ -29,7 +29,7 @@ export const useFormat = () => {
         })
       }
 
-      return format(toZoned(date), formatStr, { timeZone: timezone.value })
+      return format(toZoned(date), formatStr)
     } catch (e) {
       return ''
     }
@@ -71,7 +71,7 @@ export const useFormat = () => {
   const formatUserDate = (date: string | Date, tz: string, formatStr: string = 'yyyy-MM-dd') => {
     if (!date) return ''
     try {
-      return format(toZonedTime(new Date(date), tz), formatStr, { timeZone: tz })
+      return format(toZonedTime(new Date(date), tz), formatStr)
     } catch (e) {
       return ''
     }
@@ -83,7 +83,7 @@ export const useFormat = () => {
    */
   const getUserLocalDate = (): Date => {
     try {
-      const dateStr = format(toZoned(new Date()), 'yyyy-MM-dd', { timeZone: timezone.value })
+      const dateStr = format(toZoned(new Date()), 'yyyy-MM-dd')
       return new Date(`${dateStr}T00:00:00Z`)
     } catch (e) {
       const now = new Date()
@@ -96,7 +96,7 @@ export const useFormat = () => {
    */
   const getUserLocalTime = (): string => {
     try {
-      return format(toZoned(new Date()), 'HH:mm', { timeZone: timezone.value })
+      return format(toZoned(new Date()), 'HH:mm')
     } catch (e) {
       const now = new Date()
       return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`

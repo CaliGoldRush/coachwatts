@@ -89,7 +89,7 @@ export function getStartOfYearUTC(timezone: string, date: Date = new Date()): Da
  */
 export function formatUserTime(date: Date, timezone: string, formatStr: string = 'HH:mm'): string {
   try {
-    return format(toZonedTime(date, timezone), formatStr, { timeZone: timezone })
+    return format(toZonedTime(date, timezone), formatStr)
   } catch (e) {
     return format(date, formatStr)
   }
@@ -104,7 +104,7 @@ export function formatUserDate(
   formatStr: string = 'yyyy-MM-dd'
 ): string {
   try {
-    return format(toZonedTime(date, timezone), formatStr, { timeZone: timezone })
+    return format(toZonedTime(date, timezone), formatStr)
   } catch (e) {
     return format(date, formatStr)
   }
@@ -125,7 +125,7 @@ export function formatDateUTC(date: Date, formatStr: string = 'yyyy-MM-dd'): str
  */
 export function getUserLocalDate(timezone: string = 'UTC', date: Date = new Date()): Date {
   try {
-    const dateStr = format(toZonedTime(date, timezone), 'yyyy-MM-dd', { timeZone: timezone })
+    const dateStr = format(toZonedTime(date, timezone), 'yyyy-MM-dd')
     return new Date(`${dateStr}T00:00:00Z`)
   } catch (e) {
     // Fallback using provided date or now
