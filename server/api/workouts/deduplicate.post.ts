@@ -37,11 +37,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const body = await readBody(event)
+  const { dryRun, targetBestWorkoutIds } = body || {}
+
   try {
     const userId = (session.user as any).id || session.user.email
     const handle = await tasks.trigger(
       'deduplicate-workouts',
-      { userId },
+      { userId, dryRun, targetBestWorkoutIds },
       {
         concurrencyKey: userId,
         tags: [`user:${userId}`]
