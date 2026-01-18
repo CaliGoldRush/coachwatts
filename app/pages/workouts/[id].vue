@@ -274,7 +274,8 @@
                           'apple_health',
                           'whoop',
                           'intervals',
-                          'withings'
+                          'withings',
+                          'hevy'
                         ].includes(workout.source)
                       "
                       :provider="workout.source"

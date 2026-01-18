@@ -54,6 +54,14 @@ export const ATTRIBUTION_RULES: Record<string, AttributionRule> = {
     logoHeightClass: 'h-6',
     invertInDarkMode: true
   },
+  hevy: {
+    logoLight: '/images/logos/Hevy.svg',
+    logoDark: '/images/logos/Hevy.svg',
+    requiresDeviceName: false,
+    textFormat: () => '',
+    logoHeightClass: 'h-6',
+    invertInDarkMode: true
+  },
   apple_health: {
     logoLight: '/images/logos/apple-watch-logo.svg',
     logoDark: '/images/logos/apple-watch-logo.svg',
