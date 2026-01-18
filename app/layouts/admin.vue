@@ -87,6 +87,14 @@
           }
         },
         {
+          label: 'AI Logs',
+          icon: 'i-lucide-brain-circuit',
+          to: '/admin/ai/logs',
+          onSelect: () => {
+            isOpen.value = false
+          }
+        },
+        {
           label: 'Webhook Logs',
           icon: 'i-lucide-webhook',
           to: '/admin/webhooks',
