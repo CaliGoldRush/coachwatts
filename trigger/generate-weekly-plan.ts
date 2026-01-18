@@ -12,7 +12,8 @@ import {
   getStartOfDaysAgoUTC,
   formatUserDate,
   getStartOfDayUTC,
-  getEndOfDayUTC
+  getEndOfDayUTC,
+  formatDateUTC
 } from '../server/utils/date'
 
 const weeklyPlanSchema = {
