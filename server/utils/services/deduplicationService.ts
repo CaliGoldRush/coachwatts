@@ -322,12 +322,15 @@ export const deduplicationService = {
         // Sort by smallest difference
         withDiff.sort((a, b) => a.diff - b.diff)
 
-        // Pick the closest one
-        matchingPlanned = withDiff[0].plan
+        const bestMatch = withDiff[0]
+        if (bestMatch) {
+          // Pick the closest one
+          matchingPlanned = bestMatch.plan
 
-        logger.log(
-          `Multiple matching types found. Selected best duration match: ${matchingPlanned.title} (Diff: ${withDiff[0].diff}s)`
-        )
+          logger.log(
+            `Multiple matching types found. Selected best duration match: ${matchingPlanned.title} (Diff: ${bestMatch.diff}s)`
+          )
+        }
       } else {
         logger.log(
           `Multiple planned workouts found for ${workout.date.toISOString()} but none matched type '${workout.type}'. Skipping auto-link.`
@@ -477,10 +480,13 @@ export const deduplicationService = {
     }
 
     // Mark duplicates
-    await workoutRepository.updateMany(
-      { id: { in: group.toDelete } },
-      { isDuplicate: true, duplicateOf: group.bestWorkoutId }
-    )
+    // Note: We use individual updates because updateMany doesn't always support foreign key scalars in all Prisma versions/configs
+    for (const id of group.toDelete) {
+      await workoutRepository.update(id, {
+        isDuplicate: true,
+        canonicalWorkout: { connect: { id: group.bestWorkoutId } }
+      })
+    }
 
     // Update completeness score
     if (bestWorkout) {
