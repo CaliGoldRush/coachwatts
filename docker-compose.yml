@@ -27,19 +27,11 @@ services:
       [
         '--default_lua_flags=allow-undeclared-keys',
         '--requirepass=dragonfly',
-        '--proactor_threads',
-        '1',
-        '--maxmemory=256mb',
         '--admin_port=6380',
         '--admin_nopass',
         '--slowlog_log_slower_than=10000',
         '--slowlog_max_len=128'
       ]
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 256M
     ports:
       - '6379:6379'
       - '6380:6380'

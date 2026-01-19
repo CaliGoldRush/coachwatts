@@ -18,18 +18,21 @@ const connection = new IORedis(connectionString, {
   maxRetriesPerRequest: null // Required by BullMQ
 })
 
-// Only log connection details in development or if explicitly debugged
-if (process.env.NODE_ENV === 'development' || process.env.DEBUG_REDIS) {
-    connection.on('connect', () => {
-      const options = connection.options
-      const hasPassword = !!options.password
-      console.log(`[Queue] Redis connected to ${options.host}:${options.port} (Password: ${hasPassword ? 'Yes' : 'No'})`)
-    })
-    
-    connection.on('error', (err) => {
-      console.error('[Queue] Redis connection error:', err.message)
-    })
-}
+// Redis Connection Logging
+connection.on('connect', () => {
+  if (process.env.NODE_ENV === 'development' || process.env.DEBUG_REDIS) {
+    const options = connection.options
+    const hasPassword = !!options.password
+    console.log(
+      `[Queue] Redis connected to ${options.host}:${options.port} (Password: ${hasPassword ? 'Yes' : 'No'})`
+    )
+  }
+})
+
+connection.on('error', (err) => {
+  // Always log as a warning to keep the app running without crashing
+  console.warn('[Queue] Redis connection warning:', err.message)
+})
 
 export const webhookQueue = new Queue('webhookQueue', { connection })
 export const pingQueue = new Queue('pingQueue', { connection })

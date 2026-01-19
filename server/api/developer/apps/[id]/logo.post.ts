@@ -2,7 +2,7 @@ import { oauthRepository } from '../../../../utils/repositories/oauthRepository'
 import { getEffectiveUserId } from '../../../../utils/coaching'
 import { uploadPublicAsset } from '../../../../utils/storage'
 import { logAction } from '../../../../utils/audit'
-import { Jimp } from 'jimp'
+import Jimp from 'jimp'
 
 defineRouteMeta({
   openAPI: {
@@ -95,7 +95,7 @@ export default defineEventHandler(async (event) => {
     image.cover(512, 512)
 
     // Convert to PNG buffer
-    const processedBuffer = await image.getBufferAsync(Jimp.MIME_PNG)
+    const processedBuffer = await image.getBufferAsync('image/png')
 
     // Generate a unique filename
     const filename = `oauth/apps/${id}/logo-${Date.now()}.png`

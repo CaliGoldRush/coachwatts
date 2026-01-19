@@ -28,7 +28,7 @@ const sentryRelease = `${pkg.name}@${pkg.version}+${commitHash}`
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: false },
 
   app: {
     head: {
@@ -168,22 +168,18 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: [
-        'chartjs-adapter-date-fns',
-        'chart.js',
-        'date-fns',
-        'vue-chartjs',
-        'chartjs-plugin-annotation',
-        'date-fns-tz',
+        'prosemirror-state',
         'leaflet',
         '@vueuse/core',
+        'date-fns',
+        'date-fns-tz',
+        'vue-chartjs',
+        'chart.js',
+        'chartjs-adapter-date-fns',
+        'vuedraggable',
         '@sentry/nuxt',
         'zod',
-        '@internationalized/date',
-        'vuedraggable',
-        '@tiptap/vue-3',
-        '@tiptap/starter-kit',
-        '@tiptap/extension-placeholder',
-        'turndown'
+        '@internationalized/date'
       ]
     },
     vue: {

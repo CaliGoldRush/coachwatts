@@ -42,7 +42,9 @@ export const startCommand = new Command('start')
       console.log(chalk.gray(`  Password: ${hasPassword ? 'Yes' : 'No'}`))
     })
     connection.on('ready', () => console.log(chalk.green.bold('✔ Redis ready to accept commands')))
-    connection.on('error', (err) => console.error(chalk.red.bold('✘ Redis connection error:'), err))
+    connection.on('error', (err) =>
+      console.warn(chalk.yellow.bold('⚠ Redis connection warning:'), err.message)
+    )
     connection.on('reconnecting', () => console.log(chalk.yellow('↻ Redis reconnecting...')))
     connection.on('end', () => console.log(chalk.red('Redis connection ended')))
 
