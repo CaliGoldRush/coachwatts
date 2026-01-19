@@ -3,7 +3,13 @@ import { workoutRepository } from './repositories/workoutRepository'
 import { wellnessRepository } from './repositories/wellnessRepository'
 import { nutritionRepository } from './repositories/nutritionRepository'
 import { sportSettingsRepository } from './repositories/sportSettingsRepository'
-import { getUserTimezone, getStartOfDaysAgoUTC, getEndOfDayUTC, formatUserDate } from './date'
+import {
+  getUserTimezone,
+  getStartOfDaysAgoUTC,
+  getEndOfDayUTC,
+  formatUserDate,
+  calculateAge
+} from './date'
 import { buildWorkoutSummary, buildMetricsSummary } from './gemini'
 
 /**
@@ -22,7 +28,9 @@ export async function fetchReportContext(userId: string, inputConfig: any) {
         weight: true,
         maxHr: true,
         aiPersona: true,
-        aiModelPreference: true
+        aiModelPreference: true,
+        dob: true,
+        sex: true
       }
     })
   }
@@ -34,6 +42,7 @@ export async function fetchReportContext(userId: string, inputConfig: any) {
     } else {
       context.user.wKg = 'Unknown'
     }
+    context.user.age = calculateAge(context.user.dob)
     context.persona = context.user.aiPersona || 'Supportive'
   }
 

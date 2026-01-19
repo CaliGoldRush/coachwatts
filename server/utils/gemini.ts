@@ -512,6 +512,28 @@ export function buildWorkoutSummary(workouts: any[], timezone?: string): string 
       // Description
       if (w.description) lines.push(`\n**Description**: ${w.description}`)
 
+      // Plan Adherence (if linked)
+      if (w.plannedWorkout) {
+        lines.push(`\n**Plan Adherence**:`)
+        lines.push(`- **Planned Title**: ${w.plannedWorkout.title}`)
+        if (w.plannedWorkout.durationSec) {
+          const plannedDur = Math.round(w.plannedWorkout.durationSec / 60)
+          const actualDur = Math.round(w.durationSec / 60)
+          const diff = actualDur - plannedDur
+          lines.push(
+            `- **Duration**: ${plannedDur}m (Actual: ${actualDur}m, ${diff > 0 ? '+' : ''}${diff}m)`
+          )
+        }
+        if (w.plannedWorkout.tss) {
+          const plannedTSS = Math.round(w.plannedWorkout.tss)
+          const actualTSS = Math.round(w.tss || 0)
+          const diff = actualTSS - plannedTSS
+          lines.push(
+            `- **TSS**: ${plannedTSS} (Actual: ${actualTSS}, ${diff > 0 ? '+' : ''}${diff})`
+          )
+        }
+      }
+
       // AI Analysis Summary (if available)
       if (w.aiAnalysisJson) {
         const analysis = w.aiAnalysisJson as any
