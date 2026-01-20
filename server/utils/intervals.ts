@@ -922,6 +922,12 @@ export function normalizeIntervalsPlannedWorkout(event: IntervalsPlannedWorkout,
   // Also normalize power/HR structure (Intervals uses flat start/end and % values, we use nested range and ratios)
   if (structuredWorkout && Array.isArray(structuredWorkout.steps)) {
     structuredWorkout.steps = structuredWorkout.steps.map((step: any) => {
+      // Map legacy/short field names
+      if (step.hr && !step.heartRate) {
+        step.heartRate = step.hr
+        delete step.hr
+      }
+
       // Duration
       if (step.duration !== undefined && step.durationSeconds === undefined) {
         step.durationSeconds = step.duration

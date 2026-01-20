@@ -270,5 +270,29 @@ describe('Intervals.icu Data Normalization', () => {
       expect(steps[3].name).toBe('Cooldown Spin')
       expect(steps[3].type).toBe('Cooldown')
     })
+
+    it('maps hr to heartRate', () => {
+      const input = {
+        id: 'event-106',
+        start_date_local: '2026-01-20T06:00:00',
+        name: 'Run HR Test',
+        category: 'WORKOUT',
+        workout_doc: {
+          steps: [
+            {
+              duration: 600,
+              hr: { start: 70, end: 80, units: '%lthr' }
+            }
+          ]
+        }
+      }
+
+      const result = normalizeIntervalsPlannedWorkout(input as any, USER_ID)
+      const steps = result.structuredWorkout.steps
+
+      expect(steps[0].heartRate).toBeDefined()
+      expect(steps[0].heartRate.range).toEqual({ start: 0.7, end: 0.8 })
+      expect(steps[0].hr).toBeUndefined()
+    })
   })
 })
