@@ -114,6 +114,14 @@ compareIntervalsCommand
         console.log(`  Local Cadence:   ${JSON.stringify(local.cadence)}`)
         console.log(`  Remote Cadence:  ${JSON.stringify(remoteStep.cadence)}`)
 
+        console.log(`  Local Name:      "${local.name}"`)
+        console.log(`  Remote Text:     "${remoteStep.text}"`)
+
+        console.log(`  Local Type:      "${local.type}"`)
+        console.log(
+          `  Remote Flags:    warmup=${remoteStep.warmup}, cooldown=${remoteStep.cooldown}`
+        )
+
         // Check Cadence
         if (typeof local.cadence === 'object') {
           console.log(chalk.red('  ❌ Cadence NOT normalized (Local is object)'))

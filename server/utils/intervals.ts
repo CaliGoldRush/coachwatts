@@ -999,6 +999,37 @@ export function normalizeIntervalsPlannedWorkout(event: IntervalsPlannedWorkout,
         step.cadence = step.cadence.value
       }
 
+      // Name (Intervals uses 'text' for the step description/name)
+
+      if (!step.name && step.text) {
+        step.name = step.text
+      }
+
+      // Type (Intervals uses boolean flags or implicit types)
+
+      if (!step.type) {
+        if (step.warmup) {
+          step.type = 'Warmup'
+        } else if (step.cooldown) {
+          step.type = 'Cooldown'
+        } else {
+          // Heuristic: Low intensity (< 60%) is likely Rest/Recovery
+
+          // Check power first, then HR
+
+          let intensity = 0
+
+          if (step.power?.value) intensity = step.power.value
+          else if (step.power?.range)
+            intensity = (step.power.range.start + step.power.range.end) / 2
+          else if (step.heartRate?.value) intensity = step.heartRate.value
+          else if (step.heartRate?.range)
+            intensity = (step.heartRate.range.start + step.heartRate.range.end) / 2
+
+          step.type = intensity < 0.6 ? 'Rest' : 'Active'
+        }
+      }
+
       return step
     })
   }
