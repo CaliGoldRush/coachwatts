@@ -1,218 +1,234 @@
 <template>
-  <div class="p-8 max-w-6xl mx-auto space-y-8">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">System Debugger</h1>
-      <UButton icon="i-heroicons-clipboard" color="primary" @click="copyReport">
-        Copy Full Report
-      </UButton>
-    </div>
-
-    <!-- Timezone & Date Logic -->
-    <div class="space-y-4">
-      <h2 class="text-xl font-semibold flex items-center gap-2">
-        <UIcon name="i-heroicons-clock" />
-        Time & Date
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Client Side -->
-        <UCard>
-          <template #header>
-            <h3 class="font-bold">Client (Browser)</h3>
-          </template>
-          <div class="space-y-2 text-sm font-mono">
-            <div>
-              <span class="text-gray-500">Timezone:</span>
-              <div class="font-bold">{{ clientInfo.timezone }}</div>
-            </div>
-            <div>
-              <span class="text-gray-500">Current Time:</span>
-              <div>{{ clientInfo.time }}</div>
-            </div>
-            <div>
-              <span class="text-gray-500">ISO String:</span>
-              <div>{{ clientInfo.iso }}</div>
-            </div>
-            <div>
-              <span class="text-gray-500">User Agent:</span>
-              <div class="break-all text-xs text-gray-400">{{ clientInfo.userAgent }}</div>
-            </div>
-          </div>
-        </UCard>
-
-        <!-- Server Side -->
-        <UCard>
-          <template #header>
-            <h3 class="font-bold">Server (API)</h3>
-          </template>
-          <div v-if="data" class="space-y-2 text-sm font-mono">
-            <div>
-              <span class="text-gray-500">Timezone:</span>
-              <div class="font-bold">{{ data.time.serverTimezone }}</div>
-            </div>
-            <div>
-              <span class="text-gray-500">Current Time:</span>
-              <div>{{ data.time.serverTime }}</div>
-            </div>
-            <div>
-              <span class="text-gray-500">ISO String:</span>
-              <div>{{ data.time.serverTimeISO }}</div>
-            </div>
-            <div>
-              <span class="text-gray-500">process.env.TZ:</span>
-              <div>{{ data.time.processEnvTZ || 'Not Set' }}</div>
-            </div>
-          </div>
-          <div v-else class="flex items-center justify-center h-40">
-            <UIcon name="i-heroicons-arrow-path" class="animate-spin w-6 h-6" />
-          </div>
-        </UCard>
-      </div>
-    </div>
-
-    <!-- Application State & Tests -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <UCard>
-        <template #header>
-          <h3 class="font-bold flex items-center gap-2">
-            <UIcon name="i-heroicons-user" />
-            User Context
-          </h3>
+  <UDashboardPanel>
+    <template #header>
+      <UDashboardNavbar title="System Debugger">
+        <template #leading>
+          <UDashboardSidebarCollapse />
         </template>
-        <div class="space-y-2 text-sm font-mono">
-          <div>
-            <span class="text-gray-500">Profile Timezone:</span>
-            <div class="font-bold">{{ (session?.user as any)?.timezone || 'Not Set' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-500">User ID:</span>
-            <div class="text-xs">{{ (session?.user as any)?.id }}</div>
+        <template #right>
+          <UButton
+            icon="i-heroicons-clipboard"
+            color="primary"
+            variant="solid"
+            size="sm"
+            @click="copyReport"
+          >
+            Copy Full Report
+          </UButton>
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div class="p-8 max-w-6xl mx-auto space-y-8">
+        <!-- Timezone & Date Logic -->
+        <div class="space-y-4">
+          <h2 class="text-xl font-semibold flex items-center gap-2">
+            <UIcon name="i-heroicons-clock" />
+            Time & Date
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Client Side -->
+            <UCard>
+              <template #header>
+                <h3 class="font-bold">Client (Browser)</h3>
+              </template>
+              <div class="space-y-2 text-sm font-mono">
+                <div>
+                  <span class="text-gray-500">Timezone:</span>
+                  <div class="font-bold">{{ clientInfo.timezone }}</div>
+                </div>
+                <div>
+                  <span class="text-gray-500">Current Time:</span>
+                  <div>{{ clientInfo.time }}</div>
+                </div>
+                <div>
+                  <span class="text-gray-500">ISO String:</span>
+                  <div>{{ clientInfo.iso }}</div>
+                </div>
+                <div>
+                  <span class="text-gray-500">User Agent:</span>
+                  <div class="break-all text-xs text-gray-400">{{ clientInfo.userAgent }}</div>
+                </div>
+              </div>
+            </UCard>
+
+            <!-- Server Side -->
+            <UCard>
+              <template #header>
+                <h3 class="font-bold">Server (API)</h3>
+              </template>
+              <div v-if="data" class="space-y-2 text-sm font-mono">
+                <div>
+                  <span class="text-gray-500">Timezone:</span>
+                  <div class="font-bold">{{ data.time.serverTimezone }}</div>
+                </div>
+                <div>
+                  <span class="text-gray-500">Current Time:</span>
+                  <div>{{ data.time.serverTime }}</div>
+                </div>
+                <div>
+                  <span class="text-gray-500">ISO String:</span>
+                  <div>{{ data.time.serverTimeISO }}</div>
+                </div>
+                <div>
+                  <span class="text-gray-500">process.env.TZ:</span>
+                  <div>{{ data.time.processEnvTZ || 'Not Set' }}</div>
+                </div>
+              </div>
+              <div v-else class="flex items-center justify-center h-40">
+                <UIcon name="i-heroicons-arrow-path" class="animate-spin w-6 h-6" />
+              </div>
+            </UCard>
           </div>
         </div>
-      </UCard>
 
-      <!-- Calendar Logic Verification -->
-      <UCard>
-        <template #header>
-          <h3 class="font-bold flex items-center gap-2">
-            <UIcon name="i-heroicons-beaker" />
-            Calendar Logic Verification (Live)
-          </h3>
-        </template>
-        <div class="space-y-4">
-          <!-- Date Function Outputs -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div class="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-              <span class="text-gray-500 block mb-1">getUserLocalDate() (UTC):</span>
-              <div class="font-mono font-bold">{{ userLocalDate }}</div>
-            </div>
-            <div class="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-              <span class="text-gray-500 block mb-1">Target Month Start:</span>
-              <div class="font-mono font-bold">{{ monthStartStr }}</div>
-            </div>
-          </div>
-
-          <!-- Generated Grid Preview -->
-          <div>
-            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              Generated Grid (First 3 Weeks)
-            </h4>
-            <div
-              class="border border-gray-200 dark:border-gray-700 rounded overflow-hidden text-xs"
-            >
-              <div
-                class="grid grid-cols-8 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 font-bold p-1"
-              >
-                <div>Week</div>
-                <div>Mon</div>
-                <div>Tue</div>
-                <div>Wed</div>
-                <div>Thu</div>
-                <div>Fri</div>
-                <div>Sat</div>
-                <div>Sun</div>
+        <!-- Application State & Tests -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <UCard>
+            <template #header>
+              <h3 class="font-bold flex items-center gap-2">
+                <UIcon name="i-heroicons-user" />
+                User Context
+              </h3>
+            </template>
+            <div class="space-y-2 text-sm font-mono">
+              <div>
+                <span class="text-gray-500">Profile Timezone:</span>
+                <div class="font-bold">{{ (session?.user as any)?.timezone || 'Not Set' }}</div>
               </div>
-              <div
-                v-for="(week, i) in previewWeeks"
-                :key="i"
-                class="grid grid-cols-8 border-b border-gray-200 dark:border-gray-700 last:border-0 p-1"
-              >
-                <div class="text-gray-400 font-mono">W{{ week.number }}</div>
+              <div>
+                <span class="text-gray-500">User ID:</span>
+                <div class="text-xs">{{ (session?.user as any)?.id }}</div>
+              </div>
+            </div>
+          </UCard>
+
+          <!-- Calendar Logic Verification -->
+          <UCard>
+            <template #header>
+              <h3 class="font-bold flex items-center gap-2">
+                <UIcon name="i-heroicons-beaker" />
+                Calendar Logic Verification (Live)
+              </h3>
+            </template>
+            <div class="space-y-4">
+              <!-- Date Function Outputs -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div class="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                  <span class="text-gray-500 block mb-1">getUserLocalDate() (UTC):</span>
+                  <div class="font-mono font-bold">{{ userLocalDate }}</div>
+                </div>
+                <div class="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                  <span class="text-gray-500 block mb-1">Target Month Start:</span>
+                  <div class="font-mono font-bold">{{ monthStartStr }}</div>
+                </div>
+              </div>
+
+              <!-- Generated Grid Preview -->
+              <div>
+                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Generated Grid (First 3 Weeks)
+                </h4>
                 <div
-                  v-for="day in week.days"
-                  :key="day.date"
-                  class="font-mono"
-                  :class="{
-                    'text-gray-300 dark:text-gray-600': day.isOtherMonth,
-                    'text-blue-600 font-bold': day.isToday
-                  }"
+                  class="border border-gray-200 dark:border-gray-700 rounded overflow-hidden text-xs"
                 >
-                  {{ day.label }}
+                  <div
+                    class="grid grid-cols-8 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 font-bold p-1"
+                  >
+                    <div>Week</div>
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div>Sat</div>
+                    <div>Sun</div>
+                  </div>
+                  <div
+                    v-for="(week, i) in previewWeeks"
+                    :key="i"
+                    class="grid grid-cols-8 border-b border-gray-200 dark:border-gray-700 last:border-0 p-1"
+                  >
+                    <div class="text-gray-400 font-mono">W{{ week.number }}</div>
+                    <div
+                      v-for="day in week.days"
+                      :key="day.date"
+                      class="font-mono"
+                      :class="{
+                        'text-gray-300 dark:text-gray-600': day.isOtherMonth,
+                        'text-blue-600 font-bold': day.isToday
+                      }"
+                    >
+                      {{ day.label }}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+          </UCard>
+        </div>
+
+        <!-- Workout Date Debugging -->
+        <UCard v-if="workouts">
+          <template #header>
+            <h3 class="font-bold flex items-center gap-2">
+              <UIcon name="i-heroicons-bolt" />
+              Workout Date Verification
+            </h3>
+          </template>
+          <div class="space-y-6">
+            <div>
+              <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Recent Completed Workouts
+              </h4>
+              <UTable
+                :columns="workoutColumns"
+                :data="workouts.recentWorkouts.map((w) => enrichWorkoutDate(w))"
+                :ui="{ td: { padding: 'px-2 py-1', size: 'text-xs' } }"
+              />
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Upcoming Planned Workouts
+              </h4>
+              <UTable
+                :columns="workoutColumns"
+                :data="workouts.plannedWorkouts.map((w) => enrichWorkoutDate(w))"
+                :ui="{ td: { padding: 'px-2 py-1', size: 'text-xs' } }"
+              />
+            </div>
+          </div>
+        </UCard>
+
+        <!-- System Info (New) -->
+        <div v-if="data" class="space-y-4">
+          <h2 class="text-xl font-semibold flex items-center gap-2">
+            <UIcon name="i-heroicons-cpu-chip" />
+            System Information
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <UCard :ui="{ body: { padding: 'p-3' } }">
+              <div class="text-xs text-gray-500">Platform</div>
+              <div class="font-bold">{{ data.system.platform }} ({{ data.system.arch }})</div>
+            </UCard>
+            <UCard :ui="{ body: { padding: 'p-3' } }">
+              <div class="text-xs text-gray-500">Node Version</div>
+              <div class="font-bold">{{ data.system.nodeVersion }}</div>
+            </UCard>
+            <UCard :ui="{ body: { padding: 'p-3' } }">
+              <div class="text-xs text-gray-500">Uptime</div>
+              <div class="font-bold">{{ formatUptime(data.system.uptime) }}</div>
+            </UCard>
+            <UCard :ui="{ body: { padding: 'p-3' } }">
+              <div class="text-xs text-gray-500">Memory (RSS)</div>
+              <div class="font-bold">{{ formatBytes(data.system.memoryUsage.rss) }}</div>
+            </UCard>
           </div>
         </div>
-      </UCard>
-    </div>
-
-    <!-- Workout Date Debugging -->
-    <UCard v-if="workouts">
-      <template #header>
-        <h3 class="font-bold flex items-center gap-2">
-          <UIcon name="i-heroicons-bolt" />
-          Workout Date Verification
-        </h3>
-      </template>
-      <div class="space-y-6">
-        <div>
-          <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-            Recent Completed Workouts
-          </h4>
-          <UTable
-            :columns="workoutColumns"
-            :data="workouts.recentWorkouts.map((w) => enrichWorkoutDate(w))"
-            :ui="{ td: { padding: 'px-2 py-1', size: 'text-xs' } }"
-          />
-        </div>
-        <div>
-          <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-            Upcoming Planned Workouts
-          </h4>
-          <UTable
-            :columns="workoutColumns"
-            :data="workouts.plannedWorkouts.map((w) => enrichWorkoutDate(w))"
-            :ui="{ td: { padding: 'px-2 py-1', size: 'text-xs' } }"
-          />
-        </div>
       </div>
-    </UCard>
-
-    <!-- System Info (New) -->
-    <div v-if="data" class="space-y-4">
-      <h2 class="text-xl font-semibold flex items-center gap-2">
-        <UIcon name="i-heroicons-cpu-chip" />
-        System Information
-      </h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <UCard :ui="{ body: { padding: 'p-3' } }">
-          <div class="text-xs text-gray-500">Platform</div>
-          <div class="font-bold">{{ data.system.platform }} ({{ data.system.arch }})</div>
-        </UCard>
-        <UCard :ui="{ body: { padding: 'p-3' } }">
-          <div class="text-xs text-gray-500">Node Version</div>
-          <div class="font-bold">{{ data.system.nodeVersion }}</div>
-        </UCard>
-        <UCard :ui="{ body: { padding: 'p-3' } }">
-          <div class="text-xs text-gray-500">Uptime</div>
-          <div class="font-bold">{{ formatUptime(data.system.uptime) }}</div>
-        </UCard>
-        <UCard :ui="{ body: { padding: 'p-3' } }">
-          <div class="text-xs text-gray-500">Memory (RSS)</div>
-          <div class="font-bold">{{ formatBytes(data.system.memoryUsage.rss) }}</div>
-        </UCard>
-      </div>
-    </div>
-  </div>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
