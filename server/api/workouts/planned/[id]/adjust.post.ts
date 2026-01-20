@@ -37,6 +37,7 @@ export default defineEventHandler(async (event) => {
       adjustments
     },
     {
+      concurrencyKey: (session.user as any).id,
       tags: [`user:${(session.user as any).id}`]
     }
   )

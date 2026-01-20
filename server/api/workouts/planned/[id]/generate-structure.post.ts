@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
         plannedWorkoutId: id
       },
       {
+        concurrencyKey: user.id,
         tags: [`user:${user.id}`]
       }
     )

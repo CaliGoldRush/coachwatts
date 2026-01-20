@@ -132,7 +132,11 @@ export default defineEventHandler(async (event) => {
 
     // Trigger profile auto-detection
     // This will check if the profile is incomplete and update it from Intervals.icu
-    await tasks.trigger('autodetect-intervals-profile', { userId: user.id })
+    await tasks.trigger(
+      'autodetect-intervals-profile',
+      { userId: user.id },
+      { concurrencyKey: user.id }
+    )
 
     return {
       success: true,

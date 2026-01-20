@@ -97,6 +97,7 @@ export default defineEventHandler(async (event) => {
       plannedWorkoutId: recommendation.plannedWorkoutId
     },
     {
+      concurrencyKey: userId,
       tags: [`user:${userId}`]
     }
   )
