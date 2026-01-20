@@ -27,8 +27,7 @@
         <!-- Y-axis labels -->
         <div class="flex">
           <div
-            class="flex flex-col justify-between text-xs text-muted w-8 sm:w-12 pr-1 sm:pr-2 text-right"
-            style="height: 200px"
+            class="flex flex-col justify-between text-xs text-muted w-8 sm:w-12 pr-1 sm:pr-2 text-right h-[140px] sm:h-[200px]"
           >
             <span>120%</span>
             <span>100%</span>
@@ -39,7 +38,7 @@
           </div>
 
           <!-- Chart area -->
-          <div class="flex-1 relative min-w-0" style="height: 200px">
+          <div class="flex-1 relative min-w-0 h-[140px] sm:h-[200px]">
             <!-- Grid lines -->
             <div class="absolute inset-0 flex flex-col justify-between">
               <div v-for="i in 6" :key="i" class="border-t border-gray-200 dark:border-gray-700" />
