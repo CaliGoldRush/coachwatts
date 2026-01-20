@@ -1,7 +1,10 @@
 <template>
   <UDashboardPanel id="planned-workout-details">
     <template #header>
-      <UDashboardNavbar :title="workout?.title || 'Workout Details'">
+      <UDashboardNavbar>
+        <template #title>
+          <span class="hidden sm:inline">{{ workout?.title || 'Workout Details' }}</span>
+        </template>
         <template #leading>
           <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-left" @click="goBack">
             Back
