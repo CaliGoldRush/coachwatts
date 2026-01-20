@@ -182,9 +182,16 @@ export const generateAdHocWorkoutTask = task({
     logger.log('Created planned workout', { id: plannedWorkout.id })
 
     // Trigger Structure Generation
-    await tasks.trigger('generate-structured-workout', {
-      plannedWorkoutId: plannedWorkout.id
-    })
+    await tasks.trigger(
+      'generate-structured-workout',
+      {
+        plannedWorkoutId: plannedWorkout.id
+      },
+      {
+        concurrencyKey: userId,
+        tags: [`user:${userId}`]
+      }
+    )
 
     return { success: true, plannedWorkoutId: plannedWorkout.id }
   }

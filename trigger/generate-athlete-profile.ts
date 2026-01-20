@@ -865,7 +865,8 @@ Maintain your **${aiSettings.aiPersona}** persona throughout.`
               recommendationId: recommendation.id
             },
             {
-              concurrencyKey: userId
+              concurrencyKey: userId,
+              tags: [`user:${userId}`]
             }
           )
           logger.log('✅ Triggered recommend-today-activity')

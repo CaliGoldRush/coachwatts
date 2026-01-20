@@ -221,7 +221,8 @@ export const ingestStravaTask = task({
               activityId
             },
             {
-              concurrencyKey: userId
+              concurrencyKey: userId,
+              tags: [`user:${userId}`]
             }
           )
 

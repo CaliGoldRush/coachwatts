@@ -196,7 +196,8 @@ export const ingestAllTask = task({
             triggerRecommendation: true
           },
           {
-            concurrencyKey: userId
+            concurrencyKey: userId,
+            tags: [`user:${userId}`]
           }
         )
         logger.log('✅ Triggered generate-athlete-profile')

@@ -135,7 +135,10 @@ export default defineEventHandler(async (event) => {
     await tasks.trigger(
       'autodetect-intervals-profile',
       { userId: user.id },
-      { concurrencyKey: user.id }
+      {
+        concurrencyKey: user.id,
+        tags: [`user:${user.id}`]
+      }
     )
 
     return {
