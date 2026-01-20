@@ -111,6 +111,16 @@ compareIntervalsCommand
         console.log(`  Local Power:     ${JSON.stringify(local.power)}`)
         console.log(`  Remote Power:    ${JSON.stringify(remoteStep.power)}`)
 
+        console.log(`  Local Cadence:   ${JSON.stringify(local.cadence)}`)
+        console.log(`  Remote Cadence:  ${JSON.stringify(remoteStep.cadence)}`)
+
+        // Check Cadence
+        if (typeof local.cadence === 'object') {
+          console.log(chalk.red('  ❌ Cadence NOT normalized (Local is object)'))
+        } else if (typeof local.cadence === 'number') {
+          console.log(chalk.green('  ✓ Cadence normalized'))
+        }
+
         // Deep compare power
         if (local.power && remoteStep.power) {
           // Check Scale

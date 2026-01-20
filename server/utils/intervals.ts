@@ -982,17 +982,26 @@ export function normalizeIntervalsPlannedWorkout(event: IntervalsPlannedWorkout,
 
         if (isPercent) {
           if (step.heartRate.value !== undefined) step.heartRate.value /= 100
+
           if (step.heartRate.range) {
             step.heartRate.range.start /= 100
+
             step.heartRate.range.end /= 100
           }
         }
       }
 
+      // Cadence
+
+      // Intervals often returns { value: 90, units: 'rpm' } but we expect a number
+
+      if (step.cadence && typeof step.cadence === 'object' && step.cadence.value !== undefined) {
+        step.cadence = step.cadence.value
+      }
+
       return step
     })
   }
-
   // Detect CoachWatts management
   const isCoachWatts = event.description?.includes('[CoachWatts]')
 
