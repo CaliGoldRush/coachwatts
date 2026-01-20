@@ -185,7 +185,7 @@
               <UTable
                 :columns="workoutColumns"
                 :data="workouts.recentWorkouts.map((w) => enrichWorkoutDate(w))"
-                :ui="{ td: { padding: 'px-2 py-1', size: 'text-xs' } }"
+                :ui="{ td: 'px-2 py-1 text-xs' }"
               />
             </div>
             <div>
@@ -195,7 +195,7 @@
               <UTable
                 :columns="workoutColumns"
                 :data="workouts.plannedWorkouts.map((w) => enrichWorkoutDate(w))"
-                :ui="{ td: { padding: 'px-2 py-1', size: 'text-xs' } }"
+                :ui="{ td: 'px-2 py-1 text-xs' }"
               />
             </div>
           </div>
@@ -208,19 +208,19 @@
             System Information
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <UCard :ui="{ body: { padding: 'p-3' } }">
+            <UCard :ui="{ body: 'p-3' }">
               <div class="text-xs text-gray-500">Platform</div>
               <div class="font-bold">{{ data.system.platform }} ({{ data.system.arch }})</div>
             </UCard>
-            <UCard :ui="{ body: { padding: 'p-3' } }">
+            <UCard :ui="{ body: 'p-3' }">
               <div class="text-xs text-gray-500">Node Version</div>
               <div class="font-bold">{{ data.system.nodeVersion }}</div>
             </UCard>
-            <UCard :ui="{ body: { padding: 'p-3' } }">
+            <UCard :ui="{ body: 'p-3' }">
               <div class="text-xs text-gray-500">Uptime</div>
               <div class="font-bold">{{ formatUptime(data.system.uptime) }}</div>
             </UCard>
-            <UCard :ui="{ body: { padding: 'p-3' } }">
+            <UCard :ui="{ body: 'p-3' }">
               <div class="text-xs text-gray-500">Memory (RSS)</div>
               <div class="font-bold">{{ formatBytes(data.system.memoryUsage.rss) }}</div>
             </UCard>
@@ -305,7 +305,7 @@
     const dayIterator = new Date(start)
 
     for (let w = 0; w < 3; w++) {
-      const currentWeekDays = []
+      const currentWeekDays: any[] = []
       for (let d = 0; d < 7; d++) {
         const day = new Date(dayIterator)
         const dateStr = day.toISOString().split('T')[0]
@@ -320,10 +320,12 @@
         dayIterator.setUTCDate(dayIterator.getUTCDate() + 1)
       }
 
-      weeks.push({
-        number: getISOWeek(new Date(currentWeekDays[0].date)),
-        days: currentWeekDays
-      })
+      if (currentWeekDays.length > 0) {
+        weeks.push({
+          number: getISOWeek(new Date(currentWeekDays[0].date)),
+          days: currentWeekDays
+        })
+      }
     }
 
     previewWeeks.value = weeks
