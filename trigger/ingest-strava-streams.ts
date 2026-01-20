@@ -22,6 +22,7 @@ interface IngestStreamsPayload {
 export const ingestStravaStreams = task({
   id: 'ingest-strava-streams',
   queue: userIngestionQueue,
+  maxDuration: 900, // 15 minutes
   run: async (payload: IngestStreamsPayload) => {
     logger.log('Starting stream ingestion', {
       workoutId: payload.workoutId,

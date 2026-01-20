@@ -12,6 +12,7 @@ import { roundToTwoDecimals } from '../server/utils/number'
 export const ingestHevyTask = task({
   id: 'ingest-hevy',
   queue: userIngestionQueue,
+  maxDuration: 900, // 15 minutes
   run: async (payload: { userId: string; fullSync?: boolean }) => {
     const { userId, fullSync } = payload
 

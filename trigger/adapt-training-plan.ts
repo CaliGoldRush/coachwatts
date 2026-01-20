@@ -8,6 +8,7 @@ import { getUserTimezone, getUserLocalDate, getEndOfDayUTC } from '../server/uti
 export const adaptTrainingPlanTask = task({
   id: 'adapt-training-plan',
   queue: userReportsQueue,
+  maxDuration: 600, // 10 minutes for plan adaptation
   run: async (payload: {
     planId: string
     userId: string

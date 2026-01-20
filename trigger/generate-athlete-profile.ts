@@ -361,7 +361,7 @@ const athleteProfileSchema = {
 
 export const generateAthleteProfileTask = task({
   id: 'generate-athlete-profile',
-  maxDuration: 300, // 5 minutes for AI processing
+  maxDuration: 600, // 10 minutes for AI processing
   queue: userReportsQueue,
   run: async (payload: { userId: string; reportId: string; triggerRecommendation?: boolean }) => {
     const { userId, reportId, triggerRecommendation } = payload

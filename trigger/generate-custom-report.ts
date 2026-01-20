@@ -259,7 +259,7 @@ Be specific with data and numbers. Provide supportive, actionable feedback.`
 
 export const generateCustomReportTask = task({
   id: 'generate-custom-report',
-  maxDuration: 300, // 5 minutes for AI processing
+  maxDuration: 600, // 10 minutes for AI processing
   queue: userReportsQueue,
   run: async (payload: { userId: string; reportId: string; config: any }) => {
     const { userId, reportId, config } = payload

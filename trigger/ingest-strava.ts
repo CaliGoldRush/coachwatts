@@ -13,6 +13,7 @@ import { calculateWorkoutStress } from '../server/utils/calculate-workout-stress
 export const ingestStravaTask = task({
   id: 'ingest-strava',
   queue: userIngestionQueue,
+  maxDuration: 900, // 15 minutes
   run: async (payload: { userId: string; startDate: string; endDate: string }) => {
     const { userId, startDate, endDate } = payload
 

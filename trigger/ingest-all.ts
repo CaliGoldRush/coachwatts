@@ -11,6 +11,7 @@ import { generateAthleteProfileTask } from './generate-athlete-profile'
 
 export const ingestAllTask = task({
   id: 'ingest-all',
+  maxDuration: 3600, // 1 hour to allow for sequential sub-tasks
   run: async (payload: { userId: string; startDate: string; endDate: string }) => {
     const { userId, startDate, endDate } = payload
 

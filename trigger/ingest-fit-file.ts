@@ -21,6 +21,7 @@ import {
 export const ingestFitFile = task({
   id: 'ingest-fit-file',
   queue: userIngestionQueue,
+  maxDuration: 600, // 10 minutes for heavy processing
   run: async (payload: { userId: string; fitFileId: string }) => {
     const { userId, fitFileId } = payload
 

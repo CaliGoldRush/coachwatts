@@ -75,7 +75,7 @@ const trainingBlockSchema = {
 export const generateTrainingBlockTask = task({
   id: 'generate-training-block',
   queue: userReportsQueue,
-  maxDuration: 300, // 5 minutes
+  maxDuration: 600, // 10 minutes for complex block generation
   run: async (payload: { userId: string; blockId: string; anchorWorkoutIds?: string[] }) => {
     const { userId, blockId, anchorWorkoutIds } = payload
 

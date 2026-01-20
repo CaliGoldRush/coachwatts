@@ -45,6 +45,7 @@ const suggestionSchema = {
 export const dailyCoachTask = task({
   id: 'daily-coach',
   queue: userReportsQueue,
+  maxDuration: 300,
   run: async (payload: { userId: string }) => {
     const { userId } = payload
 

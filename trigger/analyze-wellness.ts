@@ -6,6 +6,7 @@ import { userAnalysisQueue } from './queues'
 export const analyzeWellnessTask = task({
   id: 'analyze-wellness',
   queue: userAnalysisQueue,
+  maxDuration: 300,
   run: async (payload: { wellnessId: string; userId: string }) => {
     return analyzeWellness(payload.wellnessId, payload.userId)
   }

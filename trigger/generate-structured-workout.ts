@@ -93,6 +93,7 @@ const workoutStructureSchema = {
 export const generateStructuredWorkoutTask = task({
   id: 'generate-structured-workout',
   queue: userReportsQueue,
+  maxDuration: 300,
   run: async (payload: { plannedWorkoutId: string }) => {
     const { plannedWorkoutId } = payload
 

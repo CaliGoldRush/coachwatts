@@ -30,6 +30,7 @@ const messageGenerationSchema = {
 export const generateWorkoutMessagesTask = task({
   id: 'generate-workout-messages',
   queue: userReportsQueue,
+  maxDuration: 300,
   run: async (payload: { plannedWorkoutId: string; tone: string; context?: string }) => {
     const { plannedWorkoutId, tone, context } = payload
 

@@ -6,6 +6,7 @@ import { userBackgroundQueue } from './queues'
 export const deleteUserAccountTask = task({
   id: 'delete-user-account',
   queue: userBackgroundQueue,
+  maxDuration: 600, // 10 minutes for heavy deletion
   run: async (payload: { userId: string }) => {
     const { userId } = payload
 

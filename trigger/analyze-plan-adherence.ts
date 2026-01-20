@@ -36,6 +36,7 @@ const adherenceSchema = {
 export const analyzePlanAdherenceTask = task({
   id: 'analyze-plan-adherence',
   queue: userReportsQueue,
+  maxDuration: 300,
   run: async (payload: { workoutId: string; plannedWorkoutId: string }) => {
     const { workoutId, plannedWorkoutId } = payload
 

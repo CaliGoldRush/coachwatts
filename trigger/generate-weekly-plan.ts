@@ -94,15 +94,9 @@ const weeklyPlanSchema = {
 
 export const generateWeeklyPlanTask = task({
   id: 'generate-weekly-plan',
+  maxDuration: 600, // 10 minutes for complex AI planning
   queue: userBackgroundQueue,
-  run: async (payload: {
-    userId: string
-    startDate: Date
-    daysToPlann: number
-    userInstructions?: string
-    trainingWeekId?: string
-    anchorWorkoutIds?: string[]
-  }) => {
+  run: async (payload: { userId: string; startDate: Date; daysToPlann: number }) => {
     const { userId, startDate, daysToPlann, userInstructions, trainingWeekId, anchorWorkoutIds } =
       payload
 

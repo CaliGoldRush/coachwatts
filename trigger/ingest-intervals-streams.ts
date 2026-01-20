@@ -12,6 +12,7 @@ interface IngestStreamsPayload {
 export const ingestIntervalsStreams = task({
   id: 'ingest-intervals-streams',
   queue: userIngestionQueue,
+  maxDuration: 900, // 15 minutes
   run: async (payload: IngestStreamsPayload) => {
     logger.log('Starting Intervals.icu stream ingestion', {
       workoutId: payload.workoutId,

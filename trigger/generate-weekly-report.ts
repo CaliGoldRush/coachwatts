@@ -178,7 +178,7 @@ const analysisSchema = {
 
 export const generateWeeklyReportTask = task({
   id: 'generate-weekly-report',
-  maxDuration: 300, // 5 minutes for AI processing
+  maxDuration: 600, // 10 minutes for AI processing
   queue: userReportsQueue,
   run: async (payload: { userId: string; reportId: string }) => {
     const { userId, reportId } = payload
