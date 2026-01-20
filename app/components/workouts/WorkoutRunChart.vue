@@ -102,46 +102,96 @@
           <div
             v-for="(step, index) in workout.steps"
             :key="index"
-            class="grid grid-cols-[12px_1fr_48px_80px_110px] items-start gap-4 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            class="rounded hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors p-2"
           >
-            <div
-              class="w-3 h-3 rounded-full flex-shrink-0 mt-1"
-              :style="{ backgroundColor: getStepColor(getStepIntensity(step)) }"
-            />
-            <div class="min-w-0">
-              <div class="text-sm font-medium truncate">{{ step.name }}</div>
-              <div class="text-xs text-muted">{{ step.type }}</div>
-            </div>
-            <div class="text-center text-sm font-bold text-gray-500 dark:text-gray-400">
-              {{ getZoneName(getStepIntensity(step)) }}
-            </div>
-            <div class="text-sm text-blue-500 font-semibold text-center whitespace-nowrap">
-              <!-- Placeholder for pace or cadence if available -->
-              <span v-if="step.cadence">{{ step.cadence }} SPM</span>
-              <span v-else class="text-gray-300 dark:text-gray-700">-</span>
-            </div>
-            <div class="text-right">
-              <div class="text-sm font-bold whitespace-nowrap">
-                <span v-if="step.heartRate?.range">
-                  {{ Math.round(step.heartRate.range.start * 100) }}-{{
-                    Math.round(step.heartRate.range.end * 100)
-                  }}%
-                </span>
-                <span v-else-if="step.heartRate?.value">
-                  {{ Math.round(step.heartRate.value * 100) }}%
-                </span>
-                <span v-else-if="step.power?.range">
-                  {{ Math.round(step.power.range.start * 100) }}-{{
-                    Math.round(step.power.range.end * 100)
-                  }}%
-                </span>
-                <span v-else-if="step.power?.value">
-                  {{ Math.round(step.power.value * 100) }}%
-                </span>
-                <span v-else> {{ getInferredIntensity(step) * 100 }}% (Est) </span>
+            <!-- Mobile View -->
+            <div class="flex flex-col gap-1.5 sm:hidden">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div
+                    class="w-3 h-3 rounded-full flex-shrink-0"
+                    :style="{ backgroundColor: getStepColor(getStepIntensity(step)) }"
+                  />
+                  <span class="text-sm font-medium truncate">{{ step.name }}</span>
+                </div>
+                <div class="text-xs font-mono text-muted flex-shrink-0">
+                  {{ formatDuration(step.durationSeconds || step.duration || 0) }}
+                </div>
               </div>
-              <div class="text-[10px] text-muted">
-                {{ formatDuration(step.durationSeconds || step.duration || 0) }}
+
+              <div class="flex items-center justify-between text-xs pl-5">
+                <div class="flex items-center gap-2 text-muted">
+                  <span>{{ step.type }}</span>
+                  <span>•</span>
+                  <span class="font-semibold text-gray-700 dark:text-gray-300">{{
+                    getZoneName(getStepIntensity(step))
+                  }}</span>
+                  <span v-if="step.cadence" class="text-blue-500">• {{ step.cadence }} spm</span>
+                </div>
+
+                <div class="font-bold">
+                  <span v-if="step.heartRate?.range">
+                    {{ Math.round(step.heartRate.range.start * 100) }}-{{
+                      Math.round(step.heartRate.range.end * 100)
+                    }}%
+                  </span>
+                  <span v-else-if="step.heartRate?.value">
+                    {{ Math.round(step.heartRate.value * 100) }}%
+                  </span>
+                  <span v-else-if="step.power?.range">
+                    {{ Math.round(step.power.range.start * 100) }}-{{
+                      Math.round(step.power.range.end * 100)
+                    }}%
+                  </span>
+                  <span v-else-if="step.power?.value">
+                    {{ Math.round(step.power.value * 100) }}%
+                  </span>
+                  <span v-else> {{ getInferredIntensity(step) * 100 }}% (Est) </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Desktop View -->
+            <div class="hidden sm:grid grid-cols-[12px_1fr_48px_80px_110px] items-center gap-4">
+              <div
+                class="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                :style="{ backgroundColor: getStepColor(getStepIntensity(step)) }"
+              />
+              <div class="min-w-0">
+                <div class="text-sm font-medium truncate">{{ step.name }}</div>
+                <div class="text-xs text-muted">{{ step.type }}</div>
+              </div>
+              <div class="text-center text-sm font-bold text-gray-500 dark:text-gray-400">
+                {{ getZoneName(getStepIntensity(step)) }}
+              </div>
+              <div class="text-sm text-blue-500 font-semibold text-center whitespace-nowrap">
+                <!-- Placeholder for pace or cadence if available -->
+                <span v-if="step.cadence">{{ step.cadence }} SPM</span>
+                <span v-else class="text-gray-300 dark:text-gray-700">-</span>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold whitespace-nowrap">
+                  <span v-if="step.heartRate?.range">
+                    {{ Math.round(step.heartRate.range.start * 100) }}-{{
+                      Math.round(step.heartRate.range.end * 100)
+                    }}%
+                  </span>
+                  <span v-else-if="step.heartRate?.value">
+                    {{ Math.round(step.heartRate.value * 100) }}%
+                  </span>
+                  <span v-else-if="step.power?.range">
+                    {{ Math.round(step.power.range.start * 100) }}-{{
+                      Math.round(step.power.range.end * 100)
+                    }}%
+                  </span>
+                  <span v-else-if="step.power?.value">
+                    {{ Math.round(step.power.value * 100) }}%
+                  </span>
+                  <span v-else> {{ getInferredIntensity(step) * 100 }}% (Est) </span>
+                </div>
+                <div class="text-[10px] text-muted">
+                  {{ formatDuration(step.durationSeconds || step.duration || 0) }}
+                </div>
               </div>
             </div>
           </div>
