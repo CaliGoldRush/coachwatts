@@ -2,6 +2,8 @@ import type { Integration } from '@prisma/client'
 import { formatUserDate } from './date'
 import { roundToTwoDecimals } from './number'
 
+import { WorkoutConverter } from './workout-converter'
+
 function getIntervalsHeaders(integration: Integration): Record<string, string> {
   // If we have a scope or refresh token, it's an OAuth integration
   if (integration.scope || integration.refreshToken) {
@@ -1055,7 +1057,39 @@ export function normalizeIntervalsPlannedWorkout(event: IntervalsPlannedWorkout,
     }
   }
 
-  return {
+  // RECOVERY LOGIC: Parse Exercises from Description
+  // If this is a Gym workout and we have no valid structure (or just junk Rest steps from Intervals),
+  // try to recover the exercises from the description text.
+  const isGym = event.type === 'WeightTraining' || event.type === 'Gym'
+  const steps = structuredWorkout?.steps || []
+  // Intervals auto-parsing often creates steps named 'Rest:' with type 'Rest'.
+  const hasJunkSteps =
+    steps.length > 0 &&
+    steps.every(
+      (s: any) =>
+        s.type === 'Rest' ||
+        s.text?.startsWith('Rest:') ||
+        s.name?.startsWith('Rest:') ||
+        s.name === 'Rest'
+    )
+
+  if (isGym && (hasJunkSteps || !steps.length) && event.description) {
+    const parsedExercises = WorkoutConverter.parseIntervalsGymDescription(event.description || '')
+    if (parsedExercises.length > 0) {
+      if (!structuredWorkout) {
+        // We can't assign to const, so we'll attach it to the result object directly later
+        // or we can mutate the structuredWorkout object if it exists (it might be null)
+      } else {
+        structuredWorkout.exercises = parsedExercises
+        // Clear junk steps if we found valid exercises
+        if (hasJunkSteps) {
+          structuredWorkout.steps = []
+        }
+      }
+    }
+  }
+
+  const result = {
     userId,
     externalId: String(event.id), // Convert to string
     // Parse the local date string (YYYY-MM-DDTHH:mm:ss) and force to UTC midnight
@@ -1074,6 +1108,16 @@ export function normalizeIntervalsPlannedWorkout(event: IntervalsPlannedWorkout,
     managedBy: isCoachWatts ? 'COACH_WATTS' : 'USER',
     rawJson: event
   }
+
+  // If structuredWorkout was null but we parsed exercises, we need to attach it now
+  if (!structuredWorkout && isGym && event.description) {
+    const parsedExercises = WorkoutConverter.parseIntervalsGymDescription(event.description || '')
+    if (parsedExercises.length > 0) {
+      result.structuredWorkout = { exercises: parsedExercises, steps: [] }
+    }
+  }
+
+  return result
 }
 
 function mapIntervalsMood(val: number | undefined | null): number | null {

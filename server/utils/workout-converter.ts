@@ -427,5 +427,81 @@ export const WorkoutConverter = {
     })
 
     return lines.join('\n')
+  },
+
+  parseIntervalsGymDescription(description: string): any[] {
+    const exercises: any[] = []
+    if (!description) return exercises
+
+    const lines = description.split('\n')
+    let currentExercise: any = null
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+
+      // Exercise Name: "- **Name**"
+      const nameMatch = trimmed.match(/^-\s+\*\*(.+)\*\*$/)
+      if (nameMatch) {
+        if (currentExercise) {
+          exercises.push(currentExercise)
+        }
+        currentExercise = { name: nameMatch[1] }
+        continue
+      }
+
+      if (!currentExercise) continue
+
+      // Details line (Sets/Reps/Weight)
+      // Matches: "  - 3 sets", "  - 3 sets x 10 reps", "  - 3 sets x 10 reps @ 50kg"
+      // But avoid matching "  - Rest:" or "  - Note:"
+      // Note: We check for '- ' or '  - ' prefix generically
+      if (
+        (trimmed.startsWith('- ') || trimmed.startsWith('  - ')) &&
+        !trimmed.includes('Rest:') &&
+        !trimmed.includes('Note:') &&
+        !trimmed.includes('**')
+      ) {
+        // Remove bullet
+        const text = trimmed.replace(/^[-\s]+/, '')
+
+        const setsMatch = text.match(/^(\d+)\s+sets/)
+        if (setsMatch) currentExercise.sets = parseInt(setsMatch[1], 10)
+
+        const repsMatch = text.match(/x\s+(.+?)\s+reps/)
+        if (repsMatch) currentExercise.reps = repsMatch[1]
+
+        const weightMatch = text.match(/@\s+(.+)$/)
+        if (weightMatch) currentExercise.weight = weightMatch[1]
+
+        continue
+      }
+
+      // Rest
+      // Matches: "  - Rest: 60s"
+      if (trimmed.includes('Rest:')) {
+        const restMatch = trimmed.match(/Rest:\s+(.+)$/)
+        if (restMatch) {
+          currentExercise.rest = restMatch[1]
+        }
+        continue
+      }
+
+      // Note
+      // Matches: "  - Note: ..."
+      if (trimmed.includes('Note:')) {
+        const noteMatch = trimmed.match(/Note:\s+(.+)$/)
+        if (noteMatch) {
+          currentExercise.notes = noteMatch[1]
+        }
+        continue
+      }
+    }
+
+    if (currentExercise) {
+      exercises.push(currentExercise)
+    }
+
+    return exercises
   }
 }

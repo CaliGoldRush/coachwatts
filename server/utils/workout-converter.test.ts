@@ -67,4 +67,34 @@ describe('WorkoutConverter', () => {
       expect(result).toContain('- Interval 20m 90%')
     })
   })
+
+  describe('parseIntervalsGymDescription', () => {
+    it('parses formatted description back to exercises', () => {
+      const description = `
+- **Barbell Bench Press**
+  - 3 sets x 5-7 reps @ Heavy (RPE 8)
+  - Rest: 120s
+  - Note: Control the descent.
+
+- **Pull-ups**
+  - 3 sets x AMRAP reps @ Bodyweight
+      `
+
+      const result = WorkoutConverter.parseIntervalsGymDescription(description)
+
+      expect(result).toHaveLength(2)
+
+      expect(result[0].name).toBe('Barbell Bench Press')
+      expect(result[0].sets).toBe(3)
+      expect(result[0].reps).toBe('5-7')
+      expect(result[0].weight).toBe('Heavy (RPE 8)')
+      expect(result[0].rest).toBe('120s')
+      expect(result[0].notes).toBe('Control the descent.')
+
+      expect(result[1].name).toBe('Pull-ups')
+      expect(result[1].sets).toBe(3)
+      expect(result[1].reps).toBe('AMRAP')
+      expect(result[1].weight).toBe('Bodyweight')
+    })
+  })
 })
