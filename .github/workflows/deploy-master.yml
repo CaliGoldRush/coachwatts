@@ -50,12 +50,12 @@ jobs:
           color: ${{ job.status == 'success' && '0x28a745' || '0xdc3545' }}
 
   deploy:
-    name: Deploy Trigger.dev to Staging
+    name: Deploy Trigger.dev to Production
     needs: build
     uses: ./.github/workflows/reusable-trigger-deploy.yml
     with:
-      environment: preview
-      trigger-env: staging
+      environment: production
+      trigger-env: prod
       trigger-version: '4.3.2'
       node-version: '22'
       preview-branch: false
