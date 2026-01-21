@@ -1,60 +1,11 @@
 import { getServerSession } from '../../utils/session'
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import { chatToolDeclarations, executeToolCall } from '../../utils/chat-tools'
-import { generateCoachAnalysis } from '../../utils/gemini'
+import { streamText, convertToModelMessages } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { getToolsWithContext } from '../../utils/ai-tools'
+import { generateCoachAnalysis, MODEL_NAMES } from '../../utils/gemini'
 import { buildAthleteContext } from '../../utils/services/chatContextService'
 import { prisma } from '../../utils/db'
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-
-// Model configuration (centralized in gemini.ts)
-const MODEL_NAMES = {
-  flash: 'gemini-flash-latest',
-  pro: 'gemini-pro-latest'
-} as const
-
-defineRouteMeta({
-  openAPI: {
-    tags: ['Chat'],
-    summary: 'Send chat message',
-    description: 'Sends a message to the AI coach and returns the response.',
-    requestBody: {
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            required: ['roomId', 'content'],
-            properties: {
-              roomId: { type: 'string' },
-              content: { type: 'string' },
-              files: { type: 'array', items: { type: 'string' } },
-              replyMessage: { type: 'object' }
-            }
-          }
-        }
-      }
-    },
-    responses: {
-      200: {
-        description: 'Success',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                role: { type: 'string' },
-                parts: { type: 'array' },
-                metadata: { type: 'object' }
-              }
-            }
-          }
-        }
-      },
-      401: { description: 'Unauthorized' }
-    }
-  }
-})
+import { getUserTimezone } from '../../utils/date'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
@@ -68,355 +19,208 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { roomId, content, files, replyMessage } = body
+  const { roomId, messages, files, replyMessage } = body
+
+  // Vercel AI SDK sends the full conversation history in 'messages'
+  // The last message is the new user input
+  const lastMessage = messages?.[messages.length - 1]
+
+  let content = lastMessage?.content
+  // Handle cases where content might be in parts only (common in newer SDK versions)
+  if (!content && Array.isArray(lastMessage?.parts)) {
+    content = lastMessage.parts
+      .filter((p: any) => p.type === 'text')
+      .map((p: any) => p.text)
+      .join('')
+  }
+
+  const historyMessages = messages
 
   if (!roomId || !content) {
     throw createError({ statusCode: 400, message: 'Room ID and content required' })
   }
 
-  // 1. Save User Message
-  const userMessage = await prisma.chatMessage.create({
-    data: {
-      content,
-      roomId,
-      senderId: userId,
-      files: files || undefined,
-      replyToId: replyMessage?._id || undefined,
-      seen: { [userId]: new Date() }
+  // 1. Save User Message to DB if it's not already persisted
+  // The AI SDK sends a unique ID for each message. We can use this to prevent duplicates.
+  const userMessageId = lastMessage.id
+
+  const existingMessage = userMessageId
+    ? await prisma.chatMessage.findUnique({
+        where: { id: userMessageId }
+      })
+    : null
+
+  if (!existingMessage) {
+    try {
+      await prisma.chatMessage.create({
+        data: {
+          id: userMessageId || undefined,
+          content,
+          roomId,
+          senderId: userId,
+          files: files || undefined,
+          replyToId: replyMessage?._id || undefined,
+          seen: { [userId]: new Date() }
+        }
+      })
+    } catch (err) {
+      // If ID collision occurs, it's a duplicate, we can ignore
+      console.warn('[Chat] Message save skipped (likely duplicate ID):', userMessageId)
     }
-  })
+  }
 
   // 2. Build Athlete Context (Extracted to Service)
   const { userProfile, systemInstruction } = await buildAthleteContext(userId)
+  const timezone = await getUserTimezone(userId)
 
-  // 3. Fetch Chat History (last 50 messages)
-  const history = await prisma.chatMessage.findMany({
-    where: { roomId },
-    orderBy: { createdAt: 'desc' },
-    take: 50
+  // 3. Initialize Model and Tools
+  const google = createGoogleGenerativeAI({
+    apiKey: process.env.GEMINI_API_KEY
   })
+  const modelType = userProfile?.aiModelPreference === 'flash' ? 'flash' : 'pro'
+  const modelName = MODEL_NAMES[modelType]
+  const tools = getToolsWithContext(userId, timezone)
 
-  const chronologicalHistory = history.reverse()
-
-  // 6. Build Chat History for Model
-  // Gemini requires the first message to be from user, so filter out any leading AI messages
-  let historyForModel = chronologicalHistory.map((msg: any) => ({
-    role: msg.senderId === 'ai_agent' ? 'model' : 'user',
-    parts: [{ text: msg.content }]
-  }))
-
-  // Remove any leading 'model' messages to ensure first message is 'user'
-  while (historyForModel.length > 0 && historyForModel[0] && historyForModel[0].role === 'model') {
-    historyForModel = historyForModel.slice(1)
-  }
-
-  // 7. Initialize Model with Tools (without JSON mode during tool calling)
-  // Use user preference or default to pro for chat (better quality and reasoning)
-  const modelName = userProfile?.aiModelPreference === 'flash' ? MODEL_NAMES.flash : MODEL_NAMES.pro
-
-  const model = genAI.getGenerativeModel({
-    model: modelName,
-    systemInstruction,
-    tools: [{ functionDeclarations: chatToolDeclarations }]
-  })
-
-  // 8. Start Chat with History
-  const chat = model.startChat({
-    history: historyForModel
-  })
-
-  // 9. Send Message and Handle Tool Calls Iteratively
-  let result = await chat.sendMessage(content)
-  let response = result.response
-
-  // Maximum 5 rounds of tool calls to prevent infinite loops
-  let roundCount = 0
-  const MAX_ROUNDS = 5
-  const toolCallsUsed: Array<{ name: string; args: any; response: any; timestamp: string }> = []
-  const chartData: any[] = []
-
-  while (roundCount < MAX_ROUNDS) {
-    const functionCalls = response.functionCalls?.()
-
-    if (!functionCalls || functionCalls.length === 0) {
-      break
-    }
-
-    roundCount++
-    console.log(
-      `[Tool Call Round ${roundCount}/${MAX_ROUNDS}] Processing ${functionCalls.length} function call(s)`
-    )
-
-    // Process ALL function calls and build responses array
-    const functionResponses = await Promise.all(
-      functionCalls.map(async (functionCall, index) => {
-        const callTimestamp = new Date().toISOString()
-
-        console.log(
-          `[Tool Call ${roundCount}.${index + 1}] ${functionCall.name}`,
-          functionCall.args
-        )
-
-        // Check for duplicates in the current request session
-        const isDuplicate = toolCallsUsed.some(
-          (prev) =>
-            prev.name === functionCall.name &&
-            JSON.stringify(prev.args) === JSON.stringify(functionCall.args)
-        )
-
-        if (isDuplicate) {
-          console.warn(
-            `[Tool Call ${roundCount}.${index + 1}] ⚠️ Skipping duplicate execution for ${functionCall.name}`
-          )
-          const duplicateResponse = {
-            success: true,
-            message:
-              'This tool was already executed successfully with these exact arguments. Do not retry.',
-            status: 'ALREADY_COMPLETED'
-          }
-
-          return {
-            functionResponse: {
-              name: functionCall.name,
-              response: duplicateResponse
-            }
-          }
-        }
-
-        try {
-          const toolResult = await executeToolCall(functionCall.name, functionCall.args, userId)
-
+  // 4. Stream Text
+  try {
+    const result = await streamText({
+      model: google(modelName),
+      system: systemInstruction,
+      messages: await convertToModelMessages(historyMessages),
+      tools,
+      maxSteps: 5, // Allow multi-step interactions (Agency)
+      onStepFinish: async ({ text, toolCalls, toolResults, finishReason, usage }) => {
+        console.log(`[Chat API] Step finished. Reason: ${finishReason}`)
+        if (toolCalls?.length) {
           console.log(
-            `[Tool Result ${roundCount}.${index + 1}] ${functionCall.name}:`,
-            typeof toolResult === 'object'
-              ? JSON.stringify(toolResult).substring(0, 200) + '...'
-              : toolResult
+            `[Chat API] Tool calls in step: ${toolCalls.map((t) => t.toolName).join(', ')}`
           )
-
-          // Store complete tool call information including response
-          toolCallsUsed.push({
-            name: functionCall.name,
-            args: functionCall.args,
-            response: toolResult,
-            timestamp: callTimestamp
+        }
+        if (toolResults && toolResults.length > 0) {
+          console.log(`[Chat API] Tool results in step: ${toolResults.length}`)
+          toolResults.forEach((r) => {
+            console.log(`[Chat API] Tool result (${r.toolName}):`, JSON.stringify(r, null, 2))
           })
+        }
+      },
+      onFinish: async ({ text, toolResults, usage, finishReason }) => {
+        console.log(
+          `[Chat API] Stream finished for room ${roomId}. Reason: ${finishReason}. Content length: ${text?.length || 0}`
+        )
 
-          return {
-            functionResponse: {
-              name: functionCall.name,
-              response: toolResult
+        // 1. Save AI Response to DB
+        const aiMessage = await prisma.chatMessage.create({
+          data: {
+            content: text || '',
+            roomId,
+            senderId: 'ai_agent',
+            seen: {}
+          }
+        })
+
+        // 2. Track LLM usage
+        try {
+          const promptTokens = usage.inputTokens || 0
+          const completionTokens = usage.outputTokens || 0
+          const totalTokens = promptTokens + completionTokens
+
+          // Calculate cost (Gemini 1.5 pricing)
+          const PRICING = {
+            input: 0.075, // $0.075 per 1M input tokens
+            output: 0.3 // $0.30 per 1M output tokens
+          }
+          const estimatedCost =
+            (promptTokens / 1_000_000) * PRICING.input +
+            (completionTokens / 1_000_000) * PRICING.output
+
+          await prisma.llmUsage.create({
+            data: {
+              userId,
+              provider: 'google',
+              model: modelName,
+              modelType: userProfile?.aiModelPreference === 'flash' ? 'flash' : 'pro',
+              operation: 'chat',
+              entityType: 'ChatMessage',
+              entityId: aiMessage.id,
+              promptTokens,
+              completionTokens,
+              totalTokens,
+              estimatedCost,
+              durationMs: 0,
+              retryCount: 0,
+              success: true,
+              promptPreview: content.substring(0, 500),
+              responsePreview: (text || '').substring(0, 500)
             }
-          }
-        } catch (error: any) {
-          console.error(
-            `[Tool Error ${roundCount}.${index + 1}] ${functionCall.name}:`,
-            error?.message || error
-          )
-
-          const errorResponse = {
-            error: `Failed to execute tool: ${error?.message || 'Unknown error'}`
-          }
-
-          // Store error response as well
-          toolCallsUsed.push({
-            name: functionCall.name,
-            args: functionCall.args,
-            response: errorResponse,
-            timestamp: callTimestamp
           })
+        } catch (error) {
+          console.error('[Chat] Failed to log LLM usage:', error)
+        }
 
-          return {
-            functionResponse: {
-              name: functionCall.name,
-              response: errorResponse
-            }
+        // 3. Auto-rename room after first AI response
+        const messageCount = await prisma.chatMessage.count({ where: { roomId } })
+        if (messageCount === 2) {
+          try {
+            const titlePrompt = `Based on this conversation, generate a very concise, descriptive title (max 6 words). Just return the title, nothing else.\n\nUser: ${content}\nAI: ${(text || '').substring(0, 500)}\n\nTitle:`
+            let roomTitle = await generateCoachAnalysis(titlePrompt, 'flash', {
+              userId,
+              operation: 'chat_title_generation',
+              entityType: 'ChatRoom',
+              entityId: roomId
+            })
+            roomTitle = roomTitle
+              .trim()
+              .replace(/^["']|["']$/g, '')
+              .substring(0, 60)
+            await prisma.chatRoom.update({
+              where: { id: roomId },
+              data: { name: roomTitle }
+            })
+          } catch (error) {
+            console.error(`[Chat] Failed to auto-rename room ${roomId}:`, error)
           }
         }
-      })
-    )
 
-    // Send all function responses back together
-    result = await chat.sendMessage(functionResponses)
-    response = result.response
-  }
+        // 4. Handle tool calls and charts in metadata
+        const toolCallsUsed = toolResults.map((tr: any) => ({
+          toolCallId: tr.toolCallId,
+          name: tr.toolName,
+          args: tr.args,
+          response: tr.result,
+          timestamp: new Date().toISOString()
+        }))
 
-  if (roundCount >= MAX_ROUNDS) {
-    console.warn(`Reached maximum tool call rounds (${MAX_ROUNDS}). Tools used:`, toolCallsUsed)
-  }
+        const charts = toolResults
+          .filter((tr: any) => tr.toolName === 'create_chart' && tr.result?.success)
+          .map((tr: any, index: number) => ({
+            id: `chart-${aiMessage.id}-${index}`,
+            ...tr.args
+          }))
 
-  let aiResponseText = ''
-  try {
-    aiResponseText = response.text()
-  } catch (e) {
-    // response.text() might throw if there is no text part, which can happen if model only called tools and stopped
-    console.warn('[Chat] Failed to extract text from response:', e)
-  }
-
-  // Fallback if model used tools but returned no text
-  if (!aiResponseText && toolCallsUsed.length > 0) {
-    const actionNames = toolCallsUsed.map((t) => t.name.replace(/_/g, ' ')).join(', ')
-    aiResponseText = `Completed actions: ${actionNames}.`
-  }
-
-  // Track LLM usage for debugging and cost monitoring
-  try {
-    const usageMetadata = response.usageMetadata
-    const promptTokens = usageMetadata?.promptTokenCount
-    const completionTokens = usageMetadata?.candidatesTokenCount
-    const totalTokens = usageMetadata?.totalTokenCount
-
-    // Calculate cost (Gemini 2.0 Flash pricing)
-    const PRICING = {
-      input: 0.075, // $0.075 per 1M input tokens
-      output: 0.3 // $0.30 per 1M output tokens
-    }
-    const estimatedCost =
-      promptTokens && completionTokens
-        ? (promptTokens / 1_000_000) * PRICING.input +
-          (completionTokens / 1_000_000) * PRICING.output
-        : undefined
-
-    // Build full prompt context for logging
-    const fullPrompt = [
-      '=== SYSTEM INSTRUCTION ===',
-      systemInstruction,
-      '',
-      '=== CHAT HISTORY ===',
-      ...historyForModel.map(
-        (msg: any) =>
-          `${msg.role}: ${typeof msg.parts[0] === 'string' ? msg.parts[0] : JSON.stringify(msg.parts[0])}`
-      ),
-      '',
-      '=== USER MESSAGE ===',
-      content
-    ].join('\n')
-
-    await prisma.llmUsage.create({
-      data: {
-        userId,
-        provider: 'gemini',
-        model: modelName,
-        modelType: 'flash',
-        operation: 'chat',
-        entityType: 'ChatMessage',
-        entityId: userMessage.id,
-        promptTokens,
-        completionTokens,
-        totalTokens,
-        estimatedCost,
-        durationMs: 0, // Not tracking duration for chat
-        retryCount: 0,
-        success: true,
-        promptPreview: fullPrompt.substring(0, 500),
-        responsePreview: aiResponseText.substring(0, 500)
+        if (charts.length > 0 || toolCallsUsed.length > 0) {
+          await prisma.chatMessage.update({
+            where: { id: aiMessage.id },
+            data: {
+              metadata: {
+                charts,
+                toolCalls: toolCallsUsed,
+                toolsUsed: toolCallsUsed.map((t) => t.name),
+                toolCallCount: toolCallsUsed.length
+              } as any
+            }
+          })
+        }
       }
     })
-  } catch (error) {
-    console.error('[Chat] Failed to log LLM usage:', error)
-    // Don't fail the chat if logging fails
-  }
 
-  // 10. Save AI Response
-  const aiMessage = await prisma.chatMessage.create({
-    data: {
-      content: aiResponseText,
-      roomId,
-      senderId: 'ai_agent',
-      seen: {}
-    }
-  })
-
-  // 11. Auto-rename room after first AI response
-  // Check if this is the first AI response (meaning there are only 2 messages now: user's first + this AI response)
-  const messageCount = await prisma.chatMessage.count({
-    where: { roomId }
-  })
-
-  console.log(`[Chat] Message count for room ${roomId}: ${messageCount}`)
-
-  if (messageCount === 2) {
-    // This is the first AI response - generate a concise title
-    console.log(`[Chat] Attempting to auto-rename room ${roomId}`)
-    try {
-      const titlePrompt = `Based on this conversation, generate a very concise, descriptive title (max 6 words). Just return the title, nothing else.
-
-User: ${content}
-AI: ${aiResponseText.substring(0, 500)}
-
-Title:`
-
-      console.log(`[Chat] Generating title for room ${roomId}`)
-      let roomTitle = await generateCoachAnalysis(titlePrompt, 'flash', {
-        userId,
-        operation: 'chat_title_generation',
-        entityType: 'ChatRoom',
-        entityId: roomId
-      })
-      roomTitle = roomTitle.trim()
-
-      // Clean up the title - remove quotes, limit length
-      roomTitle = roomTitle.replace(/^["']|["']$/g, '').substring(0, 60)
-
-      console.log(`[Chat] Generated title: "${roomTitle}"`)
-
-      // Update the room name
-      await prisma.chatRoom.update({
-        where: { id: roomId },
-        data: { name: roomTitle }
-      })
-
-      console.log(`[Chat] Successfully renamed room ${roomId} to: "${roomTitle}"`)
-    } catch (error: any) {
-      console.error(`[Chat] Failed to auto-rename room ${roomId}:`, {
-        message: error.message,
-        stack: error.stack,
-        error
-      })
-      // Don't fail the whole request if renaming fails
-    }
-  } else {
-    console.log(`[Chat] Skipping auto-rename for room ${roomId} (messageCount: ${messageCount})`)
-  }
-
-  // 12. Extract chart data from tool calls
-  const chartToolCalls = toolCallsUsed.filter((t) => t.name === 'create_chart')
-  const charts = chartToolCalls.map((call, index) => ({
-    id: `chart-${aiMessage.id}-${index}`,
-    ...call.args
-  }))
-
-  // 13. Store chart data and complete tool call information in message metadata
-  if (charts.length > 0 || toolCallsUsed.length > 0) {
-    await prisma.chatMessage.update({
-      where: { id: aiMessage.id },
-      data: {
-        metadata: {
-          charts,
-          toolCalls: toolCallsUsed, // Store complete tool call info with args and responses
-          toolsUsed: toolCallsUsed.map((t) => t.name), // Keep for backward compatibility
-          toolCallCount: toolCallsUsed.length
-        } as any // Cast to any to handle Json type
+    return result.toUIMessageStreamResponse({
+      onError: (error) => {
+        console.error('[Chat API] Stream error:', error)
+        return 'An error occurred while generating the response.'
       }
     })
-  }
-
-  // 14. Return AI Message in AI SDK v5 format
-  return {
-    id: aiMessage.id,
-    role: 'assistant' as const,
-    parts: [
-      {
-        type: 'text' as const,
-        id: `text-${aiMessage.id}`,
-        text: aiResponseText
-      }
-    ],
-    metadata: {
-      charts,
-      toolCalls: toolCallsUsed, // Include complete tool call info in response
-      toolsUsed: toolCallsUsed.map((t) => t.name),
-      toolCallCount: toolCallsUsed.length,
-      createdAt: aiMessage.createdAt
-    }
+  } catch (error: any) {
+    console.error('[Chat] Error in streamText:', error)
+    throw createError({ statusCode: 500, message: 'Failed to generate response: ' + error.message })
   }
 })
