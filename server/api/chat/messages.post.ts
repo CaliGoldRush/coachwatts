@@ -95,10 +95,23 @@ export default defineEventHandler(async (event) => {
   try {
     const allToolResults: any[] = []
 
+    // Workaround for 'Unsupported role: tool' in convertToModelMessages
+    // We filter out tool messages, convert the rest, then append tool messages manually
+    const uiMessages = historyMessages.filter((m: any) => m.role !== 'tool')
+    const toolMessages = historyMessages.filter((m: any) => m.role === 'tool')
+
+    const coreMessages = [
+      ...(await convertToModelMessages(uiMessages)),
+      ...toolMessages.map((m: any) => ({
+        role: 'tool',
+        content: m.content
+      }))
+    ] as any
+
     const result = await streamText({
       model: google(modelName),
       system: systemInstruction,
-      messages: await convertToModelMessages(historyMessages),
+      messages: coreMessages,
       tools,
       stopWhen: stepCountIs(5), // Allow multi-step interactions (Agency)
       onStepFinish: async ({ text, toolCalls, toolResults, finishReason, usage }) => {
