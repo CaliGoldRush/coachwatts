@@ -423,7 +423,7 @@ export async function updatePlannedWorkout(
         date: formatUserDate(workout.date, timezone),
         title: workout.title,
         type: workout.type,
-        sync_status: syncResult.synced ? 'SYNCED' : 'PENDING'
+        sync_status: syncResult.synced ? 'SYNCED' : 'QUEUED_FOR_SYNC'
       }
     }
   } catch (error: any) {
