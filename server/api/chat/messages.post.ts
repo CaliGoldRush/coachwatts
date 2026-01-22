@@ -134,91 +134,134 @@ export default defineEventHandler(async (event) => {
 
     // Manual Tool Execution for Approvals
 
-    // If the last message is a tool result saying "User confirmed", we must execute the tool!
+    // Iterate through ALL tool messages to handle potential duplicates or multi-step approvals
 
-    const lastCoreMsg = coreMessages[coreMessages.length - 1]
+    // We process from oldest to newest to maintain order, but for execution we might want to be careful.
 
-    if (lastCoreMsg?.role === 'tool' && Array.isArray(lastCoreMsg.content)) {
-      const approvalPart = lastCoreMsg.content.find(
-        (p: any) => p.result === 'User confirmed action.' || p.approved === true
-      )
+    // Actually, if we have multiple approvals for same ID, we should probably only execute once.
 
-      if (approvalPart) {
-        const toolCallId = approvalPart.toolCallId || approvalPart.approvalId
+    const executedToolCallIds = new Set<string>()
 
-        console.log('[Chat API] Intercepted approval for:', toolCallId)
+    for (const msg of coreMessages) {
+      if (msg.role === 'tool' && Array.isArray(msg.content)) {
+        const approvalPartIndex = msg.content.findIndex(
+          (p: any) =>
+            p.result === 'User confirmed action.' ||
+            p.approved === true ||
+            p.type === 'tool-approval-response'
+        )
 
-        // Find the tool call in the previous assistant message
+        if (approvalPartIndex !== -1) {
+          const approvalPart = msg.content[approvalPartIndex]
 
-        const assistantMsg = coreMessages[coreMessages.length - 2]
+          const toolCallId = approvalPart.toolCallId || approvalPart.approvalId
 
-        if (assistantMsg?.role === 'assistant' && Array.isArray(assistantMsg.content)) {
-          const toolCallPart = assistantMsg.content.find(
-            (p: any) => p.type === 'tool-call' && p.toolCallId === toolCallId
-          )
+          if (toolCallId && !executedToolCallIds.has(toolCallId)) {
+            console.log('[Chat API] Intercepted approval for:', toolCallId)
 
-          if (toolCallPart) {
-            const toolName = toolCallPart.toolName
+            // Find the tool call in PREVIOUS messages (Assistant)
 
-            const args = toolCallPart.args
+            // We search backwards from this message
 
-            console.log(`[Chat API] Executing approved tool: ${toolName}`)
+            const msgIndex = coreMessages.indexOf(msg)
 
-            if (tools[toolName]) {
-              try {
-                const executionResult = await tools[toolName].execute(args, {
-                  toolCallId,
+            const assistantMsg = coreMessages
+              .slice(0, msgIndex)
+              .reverse()
+              .find(
+                (m: any) =>
+                  m.role === 'assistant' &&
+                  Array.isArray(m.content) &&
+                  m.content.some((p: any) => p.type === 'tool-call' && p.toolCallId === toolCallId)
+              )
 
-                  messages: coreMessages
-                })
+            if (assistantMsg) {
+              const toolCallPart = (assistantMsg.content as any[]).find(
+                (p: any) => p.type === 'tool-call' && p.toolCallId === toolCallId
+              )
 
-                console.log(
-                  '[Chat API] Execution result:',
-                  JSON.stringify(executionResult).substring(0, 100)
-                )
+              if (toolCallPart) {
+                const toolName = toolCallPart.toolName
 
-                // REPLACE the approval content with the actual result
+                const args = toolCallPart.args
 
-                lastCoreMsg.content = [
-                  {
-                    type: 'tool-result',
+                console.log(`[Chat API] Executing approved tool: ${toolName}`)
 
-                    toolCallId,
+                if (tools[toolName]) {
+                  try {
+                    // Execute
 
-                    toolName,
+                    const executionResult = await tools[toolName].execute(args, {
+                      toolCallId,
 
-                    result: executionResult
+                      messages: coreMessages
+                    })
+
+                    console.log(
+                      '[Chat API] Execution result:',
+                      JSON.stringify(executionResult).substring(0, 100)
+                    )
+
+                    // Replace content with result
+
+                    msg.content[approvalPartIndex] = {
+                      type: 'tool-result',
+
+                      toolCallId,
+
+                      toolName,
+
+                      result: executionResult
+                    }
+
+                    executedToolCallIds.add(toolCallId)
+
+                    // Track execution
+
+                    allToolResults.push({
+                      toolCallId,
+
+                      toolName,
+
+                      args,
+
+                      result: executionResult
+                    })
+                  } catch (execErr: any) {
+                    console.error('[Chat API] Tool execution failed:', execErr)
+
+                    msg.content[approvalPartIndex] = {
+                      type: 'tool-result',
+
+                      toolCallId,
+
+                      toolName,
+
+                      result: `Error executing tool: ${execErr.message}`,
+
+                      isError: true
+                    }
+
+                    executedToolCallIds.add(toolCallId) // Mark executed even if failed to prevent retry loops
                   }
-                ]
-
-                // Track execution for metadata
-
-                allToolResults.push({
-                  toolCallId,
-
-                  toolName,
-
-                  args,
-
-                  result: executionResult
-                })
-              } catch (execErr: any) {
-                console.error('[Chat API] Tool execution failed:', execErr)
-
-                lastCoreMsg.content = [
-                  {
-                    type: 'tool-result',
-
-                    toolCallId,
-
-                    toolName,
-
-                    result: `Error executing tool: ${execErr.message}`,
-
-                    isError: true
-                  }
-                ]
+                }
               }
+            }
+          } else if (toolCallId && executedToolCallIds.has(toolCallId)) {
+            // Duplicate approval for already executed tool - replace with a placeholder result or remove?
+
+            // We must convert it to tool-result to satisfy schema, reuse previous result if possible?
+
+            // For simplicity, just mark as "Already executed"
+
+            msg.content[approvalPartIndex] = {
+              type: 'tool-result',
+
+              toolCallId,
+
+              toolName: 'unknown', // We might not know name easily here without lookup
+
+              result: 'Tool already executed in previous message.'
             }
           }
         }
