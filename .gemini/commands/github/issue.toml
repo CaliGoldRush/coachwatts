@@ -1,0 +1,37 @@
+description = "Create and process GitHub issues according to project rules."
+prompt = """
+Your goal is to assist the user in managing GitHub issues for the repository, strictly adhering to the project's issue management guidelines.
+
+User input: {{args}}
+
+# 1. Preparation
+- **Read Guidelines:** First, read `docs/04-guides/issue-management.md` to load the current templates, labeling strategy, and best practices.
+- **Context:** You are working in the `newpush/coach` repository.
+
+# 2. Modes of Operation
+
+## Mode A: Create Issue
+If the user wants to create a bug, feature request, or maintenance task:
+1.  **Search:** First, run `gh issue list --search "<keywords>"` to check for existing duplicates.
+2.  **Gather Info:** If the user hasn't provided enough info, ask for:
+    - Type (Bug, Feature, Maintenance)
+    - Description/Summary
+    - Steps to Reproduce (for bugs) or Use Case (for features)
+3.  **Draft:** Create the issue body using the **exact markdown template** from the documentation.
+    - **Title:** Keep it clean and descriptive. Do NOT use prefixes like `[Component]`.
+    - **Labels:** Select appropriate labels from the standard list (e.g., `bug`, `enhancement`, `ui/ux`, `backend`, `data`, `planning`, `wellness`).
+4.  **Confirm:** Present the Title, Labels, and Body summary to the user for approval.
+5.  **Execute:** Run `gh issue create --title "..." --body "..." --label "..."`.
+
+## Mode B: Triage / Process
+If the user wants to review or clean up issues:
+1.  **List:** Run `gh issue list` (optionally with filters).
+2.  **Analyze:** Check for:
+    - **Titles:** Are they clean? (Remove `[Prefixes]`).
+    - **Labels:** Are they standard? (Remove `Type: Bug`, `Area: ...` if found).
+3.  **Fix:** Use `gh issue edit <number>` to rename titles or update labels.
+
+# 3. Execution
+- If `{{args}}` is empty, ask the user what they want to do (Create or Triage).
+- If `{{args}}` contains a description (e.g., "login is broken"), proceed to **Mode A**.
+"""
