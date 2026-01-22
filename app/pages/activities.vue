@@ -1512,26 +1512,18 @@
     if (viewMode.value !== 'calendar' || !isCurrentMonth.value) return
 
     // For mobile, use the specific anchor
-    const mobileEl = document.getElementById('mobile-today-anchor')
-    if (mobileEl && window.innerWidth < 1024) {
-      mobileEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (window.innerWidth < 1024) {
+      const mobileEl = document.getElementById('mobile-today-anchor')
+      if (mobileEl) {
+        mobileEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
       return
     }
 
-    // For desktop, find the cell and scroll its container
+    // For desktop
     const todayCell = document.querySelector('.today-cell')
     if (todayCell) {
-      const container = todayCell.closest('.overflow-y-auto')
-      if (container) {
-        // Scroll to the top of the week row containing the today-cell
-        const row = todayCell.parentElement
-        if (row) {
-          container.scrollTo({
-            top: row.offsetTop - container.getBoundingClientRect().top,
-            behavior: 'smooth'
-          })
-        }
-      }
+      todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }
 
