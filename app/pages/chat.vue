@@ -174,12 +174,7 @@
       // Transform DB messages to AI SDK format (UIMessage)
       const transformedMessages = loadedMessages.map((msg) => ({
         id: msg.id,
-        role:
-          msg.senderId === 'ai_agent'
-            ? 'assistant'
-            : msg.senderId === 'system_tool'
-              ? 'tool'
-              : 'user',
+        role: msg.role, // Use role from API response (already mapped)
         content: msg.content,
         parts: msg.parts || [{ type: 'text', text: msg.content }],
         createdAt: new Date(msg.createdAt),
