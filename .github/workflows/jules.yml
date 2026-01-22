@@ -1,0 +1,37 @@
+name: Jules Agent
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  solve-issue:
+    if: >
+      github.actor == 'hdkiller' &&
+      (
+        (github.event_name == 'issues' && github.event.label.name == 'Jules') ||
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@Jules'))
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - name: Invoke Jules
+        uses: google-labs-code/jules-invoke@v1
+        with:
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          prompt: |
+            You are an expert software engineer working on the repository ${{ github.repository }}.
+            
+            Please resolve the following issue:
+            
+            Issue Title: ${{ github.event.issue.title }}
+            Issue Description:
+            ${{ github.event.issue.body }}
+            
+            ${{ github.event_name == 'issue_comment' && format('User Instruction: {0}', github.event.comment.body) || '' }}
+            
+            Please implement the necessary changes and create a Pull Request.
