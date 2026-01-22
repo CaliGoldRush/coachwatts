@@ -151,8 +151,26 @@ buildCommand
           setTitle(parts.join(' | '))
         }
 
-        console.log(chalk.gray(`\nRefreshing in ${interval} seconds... (Press Ctrl+C to stop)`))
-        setTimeout(loop, interval * 1000)
+        console.log(chalk.gray(`Last updated: ${new Date().toLocaleTimeString()}\n`))
+
+        let remaining = interval
+        const updateCountdown = () => {
+          process.stdout.write(
+            chalk.gray(`\rRefreshing in ${remaining}s... (Press Ctrl+C to stop)   `)
+          )
+        }
+
+        updateCountdown()
+
+        const timer = setInterval(() => {
+          remaining--
+          if (remaining <= 0) {
+            clearInterval(timer)
+            loop()
+          } else {
+            updateCountdown()
+          }
+        }, 1000)
       }
       loop()
     } else {
