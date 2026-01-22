@@ -125,7 +125,7 @@
     "prepare": "husky || true"
   },
   "type": "module",
-  "version": "0.5.13",
+  "version": "0.5.14",
   "pnpm": {
     "overrides": {
       "@vercel/nft": "^0.27.4"
