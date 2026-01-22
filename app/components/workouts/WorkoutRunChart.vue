@@ -345,11 +345,11 @@
 
   function getStepColor(intensity: number): string {
     // Use zone colors
-    if (intensity <= 0.75) return ZONE_COLORS[0]
-    if (intensity <= 0.85) return ZONE_COLORS[1]
-    if (intensity <= 0.95) return ZONE_COLORS[2]
-    if (intensity <= 1.05) return ZONE_COLORS[3]
-    return ZONE_COLORS[4]
+    if (intensity <= 0.75) return ZONE_COLORS[0] || '#10b981'
+    if (intensity <= 0.85) return ZONE_COLORS[1] || '#3b82f6'
+    if (intensity <= 0.95) return ZONE_COLORS[2] || '#f59e0b'
+    if (intensity <= 1.05) return ZONE_COLORS[3] || '#f97316'
+    return ZONE_COLORS[4] || '#ef4444'
   }
 
   function getZoneName(intensity: number): string {

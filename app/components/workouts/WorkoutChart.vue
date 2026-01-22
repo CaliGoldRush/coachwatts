@@ -323,9 +323,87 @@
   }>()
 
   const hoveredStep = ref<any>(null)
-  // ... (computed properties)
 
-  // ...
+  const totalDuration = computed(() => {
+    if (!props.workout?.steps) return 0
+    return props.workout.steps.reduce(
+      (acc: number, step: any) => acc + (step.durationSeconds || step.duration || 0),
+      0
+    )
+  })
+
+  const chartMaxPower = computed(() => {
+    if (!props.workout?.steps) return 1.5 // Fallback to 150% FTP
+    let max = 0
+    props.workout.steps.forEach((step: any) => {
+      const val = step.power?.range ? step.power.range.end : step.power?.value || 0
+      if (val > max) max = val
+    })
+    // Ensure we always have at least 100% FTP scale, and some padding above max
+    return Math.max(1.0, max * 1.1)
+  })
+
+  const yAxisLabels = computed(() => {
+    const max = chartMaxPower.value * 100
+    const step = max / 5
+    return Array.from({ length: 6 }, (_, i) => Math.round(max - i * step))
+  })
+
+  const avgPower = computed(() => {
+    if (!props.workout?.steps || totalDuration.value === 0) return 0
+    const totalWork = props.workout.steps.reduce((acc: number, step: any) => {
+      const val = step.power?.range
+        ? (step.power.range.start + step.power.range.end) / 2
+        : step.power?.value || 0
+      const duration = step.durationSeconds || step.duration || 0
+      return acc + val * duration
+    }, 0)
+    return totalWork / totalDuration.value
+  })
+
+  const maxPower = computed(() => {
+    if (!props.workout?.steps) return 0
+    return props.workout.steps.reduce((acc: number, step: any) => {
+      const val = step.power?.range ? step.power.range.end : step.power?.value || 0
+      return Math.max(acc, val)
+    }, 0)
+  })
+
+  const cadenceAxisLabels = computed(() => {
+    return [120, 100, 80, 60, 40, 0]
+  })
+
+  const cadencePath = computed(() => {
+    if (!props.workout?.steps || totalDuration.value === 0) return ''
+
+    let path = ''
+    let currentTime = 0
+
+    props.workout.steps.forEach((step: any, index: number) => {
+      if (!step.cadence) {
+        currentTime += step.durationSeconds || step.duration || 0
+        return
+      }
+
+      // 1000 is the viewBox width, 100 is the height
+      // X coordinate: (time / totalDuration) * 1000
+      // Y coordinate: 100 - (cadence / maxCadence) * 100
+      const startX = (currentTime / totalDuration.value) * 1000
+      const stepDuration = step.durationSeconds || step.duration || 0
+      const endX = ((currentTime + stepDuration) / totalDuration.value) * 1000
+      const y = 100 - (step.cadence / 120) * 100 // Scale to 120 RPM max
+
+      if (path === '') {
+        path = `M ${startX} ${y} L ${endX} ${y}`
+      } else {
+        path += ` L ${startX} ${y} L ${endX} ${y}`
+      }
+
+      currentTime += stepDuration
+    })
+
+    return path
+  })
 
   const zoneDistribution = computed(() => {
     const distribution = [
