@@ -112,40 +112,12 @@
   const onToolApproval = (approval: { approvalId: string; approved: boolean; result?: string }) => {
     console.log('[Chat] Tool Approval:', approval)
 
-    // Use addToolApprovalResponse if available (specific for approvals)
-    if (typeof (chat as any).addToolApprovalResponse === 'function') {
-      console.log('[Chat] Calling addToolApprovalResponse')
-      ;(chat as any).addToolApprovalResponse({
-        toolCallId: approval.approvalId,
-        result: approval.result || (approval.approved ? 'Approved' : 'Denied')
-      })
-    }
-    // Use addToolResult as fallback or if appropriate
-    else if (typeof (chat as any).addToolResult === 'function') {
-      console.log('[Chat] Calling addToolResult')
-      ;(chat as any).addToolResult({
-        toolCallId: approval.approvalId,
-        result: approval.result || (approval.approved ? 'Approved' : 'Denied')
-      })
-    }
-
-    // DEBUG: Inspect chat object to find trigger method
-    console.log('[Chat DEBUG] Chat object keys:', Object.keys(chat))
-
-    // Force request if needed
-    // 'regenerate' is available and should resend the context including the approval
-    if (typeof (chat as any).regenerate === 'function') {
-      console.log('[Chat] Triggering regenerate() to send approval...')
-      ;(chat as any).regenerate()
-    } else {
-      console.warn('[Chat] No regenerate method found. Request might hang.')
-    }
-    return
-    // Fallback: Append message manually
+    // Manually construct the tool approval response message
     const responsePart = {
-      type: 'tool-result', // Use standard tool-result
-      toolCallId: approval.approvalId,
-      result: approval.result || (approval.approved ? 'Approved' : 'Denied')
+      type: 'tool-approval-response',
+      approvalId: approval.approvalId,
+      approved: approval.approved,
+      result: approval.result
     }
 
     const message = {
@@ -153,17 +125,12 @@
       content: [responsePart]
     }
 
-    console.log('[Chat] Sending tool result message (fallback):', message)
+    console.log('[Chat] Sending tool approval message via sendMessage:', message)
 
-    if (typeof (chat as any).append === 'function') {
-      ;(chat as any).append(message)
-    } else if (typeof (chat as any).sendMessage === 'function') {
+    if (typeof (chat as any).sendMessage === 'function') {
       ;(chat as any).sendMessage(message)
     } else {
-      console.error(
-        '[Chat] No suitable method found to send tool result. Chat object keys:',
-        Object.keys(chat)
-      )
+      console.error('[Chat] No sendMessage method found. Chat object keys:', Object.keys(chat))
     }
   }
   // Load initial room and messages
