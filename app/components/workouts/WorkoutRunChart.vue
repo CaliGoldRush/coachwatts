@@ -252,6 +252,8 @@
 </template>
 
 <script setup lang="ts">
+  import { ZONE_COLORS } from '~/utils/zone-colors'
+
   const props = defineProps<{
     workout: any // structuredWorkout JSON
   }>()
@@ -269,11 +271,11 @@
 
   const zoneDistribution = computed(() => {
     const distribution = [
-      { name: 'Z1', min: 0, max: 0.75, duration: 0, color: '#9ca3af' }, // gray
-      { name: 'Z2', min: 0.75, max: 0.85, duration: 0, color: '#3b82f6' }, // blue
-      { name: 'Z3', min: 0.85, max: 0.95, duration: 0, color: '#22c55e' }, // green
-      { name: 'Z4', min: 0.95, max: 1.05, duration: 0, color: '#eab308' }, // yellow
-      { name: 'Z5', min: 1.05, max: 9.99, duration: 0, color: '#ef4444' } // red
+      { name: 'Z1', min: 0, max: 0.75, duration: 0, color: ZONE_COLORS[0] }, // Green
+      { name: 'Z2', min: 0.75, max: 0.85, duration: 0, color: ZONE_COLORS[1] }, // Blue
+      { name: 'Z3', min: 0.85, max: 0.95, duration: 0, color: ZONE_COLORS[2] }, // Amber
+      { name: 'Z4', min: 0.95, max: 1.05, duration: 0, color: ZONE_COLORS[3] }, // Orange
+      { name: 'Z5', min: 1.05, max: 9.99, duration: 0, color: ZONE_COLORS[4] } // Red
     ]
 
     if (!props.workout?.steps) return distribution
@@ -343,11 +345,11 @@
 
   function getStepColor(intensity: number): string {
     // Use zone colors
-    if (intensity <= 0.75) return '#9ca3af' // Z1 - Gray
-    if (intensity <= 0.85) return '#3b82f6' // Z2 - Blue
-    if (intensity <= 0.95) return '#22c55e' // Z3 - Green
-    if (intensity <= 1.05) return '#eab308' // Z4 - Yellow
-    return '#ef4444' // Z5 - Red
+    if (intensity <= 0.75) return ZONE_COLORS[0]
+    if (intensity <= 0.85) return ZONE_COLORS[1]
+    if (intensity <= 0.95) return ZONE_COLORS[2]
+    if (intensity <= 1.05) return ZONE_COLORS[3]
+    return ZONE_COLORS[4]
   }
 
   function getZoneName(intensity: number): string {

@@ -25,6 +25,8 @@
 </template>
 
 <script setup lang="ts">
+  import { getZoneColor } from '~/utils/zone-colors'
+
   interface Props {
     workoutIds: string[]
     autoLoad?: boolean
@@ -41,22 +43,6 @@
   defineEmits<{
     click: []
   }>()
-
-  // Zone colors matching the MiniZoneChart component - expanded to support up to 8 zones
-  const zoneColors = [
-    'rgb(34, 197, 94)', // Z1 - Green
-    'rgb(59, 130, 246)', // Z2 - Blue
-    'rgb(245, 158, 11)', // Z3 - Yellow
-    'rgb(249, 115, 22)', // Z4 - Orange
-    'rgb(239, 68, 68)', // Z5 - Red
-    'rgb(124, 58, 237)', // Z6 - Violet
-    'rgb(168, 85, 247)', // Z7 - Purple
-    'rgb(236, 72, 153)' // Z8 - Pink
-  ]
-
-  function getZoneColor(index: number): string {
-    return zoneColors[index] || 'rgb(156, 163, 175)'
-  }
 
   const loading = ref(false)
   const aggregatedZones = ref<number[]>([])

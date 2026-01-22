@@ -150,6 +150,7 @@
     LinearScale,
     type ChartOptions
   } from 'chart.js'
+  import { getZoneColor } from '~/utils/zone-colors'
 
   ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
@@ -167,22 +168,6 @@
   const localStreamData = ref<any>(null)
   const userZones = ref<any>(null)
   const selectedZoneType = ref<'hr' | 'power'>('hr')
-
-  // Default zone colors (from Z1 to Z8) - expanded to support up to 8 zones
-  const zoneColors = [
-    'rgb(34, 197, 94)', // Z1 - Green (Recovery)
-    'rgb(59, 130, 246)', // Z2 - Blue (Endurance)
-    'rgb(245, 158, 11)', // Z3 - Yellow (Tempo)
-    'rgb(249, 115, 22)', // Z4 - Orange (Threshold)
-    'rgb(239, 68, 68)', // Z5 - Red (Anaerobic/VO2 Max)
-    'rgb(124, 58, 237)', // Z6 - Violet (Anaerobic Capacity)
-    'rgb(168, 85, 247)', // Z7 - Purple (Neuromuscular)
-    'rgb(236, 72, 153)' // Z8 - Pink (Extra)
-  ]
-
-  function getZoneColor(index: number): string {
-    return zoneColors[index] || '#999999'
-  }
 
   // Computed properties
   const hasStreamData = computed(() => {

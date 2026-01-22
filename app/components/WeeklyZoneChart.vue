@@ -61,6 +61,7 @@
     Tooltip,
     Legend
   } from 'chart.js'
+  import { ZONE_COLORS } from '~/utils/zone-colors'
 
   ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -81,16 +82,6 @@
     }
   )
 
-  const zoneColors = [
-    '#22c55e', // Z1 - Recovery (Green)
-    '#3b82f6', // Z2 - Endurance (Blue)
-    '#f59e0b', // Z3 - Tempo (Yellow)
-    '#f97316', // Z4 - Threshold (Orange)
-    '#ef4444', // Z5 - VO2 Max (Red)
-    '#7c3aed', // Z6 - Anaerobic (Violet)
-    '#a855f7' // Z7 - Neuromuscular (Purple)
-  ]
-
   const activeLabels = computed(() => {
     if (!data.value?.zoneLabels) return []
     const labels =
@@ -98,7 +89,7 @@
 
     // Filter labels to only include those that have a corresponding color
     // AND ensure we don't try to show more zones than we have colors for
-    return labels.slice(0, zoneColors.length)
+    return labels.slice(0, ZONE_COLORS.length)
   })
 
   const chartData = computed(() => {
@@ -125,7 +116,7 @@
         datasets.push({
           label: activeLabels.value[z],
           data: zoneData,
-          backgroundColor: zoneColors[z],
+          backgroundColor: ZONE_COLORS[z],
           borderRadius: z === numZones - 1 ? 4 : 0,
           stack: 'intensity'
         })

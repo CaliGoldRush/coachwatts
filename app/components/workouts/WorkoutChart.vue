@@ -315,110 +315,32 @@
 </template>
 
 <script setup lang="ts">
+  import { ZONE_COLORS } from '~/utils/zone-colors'
+
   const props = defineProps<{
     workout: any // structuredWorkout JSON
     userFtp?: number
   }>()
 
   const hoveredStep = ref<any>(null)
+  // ... (computed properties)
 
-  // Computed properties
-  const totalDuration = computed(() => {
-    if (!props.workout?.steps) return 0
-    return props.workout.steps.reduce(
-      (sum: number, step: any) => sum + (step.durationSeconds || 0),
-      0
-    )
-  })
-
-  const avgPower = computed(() => {
-    if (!props.workout?.steps || props.workout.steps.length === 0) return 0
-    const weightedSum = props.workout.steps.reduce((sum: number, step: any) => {
-      return sum + (step.power?.value || 0) * (step.durationSeconds || 0)
-    }, 0)
-    return weightedSum / totalDuration.value
-  })
-
-  const maxPower = computed(() => {
-    if (!props.workout?.steps || props.workout.steps.length === 0) return 0
-    return Math.max(
-      ...props.workout.steps.map((step: any) => {
-        if (step.power?.range) {
-          return step.power.range.end
-        }
-        return step.power?.value || 0
-      })
-    )
-  })
-
-  const chartMaxPower = computed(() => {
-    const p = Math.max(maxPower.value, 1.2) // Ensure at least 120%
-    return Math.ceil(p / 0.2) * 0.2 // Round up to nearest 20%
-  })
-
-  const yAxisLabels = computed(() => {
-    const labels = []
-    for (let i = 6; i > 0; i--) {
-      labels.push(Math.round((chartMaxPower.value / 6) * i * 100))
-    }
-    return labels
-  })
-
-  const chartMaxCadence = computed(() => {
-    if (!props.workout?.steps) return 120
-    const maxCadenceVal = Math.max(...props.workout.steps.map((s: any) => s.cadence || 0))
-    const c = Math.max(maxCadenceVal, 120) // Ensure at least 120 RPM
-    return Math.ceil(c / 20) * 20 // Round up to nearest 20 RPM
-  })
-
-  const cadenceAxisLabels = computed(() => {
-    const numLabels = 5
-    const labels = []
-    for (let i = numLabels - 1; i >= 0; i--) {
-      labels.push(Math.round((chartMaxCadence.value / (numLabels - 1)) * i))
-    }
-    return labels
-  })
-
-  const cadencePath = computed(() => {
-    if (!props.workout?.steps || props.workout.steps.length === 0) return ''
-
-    let path = ''
-    let currentX = 0
-    const chartWidth = 1000 // Virtual coordinate system
-    const chartHeight = 100 // Virtual coordinate system
-
-    props.workout.steps.forEach((step: any, index: number) => {
-      const stepWidth =
-        ((step.durationSeconds || step.duration || 0) / totalDuration.value) * chartWidth
-      const cadence = step.cadence || 0
-      const y = chartHeight - Math.min(cadence / chartMaxCadence.value, 1) * chartHeight
-
-      if (index === 0) {
-        path += `M ${currentX} ${y} `
-      }
-
-      path += `L ${currentX + stepWidth} ${y} `
-      currentX += stepWidth
-    })
-
-    return path
-  })
+  // ...
 
   const zoneDistribution = computed(() => {
     const distribution = [
-      // Z1: Emerald Green (Matches "Recovery Spin" in your screenshot)
-      { name: 'Z1', min: 0, max: 0.55, duration: 0, color: 'rgb(16, 185, 129)' },
-      // Z2: Royal Blue (Matches "Easy Spin" in your screenshot)
-      { name: 'Z2', min: 0.55, max: 0.75, duration: 0, color: 'rgb(59, 130, 246)' },
-      // Z3: Amber/Gold (Distinct from Orange, highly visible)
-      { name: 'Z3', min: 0.75, max: 0.9, duration: 0, color: 'rgb(245, 158, 11)' },
+      // Z1: Emerald Green (Recovery)
+      { name: 'Z1', min: 0, max: 0.55, duration: 0, color: ZONE_COLORS[0] },
+      // Z2: Royal Blue (Endurance)
+      { name: 'Z2', min: 0.55, max: 0.75, duration: 0, color: ZONE_COLORS[1] },
+      // Z3: Amber/Gold (Tempo)
+      { name: 'Z3', min: 0.75, max: 0.9, duration: 0, color: ZONE_COLORS[2] },
       // Z4: Deep Orange (Threshold)
-      { name: 'Z4', min: 0.9, max: 1.05, duration: 0, color: 'rgb(249, 115, 22)' },
+      { name: 'Z4', min: 0.9, max: 1.05, duration: 0, color: ZONE_COLORS[3] },
       // Z5: Bright Red (VO2 Max)
-      { name: 'Z5', min: 1.05, max: 1.2, duration: 0, color: 'rgb(239, 68, 68)' },
-      // Z6: Electric Purple (Anaerobic - distinguishes max effort from Z5)
-      { name: 'Z6', min: 1.2, max: 9.99, duration: 0, color: 'rgb(168, 85, 247)' }
+      { name: 'Z5', min: 1.05, max: 1.2, duration: 0, color: ZONE_COLORS[4] },
+      // Z6: Electric Purple (Anaerobic)
+      { name: 'Z6', min: 1.2, max: 9.99, duration: 0, color: ZONE_COLORS[5] }
     ]
 
     if (!props.workout?.steps) return distribution

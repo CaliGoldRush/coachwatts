@@ -1,0 +1,33 @@
+description = "Merges a GitHub Pull Request locally, reviewing comments and ensuring a clean merge."
+prompt = """
+Your goal is to help the user merge a GitHub Pull Request (PR) into their current local branch.
+
+User input: {{args}}
+
+# Workflow
+
+1.  **Identify the Pull Request:**
+    - Parse `{{args}}` to find a PR number or URL.
+    - If no PR is specified, list open PRs using `search_pull_requests` (filtered by `state:open`) or `gh pr list` to help the user choose.
+
+2.  **Analyze Context & Comments (CRITICAL):**
+    - **Fetch PR Details:** Use `pull_request_read` (method='get') to get the PR details (branch name, author, description).
+    - **Read Comments:** Use `pull_request_read` (method='get_comments' or 'get_review_comments') or `gh pr view <pr_number> --comments`.
+    - **Analyze:** specifically look for "suggestions", "requirements", or "feedback" from other agents or reviewers.
+    - **Report:** Briefly summarize the PR and any crucial feedback found in the comments *before* merging.
+
+3.  **Fetch and Merge:**
+    - Fetch the PR branch: `git fetch origin pull/<pr_number>/head:<local_branch_name>` or `git fetch origin <branch_name>`.
+    - Merge the branch: `git merge <local_branch_name>` (or `FETCH_HEAD` if you fetched directly).
+    - **Handle Conflicts:** If `git merge` reports conflicts, stop and ask the user for assistance or use available tools to list conflicting files. Do not commit a broken merge.
+
+4.  **Post-Merge Verification:**
+    - Run `git status` and `git log -n 1` to confirm the merge state.
+    - If the merge was successful, inform the user.
+
+5.  **Completion:**
+    - Ask the user if they want to:
+        - Run tests/linting.
+        - Push the changes (`git push`).
+        - Close the PR (`gh pr close <pr_number>`).
+"""

@@ -19,6 +19,8 @@
 </template>
 
 <script setup lang="ts">
+  import { getZoneColor } from '~/utils/zone-colors'
+
   interface Props {
     workoutId: string
     autoLoad?: boolean
@@ -31,22 +33,6 @@
     streamData: null,
     userZones: null
   })
-
-  // Zone colors matching the full ZoneChart component - expanded to support up to 8 zones
-  const zoneColors = [
-    'rgb(34, 197, 94)', // Z1 - Green (Recovery)
-    'rgb(59, 130, 246)', // Z2 - Blue (Endurance)
-    'rgb(245, 158, 11)', // Z3 - Yellow (Tempo)
-    'rgb(249, 115, 22)', // Z4 - Orange (Threshold)
-    'rgb(239, 68, 68)', // Z5 - Red (Anaerobic/VO2 Max)
-    'rgb(124, 58, 237)', // Z6 - Violet (Anaerobic Capacity)
-    'rgb(168, 85, 247)', // Z7 - Purple (Neuromuscular)
-    'rgb(236, 72, 153)' // Z8 - Pink (Extra)
-  ]
-
-  function getZoneColor(index: number): string {
-    return zoneColors[index] || 'rgb(156, 163, 175)' // Fallback to gray-400
-  }
 
   const loading = ref(false)
   const error = ref(false)
