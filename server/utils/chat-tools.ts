@@ -19,9 +19,6 @@ import {
   getPlannedWorkoutDetails
 } from './chat-tools/training-plan-tools'
 
-// Export training plan tools for context service
-export { generateTrainingContext, formatTrainingContextForPrompt } from './training-metrics'
-
 /**
  * Format a Date object as YYYY-MM-DD string in local timezone
  * This ensures dates displayed to the AI match what the user sees in the UI

@@ -4,7 +4,7 @@ import { getUserLocalDate, formatUserDate } from '../date'
 import { workoutRepository } from '../repositories/workoutRepository'
 import { nutritionRepository } from '../repositories/nutritionRepository'
 import { wellnessRepository } from '../repositories/wellnessRepository'
-import { generateTrainingContext, formatTrainingContextForPrompt } from '../chat-tools'
+import { generateTrainingContext, formatTrainingContextForPrompt } from '../training-metrics'
 
 export async function buildAthleteContext(userId: string): Promise<{
   context: string
