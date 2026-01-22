@@ -5,6 +5,9 @@ import chalk from 'chalk'
 const buildCommand = new Command('build')
 
 const checkStatus = () => {
+  let gcloudStatusStr = ''
+  let githubStatusStr = ''
+
   console.log(chalk.blue('=== Build Status Check ===\n'))
 
   // 1. Check Gcloud Build Status
@@ -18,6 +21,7 @@ const checkStatus = () => {
 
     if (gcloudBuilds.length > 0) {
       const build = gcloudBuilds[0]
+      gcloudStatusStr = build.status
       const statusColor = build.status === 'SUCCESS' ? chalk.green : chalk.red
       console.log(`Latest Gcloud Build: `)
       console.log(`  ID:     ${build.id}`)
@@ -50,6 +54,7 @@ const checkStatus = () => {
     if (filteredRuns.length > 0) {
       console.log(`Latest GitHub Action: `)
       const run = filteredRuns[0]
+      githubStatusStr = run.conclusion || run.status
       const icon = run.conclusion === 'success' ? '✓' : run.conclusion === 'failure' ? '✗' : '•'
       const color =
         run.conclusion === 'success'
@@ -72,6 +77,12 @@ const checkStatus = () => {
       )
     )
   }
+
+  return { gcloud: gcloudStatusStr, github: githubStatusStr }
+}
+
+const setTitle = (title: string) => {
+  process.stdout.write(`\x1b]0;${title}\x07`)
 }
 
 buildCommand
@@ -89,7 +100,16 @@ buildCommand
 
       const loop = () => {
         process.stdout.write('\x1Bc') // Clear screen
-        checkStatus()
+        const status = checkStatus()
+
+        const parts = []
+        if (status.gcloud) parts.push(`Gcloud: ${status.gcloud}`)
+        if (status.github) parts.push(`GH: ${status.github}`)
+
+        if (parts.length > 0) {
+          setTitle(parts.join(' | '))
+        }
+
         console.log(chalk.gray(`\nRefreshing in ${interval} seconds... (Press Ctrl+C to stop)`))
         setTimeout(loop, interval * 1000)
       }
