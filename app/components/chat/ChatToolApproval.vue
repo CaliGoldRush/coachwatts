@@ -99,7 +99,7 @@
           </UButton>
           <UButton
             size="xs"
-            color="red"
+            color="error"
             variant="ghost"
             icon="i-heroicons-x-mark"
             :loading="submitting"
