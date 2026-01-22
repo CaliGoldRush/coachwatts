@@ -19,6 +19,7 @@
     <a href="#quick-start">Quick Start</a> •
     <a href="#integrations">Integrations</a> •
     <a href="./docs/INDEX.md">Documentation</a> •
+    <a href="./public/content/releases">Release Notes</a> •
     <a href="./ACKNOWLEDGEMENTS.md">Acknowledgements</a>
   </p>
 </div>
@@ -127,6 +128,7 @@ We have extensive documentation available in the [`docs/`](./docs) directory:
 
 - [**Architecture**](./docs/01-architecture/system-overview.md): System design and data flow.
 - [**Database Schema**](./docs/01-architecture/database-schema.md): Detailed Prisma models.
+- [**Release Notes**](./public/content/releases): Detailed change logs for each version.
 - **Feature Guides**:
   - [AI Chat System](./docs/02-features/chat/overview.md)
   - [Scoring System](./docs/02-features/analytics/scoring-system.md)
