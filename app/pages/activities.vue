@@ -1532,10 +1532,9 @@
         // Calculate position relative to container
         const relativeTop = cellRect.top - containerRect.top + scrollTop
 
-        // Scroll to the cell minus a buffer (approx header height + padding)
-        // Header row is ~40px, adding extra context
+        // Scroll to the cell (relativeTop accounts for headers/padding within the grid)
         container.scrollTo({
-          top: Math.max(0, relativeTop - 5),
+          top: relativeTop,
           behavior: 'smooth'
         })
       }
