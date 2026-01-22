@@ -786,6 +786,26 @@
 
   const integrationStore = useIntegrationStore()
   const { formatDate, formatDateUTC, formatDateTime, getUserLocalDate } = useFormat()
+  const { onTaskCompleted } = useUserRunsState()
+
+  // Auto-refresh when relevant background tasks complete
+  const REFRESH_TASKS = [
+    'ingest-strava',
+    'ingest-intervals',
+    'ingest-fit-file',
+    'ingest-hevy',
+    'ingest-all',
+    'generate-structured-workout',
+    'generate-weekly-plan',
+    'generate-training-block',
+    'adapt-training-plan'
+  ]
+
+  REFRESH_TASKS.forEach((task) => {
+    onTaskCompleted(task, () => {
+      refresh()
+    })
+  })
 
   // Modal state
   const showDeduplicateModal = ref(false)
