@@ -19,6 +19,18 @@
         <template #right>
           <TriggerMonitorButton />
           <UButton
+            v-if="workout"
+            color="error"
+            variant="outline"
+            size="sm"
+            class="font-bold"
+            icon="i-heroicons-trash"
+            @click="showDeleteModal = true"
+          >
+            <span class="hidden sm:inline">Delete</span>
+          </UButton>
+
+          <UButton
             v-if="workout?.structuredWorkout"
             color="neutral"
             variant="outline"
@@ -582,9 +594,36 @@
       </div>
     </template>
     <template #footer>
+      <UButton label="Eject Workout" color="error" :loading="ejecting" @click="ejectWorkout" />
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="showDeleteModal"
+    title="Delete Planned Workout"
+    description="This action cannot be undone."
+  >
+    <template #body>
+      <div class="p-6 space-y-4">
+        <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg flex items-start gap-3">
+          <UIcon
+            name="i-heroicons-exclamation-triangle"
+            class="w-5 h-5 text-red-600 flex-shrink-0"
+          />
+          <div class="text-red-800 dark:text-red-200">
+            <p class="font-medium">Are you sure you want to delete this workout?</p>
+            <p class="mt-1">
+              This will permanently remove the planned workout from Coach Wattz. If it was synced to
+              Intervals.icu, it will also be deleted from there.
+            </p>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton label="Cancel" color="neutral" variant="ghost" @click="showEjectModal = false" />
-        <UButton label="Eject Workout" color="error" :loading="ejecting" @click="ejectWorkout" />
+        <UButton label="Cancel" color="neutral" variant="ghost" @click="showDeleteModal = false" />
+        <UButton label="Delete Workout" color="error" :loading="deleting" @click="deleteWorkout" />
       </div>
     </template>
   </UModal>
@@ -652,6 +691,8 @@
   const generating = ref(false)
   const adjusting = ref(false)
   const generatingMessages = ref(false)
+  const showDeleteModal = ref(false)
+  const deleting = ref(false)
   const showAdjustModal = ref(false)
   const showMessageModal = ref(false)
   const showDownloadModal = ref(false)
@@ -750,6 +791,31 @@
     // For now, just return 0 if null
     return 0
   })
+
+  async function deleteWorkout() {
+    if (!workout.value?.id) return
+    deleting.value = true
+    try {
+      await $fetch(`/api/planned-workouts/${workout.value.id}`, {
+        method: 'DELETE'
+      })
+      toast.add({
+        title: 'Workout Deleted',
+        description: 'The planned workout has been removed.',
+        color: 'success'
+      })
+      showDeleteModal.value = false
+      router.push('/activities') // Or wherever appropriate
+    } catch (error: any) {
+      toast.add({
+        title: 'Delete Failed',
+        description: error.data?.message || 'Failed to delete workout',
+        color: 'error'
+      })
+    } finally {
+      deleting.value = false
+    }
+  }
 
   async function publishWorkout() {
     if (!workout.value?.id) return
