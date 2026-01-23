@@ -19,6 +19,7 @@ let ws: WebSocket | null = null
 let activeSubscribers = 0
 let initPromise: Promise<void> | null = null
 let pollInterval: NodeJS.Timeout | null = null
+let pingInterval: NodeJS.Timeout | null = null
 
 export const ACTIVE_STATUSES = [
   'EXECUTING',
@@ -98,6 +99,24 @@ export function useUserRuns() {
     }
   }
 
+  const stopPing = () => {
+    if (pingInterval) {
+      clearInterval(pingInterval)
+      pingInterval = null
+    }
+  }
+
+  const startPing = () => {
+    stopPing()
+    // Send a ping every 30 seconds to keep the connection alive
+    // This prevents Nginx/Cloudflare/Browsers from closing idle connections
+    pingInterval = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send('ping')
+      }
+    }, 30000)
+  }
+
   // --- WebSocket ---
   const connectWebSocket = () => {
     if (ws) return
@@ -113,6 +132,7 @@ export function useUserRuns() {
     ws.onopen = async () => {
       isConnected.value = true
       stopPolling()
+      startPing()
       if (session.value?.user && (session.value.user as any).id) {
         try {
           const { token } = await $fetch<{ token: string }>('/api/websocket-token')
@@ -138,6 +158,7 @@ export function useUserRuns() {
     ws.onclose = () => {
       isConnected.value = false
       ws = null
+      stopPing()
       startPolling()
       if (activeSubscribers > 0) {
         setTimeout(connectWebSocket, 3000)
@@ -219,6 +240,7 @@ export function useUserRuns() {
       isConnected.value = false
       initPromise = null
       stopPolling()
+      stopPing()
     }
   })
 
