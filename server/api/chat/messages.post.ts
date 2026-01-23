@@ -21,6 +21,20 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { roomId, messages, files, replyMessage } = body
 
+  // Block messages in legacy rooms (pre-migration)
+  const MIGRATION_CUTOFF = new Date('2026-01-22T00:00:00Z')
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: roomId },
+    select: { createdAt: true }
+  })
+
+  if (room && new Date(room.createdAt) < MIGRATION_CUTOFF) {
+    throw createError({
+      statusCode: 403,
+      message: 'This chat is read-only. Please start a new chat.'
+    })
+  }
+
   // Vercel AI SDK sends the full conversation history in 'messages'
   // The last message is the new user input
   const lastMessage = messages?.[messages.length - 1]
@@ -234,7 +248,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Manual Tool Execution for Approvals
-    // ... rest of the code remains same, using coreMessages ...
+    const executedToolCallIds = new Set<string>()
 
     for (const msg of coreMessages) {
       if (msg.role === 'tool' && Array.isArray(msg.content)) {
@@ -242,45 +256,14 @@ export default defineEventHandler(async (event) => {
           (p: any) =>
             p.result === 'User confirmed action.' ||
             p.approved === true ||
-            p.type === 'tool-approval-response'
+            p.type === 'tool-approval-response' ||
+            (p.type === 'tool-result' && p.result === 'User confirmed action.')
         )
 
         if (approvalPartIndex !== -1) {
           const approvalPart = msg.content[approvalPartIndex]
 
-          const approvalId = approvalPart.approvalId
-          let toolCallId = approvalPart.toolCallId || approvalId
-
-          // If we have an approvalId, try to resolve the real toolCallId from the history
-          // This handles cases where Vercel SDK uses a different ID for approval interaction
-          if (approvalId) {
-            const assistantMsg = coreMessages.find(
-              (m: any) =>
-                m.role === 'assistant' &&
-                Array.isArray(m.content) &&
-                m.content.some(
-                  (p: any) =>
-                    p.type === 'tool-approval-request' &&
-                    (p.approvalId === approvalId || p.toolCallId === approvalId)
-                )
-            )
-
-            if (assistantMsg) {
-              const requestPart = (assistantMsg.content as any[]).find(
-                (p: any) =>
-                  p.type === 'tool-approval-request' &&
-                  (p.approvalId === approvalId || p.toolCallId === approvalId)
-              )
-              if (requestPart && requestPart.toolCallId) {
-                toolCallId = requestPart.toolCallId
-                if (toolCallId !== approvalId) {
-                  console.log(
-                    `[Chat API] Resolved approvalId ${approvalId} to toolCallId ${toolCallId}`
-                  )
-                }
-              }
-            }
-          }
+          const toolCallId = approvalPart.toolCallId
 
           if (toolCallId && !executedToolCallIds.has(toolCallId)) {
             console.log('[Chat API] Intercepted approval for:', toolCallId)
@@ -332,31 +315,20 @@ export default defineEventHandler(async (event) => {
                     )
 
                     // Replace content with result
-
                     msg.content[approvalPartIndex] = {
                       type: 'tool-result',
-
                       toolCallId,
-
                       toolName,
-
-                      output:
-                        typeof executionResult === 'string'
-                          ? { type: 'text', value: executionResult }
-                          : { type: 'json', value: executionResult }
+                      result: executionResult
                     }
 
                     executedToolCallIds.add(toolCallId)
 
                     // Track execution
-
                     allToolResults.push({
                       toolCallId,
-
                       toolName,
-
                       args,
-
                       result: executionResult
                     })
                   } catch (execErr: any) {
@@ -364,13 +336,9 @@ export default defineEventHandler(async (event) => {
 
                     msg.content[approvalPartIndex] = {
                       type: 'tool-result',
-
                       toolCallId,
-
                       toolName,
-
-                      output: { type: 'text', value: `Error executing tool: ${execErr.message}` },
-
+                      result: `Error executing tool: ${execErr.message}`,
                       isError: true
                     }
 
@@ -380,20 +348,12 @@ export default defineEventHandler(async (event) => {
               }
             }
           } else if (toolCallId && executedToolCallIds.has(toolCallId)) {
-            // Duplicate approval for already executed tool - replace with a placeholder result or remove?
-
-            // We must convert it to tool-result to satisfy schema, reuse previous result if possible?
-
-            // For simplicity, just mark as "Already executed"
-
+            // Duplicate approval for already executed tool
             msg.content[approvalPartIndex] = {
               type: 'tool-result',
-
               toolCallId,
-
-              toolName: 'unknown', // We might not know name easily here without lookup
-
-              output: { type: 'text', value: 'Tool already executed in previous message.' }
+              toolName: 'unknown',
+              result: 'Tool already executed in previous message.'
             }
           }
         }
@@ -624,6 +584,20 @@ export default defineEventHandler(async (event) => {
     })
   } catch (error: any) {
     console.error('[Chat] Error in streamText:', error)
-    throw createError({ statusCode: 500, message: 'Failed to generate response: ' + error.message })
+
+    // Check for history/sequence errors which often indicate corrupted legacy chats
+    const errorStr = (error.message || '').toLowerCase()
+    const isHistoryError =
+      errorStr.includes('history') ||
+      errorStr.includes('tool_call') ||
+      errorStr.includes('sequence') ||
+      errorStr.includes('interleaved') ||
+      errorStr.includes('previous_message')
+
+    const userMessage = isHistoryError
+      ? 'This chat history is not compatible with the new AI engine. Please start a new chat to continue.'
+      : 'Failed to generate response: ' + error.message
+
+    throw createError({ statusCode: 500, message: userMessage })
   }
 })

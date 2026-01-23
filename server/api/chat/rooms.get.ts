@@ -86,15 +86,20 @@ export default defineEventHandler(async (event) => {
     rooms = [aiRoom]
   }
 
+  // Migration cutoff date: January 22, 2026
+  const MIGRATION_CUTOFF = new Date('2026-01-22T00:00:00Z')
+
   // Format for vue-advanced-chat
   const formattedRooms = rooms.map((room) => {
     const lastMessage = room.messages[0]
+    const isReadOnly = new Date(room.createdAt) < MIGRATION_CUTOFF
 
     return {
       roomId: room.id,
       roomName: room.name,
       avatar: room.avatar,
       unreadCount: 0, // TODO: Implement unread count logic
+      isReadOnly,
       index: lastMessage
         ? new Date(lastMessage.createdAt).getTime()
         : new Date(room.createdAt).getTime(),
