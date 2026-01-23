@@ -1,12 +1,19 @@
 <template>
-  <UCard>
+  <UCard
+    class="cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors group"
+    @click="emit('edit', goal)"
+  >
     <div class="flex items-start justify-between">
       <div class="flex items-start gap-3">
         <div class="p-2 rounded-lg ring-1 ring-inset" :class="typeColorClasses">
           <UIcon :name="typeIcon" class="w-5 h-5" />
         </div>
         <div>
-          <h3 class="font-semibold text-sm text-gray-900 dark:text-white">{{ goal.title }}</h3>
+          <h3
+            class="font-semibold text-sm text-gray-900 dark:text-white group-hover:text-primary transition-colors"
+          >
+            {{ goal.title }}
+          </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ typeLabel }}</p>
 
           <div class="mt-3 flex flex-wrap gap-2">
@@ -24,7 +31,13 @@
       </div>
 
       <UDropdownMenu :items="actions">
-        <UButton color="neutral" variant="ghost" icon="i-heroicons-ellipsis-vertical" size="xs" />
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-ellipsis-vertical"
+          size="xs"
+          @click.stop
+        />
       </UDropdownMenu>
     </div>
 

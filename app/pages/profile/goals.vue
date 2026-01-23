@@ -6,11 +6,21 @@
     middleware: 'auth'
   })
 
-  const showWizard = ref(false)
-  const editingGoal = ref<any>(null)
+  const route = useRoute()
+  const router = useRouter()
+  const toast = useToast()
+
+  const showWizard = computed(() => !!route.query.new || !!route.query.edit)
+  const editingGoalId = computed(() => route.query.edit as string)
+
+  const { data, pending: loading, refresh } = await useFetch('/api/goals')
+
+  const goals = computed(() => data.value?.goals || [])
+  const activeGoals = computed(() => goals.value.filter((g: any) => g.status === 'ACTIVE'))
+  const editingGoal = computed(() => goals.value.find((g: any) => g.id === editingGoalId.value))
+
   const showDeleteModal = ref(false)
   const goalToDelete = ref<string | null>(null)
-  const toast = useToast()
 
   // AI Features
   const suggestionsLoading = ref(false)
@@ -49,19 +59,16 @@
     }
   })
 
-  const { data, pending: loading, refresh } = await useFetch('/api/goals')
-
-  const goals = computed(() => data.value?.goals || [])
-  const activeGoals = computed(() => goals.value.filter((g: any) => g.status === 'ACTIVE'))
-
   function handleEdit(goal: any) {
-    editingGoal.value = goal
-    showWizard.value = true
+    router.push({ query: { edit: goal.id } })
+  }
+
+  function openNewGoal() {
+    router.push({ query: { new: 'true' } })
   }
 
   function closeWizard() {
-    showWizard.value = false
-    editingGoal.value = null
+    router.push({ query: {} })
   }
 
   async function refreshGoals() {
@@ -70,13 +77,12 @@
 
   function onGoalCreated() {
     refreshGoals()
-    showWizard.value = false
+    closeWizard()
   }
 
   function onGoalUpdated() {
     refreshGoals()
-    showWizard.value = false
-    editingGoal.value = null
+    closeWizard()
   }
 
   function deleteGoal(id: string) {
@@ -227,7 +233,7 @@
             icon="i-heroicons-plus"
             size="sm"
             class="font-bold"
-            @click="showWizard = true"
+            @click="openNewGoal"
           >
             <span class="hidden sm:inline">Add Goal</span>
             <span class="sm:hidden">Add</span>
@@ -239,16 +245,18 @@
     <template #body>
       <div class="p-3 sm:p-6 space-y-4 sm:space-y-6">
         <!-- Page Header -->
-        <div>
+        <div v-if="!showWizard">
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Goals</h1>
           <p class="text-sm text-muted mt-1">
-            Set and track your fitness goals to stay motivated and measure progress
+            Set and track your fitness goals to stay motivated and measure progress. These goals are
+            used by the AI Coach to understand your objectives and ensure your training plans, daily
+            advice, and performance analysis are perfectly aligned with what you want to achieve.
           </p>
         </div>
 
         <div class="space-y-6">
           <!-- AI Features Section -->
-          <div class="flex gap-3">
+          <div v-if="!showWizard" class="flex gap-3">
             <UButton
               color="primary"
               variant="outline"
@@ -275,7 +283,7 @@
           </div>
 
           <!-- AI Suggestions Section -->
-          <UCard v-if="showSuggestions">
+          <UCard v-if="showSuggestions && !showWizard">
             <template #header>
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -406,7 +414,7 @@
           </UCard>
 
           <!-- Goal Review Section -->
-          <UCard v-if="showReview">
+          <UCard v-if="showReview && !showWizard">
             <template #header>
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -575,25 +583,12 @@
           </UCard>
 
           <div v-if="showWizard">
-            <UCard>
-              <template #header>
-                <div class="flex items-center justify-between">
-                  <h3 class="font-semibold">{{ editingGoal ? 'Edit Goal' : 'Create New Goal' }}</h3>
-                  <UButton
-                    icon="i-heroicons-x-mark"
-                    variant="ghost"
-                    size="sm"
-                    @click="closeWizard"
-                  />
-                </div>
-              </template>
-              <EventGoalWizard
-                :goal="editingGoal"
-                @close="closeWizard"
-                @created="onGoalCreated"
-                @updated="onGoalUpdated"
-              />
-            </UCard>
+            <EventGoalWizard
+              :goal="editingGoal"
+              @close="closeWizard"
+              @created="onGoalCreated"
+              @updated="onGoalUpdated"
+            />
           </div>
 
           <div v-if="loading" class="space-y-4">
@@ -618,7 +613,7 @@
             </UButton>
           </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-else-if="!showWizard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <GoalCard
               v-for="goal in goals"
               :key="goal.id"

@@ -1,8 +1,18 @@
 <template>
   <div class="space-y-6">
     <!-- Step 1: Goal Type Selection -->
-    <div v-if="step === 1" class="space-y-4">
-      <h3 class="text-lg font-semibold">What are you training for?</h3>
+    <div v-if="step === 1" class="space-y-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xl font-semibold">What are you training for?</h3>
+        <UButton
+          icon="i-heroicons-x-mark"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          @click="emit('close')"
+        />
+      </div>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
           v-for="type in goalTypes"
@@ -26,9 +36,23 @@
 
     <!-- Step 2: Select Event (Only for EVENT type) -->
     <div v-else-if="step === 2 && selectedType === 'EVENT'" class="space-y-6">
-      <div class="flex items-center gap-3 mb-4">
-        <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" @click="step = 1" />
-        <h3 class="text-xl font-semibold">Select your target event</h3>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <UButton
+            icon="i-heroicons-arrow-left"
+            variant="ghost"
+            size="sm"
+            @click="isEditMode ? (step = 3) : (step = 1)"
+          />
+          <h3 class="text-xl font-semibold">Select your target event</h3>
+        </div>
+        <UButton
+          icon="i-heroicons-x-mark"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          @click="emit('close')"
+        />
       </div>
 
       <div class="space-y-4">
@@ -115,8 +139,10 @@
               :disabled="form.eventIds.length === 0"
               @click="step = 3"
             >
-              Continue with {{ form.eventIds.length }} Event{{
-                form.eventIds.length !== 1 ? 's' : ''
+              {{
+                isEditMode
+                  ? 'Back to Config'
+                  : `Continue with ${form.eventIds.length} Event${form.eventIds.length !== 1 ? 's' : ''}`
               }}
             </UButton>
           </div>
@@ -124,46 +150,260 @@
       </div>
     </div>
 
-    <!-- Step 3: Event Details / Course Profile -->
-    <div v-else-if="step === 3" class="space-y-6">
-      <div class="flex items-center justify-between mb-6">
+    <!-- Step 3: Configuration -->
+    <div v-else-if="step === 3" class="space-y-8">
+      <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <UButton
             icon="i-heroicons-arrow-left"
             variant="ghost"
             size="sm"
-            @click="selectedType === 'EVENT' ? (step = 2) : (step = 1)"
+            @click="isEditMode ? emit('close') : selectedType === 'EVENT' ? (step = 2) : (step = 1)"
           />
-          <h3 class="text-xl font-semibold">Configure {{ selectedTypeLabel }}</h3>
+          <h3 class="text-xl font-semibold">
+            {{ isEditMode ? 'Edit Goal' : `Configure ${selectedTypeLabel}` }}
+          </h3>
         </div>
+        <UButton
+          icon="i-heroicons-x-mark"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          @click="emit('close')"
+        />
       </div>
 
-      <div class="space-y-5">
-        <div>
-          <label class="flex items-center gap-2 text-sm font-medium mb-2">
-            <UIcon name="i-heroicons-tag" class="w-4 h-4 text-muted" />
-            Goal Title
-          </label>
-          <UInput v-model="form.title" placeholder="e.g. Maratona dles Dolomites" size="lg" />
+      <div class="space-y-6">
+        <!-- Primary Information Group -->
+        <div
+          class="p-4 bg-gray-50/50 dark:bg-gray-800/20 rounded-xl border border-gray-100 dark:border-gray-800 space-y-6"
+        >
+          <UFormField>
+            <template #label>
+              <div class="flex items-center gap-2 text-base font-semibold">
+                <UIcon name="i-heroicons-tag" class="w-5 h-5 text-primary" />
+                Goal Title
+              </div>
+            </template>
+            <UInput
+              v-model="form.title"
+              placeholder="e.g. Sub-4 Hour Marathon or Lose 5kg"
+              size="xl"
+              class="w-full"
+            />
+            <template #help>
+              Make the goal title descriptive so the AI can better understand and support your
+              objectives.
+            </template>
+          </UFormField>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <UFormField>
+              <template #label>
+                <div class="flex items-center gap-2 text-base font-semibold">
+                  <UIcon name="i-heroicons-calendar" class="w-5 h-5 text-primary" />
+                  Goal Deadline
+                </div>
+              </template>
+              <UInput v-model="deadline" type="date" size="xl" class="w-full" />
+            </UFormField>
+
+            <UFormField>
+              <template #label>
+                <div class="flex items-center gap-2 text-base font-semibold">
+                  <UIcon name="i-heroicons-flag" class="w-5 h-5 text-primary" />
+                  Priority
+                </div>
+              </template>
+              <USelect
+                v-model="form.priority"
+                :items="[
+                  { label: '🔥 High Priority', value: 'HIGH' },
+                  { label: '⚖️ Medium Priority', value: 'MEDIUM' },
+                  { label: '🌱 Low Priority', value: 'LOW' }
+                ]"
+                size="xl"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
         </div>
 
+        <!-- Goal Type Specific Targets -->
+        <div
+          class="p-4 bg-primary/5 dark:bg-primary/10 rounded-xl border border-primary/10 space-y-6"
+        >
+          <div v-if="selectedType === 'EVENT'" class="space-y-6">
+            <UFormField>
+              <template #label>
+                <div class="flex items-center gap-2 font-medium">
+                  <UIcon name="i-heroicons-trophy" class="w-4 h-4 text-muted" />
+                  Event Type
+                </div>
+              </template>
+              <USelect v-model="form.eventType" :items="eventSubTypes" size="xl" class="w-full" />
+            </UFormField>
+          </div>
+
+          <div v-else-if="selectedType === 'BODY_COMPOSITION'" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <UFormField>
+                <template #label>
+                  <div class="flex items-center gap-2 font-medium">
+                    <UIcon name="i-heroicons-scale" class="w-4 h-4 text-muted" />
+                    Start Weight (kg)
+                  </div>
+                </template>
+                <UInputNumber
+                  v-model="form.startValue"
+                  size="xl"
+                  placeholder="90.0"
+                  class="w-full"
+                />
+              </UFormField>
+              <UFormField>
+                <template #label>
+                  <div class="flex items-center gap-2 font-medium">
+                    <UIcon name="i-heroicons-arrow-trending-down" class="w-4 h-4 text-muted" />
+                    Target Weight (kg)
+                  </div>
+                </template>
+                <UInputNumber
+                  v-model="form.targetValue"
+                  size="xl"
+                  placeholder="85.0"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
+          </div>
+
+          <div v-else-if="selectedType === 'PERFORMANCE'" class="space-y-6">
+            <UFormField>
+              <template #label>
+                <div class="flex items-center gap-2 font-medium">
+                  <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 text-muted" />
+                  Metric to Improve
+                </div>
+              </template>
+              <USelect
+                v-model="form.metric"
+                :items="[
+                  'FTP (Watts)',
+                  'VO2 Max',
+                  '5k Pace (min/km)',
+                  '10k Pace (min/km)',
+                  'Max Heart Rate'
+                ]"
+                size="xl"
+                class="w-full"
+              />
+            </UFormField>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <UFormField>
+                <template #label>
+                  <div class="flex items-center gap-2 font-medium">
+                    <UIcon name="i-heroicons-arrow-right-circle" class="w-4 h-4 text-muted" />
+                    Current Value
+                  </div>
+                </template>
+                <UInputNumber
+                  v-model="form.startValue"
+                  size="xl"
+                  placeholder="250"
+                  class="w-full"
+                />
+              </UFormField>
+              <UFormField>
+                <template #label>
+                  <div class="flex items-center gap-2 font-medium">
+                    <UIcon name="i-heroicons-bolt" class="w-4 h-4 text-muted" />
+                    Target Value
+                  </div>
+                </template>
+                <UInputNumber
+                  v-model="form.targetValue"
+                  size="xl"
+                  placeholder="275"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
+          </div>
+
+          <div v-else-if="selectedType === 'CONSISTENCY'" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <UFormField class="sm:col-span-2">
+                <template #label>
+                  <div class="flex items-center gap-2 font-medium">
+                    <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 text-muted" />
+                    Weekly Commitment
+                  </div>
+                </template>
+                <UInputNumber
+                  v-model="form.targetValue"
+                  size="xl"
+                  placeholder="10"
+                  class="w-full"
+                />
+              </UFormField>
+              <UFormField label="Metric">
+                <USelect
+                  v-model="form.metric"
+                  :items="['Hours', 'Workouts', 'TSS']"
+                  size="xl"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
+            <p class="text-xs text-muted italic flex items-center gap-1">
+              <UIcon name="i-heroicons-information-circle" class="w-4 h-4" />
+              This sets a target date for building this habit and maintaining this level.
+            </p>
+          </div>
+        </div>
+
+        <!-- Event Summary (Already selected in Step 2) -->
         <template v-if="selectedType === 'EVENT'">
           <div class="space-y-4">
-            <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider">
-              Target Events ({{ selectedEvents.length }})
-            </h4>
+            <div class="flex items-center justify-between px-1">
+              <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                Linked Events ({{ selectedEvents.length }})
+              </h4>
+              <UButton
+                v-if="isEditMode"
+                variant="ghost"
+                color="primary"
+                size="xs"
+                icon="i-heroicons-pencil-square"
+                @click="step = 2"
+              >
+                Manage Events
+              </UButton>
+            </div>
             <div
               v-for="event in selectedEvents"
               :key="event.id"
-              class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 relative overflow-hidden"
+              class="p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800/80 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden cursor-pointer transition-colors group/event"
+              @click="window.open(`/events/${event.id}`, '_blank')"
             >
               <div class="absolute top-0 right-0 p-2 opacity-10">
                 <UIcon name="i-heroicons-calendar" class="w-12 h-12" />
               </div>
 
-              <div class="font-bold text-gray-900 dark:text-white mb-3">{{ event.title }}</div>
+              <div class="flex items-center justify-between mb-3 relative z-10">
+                <div
+                  class="font-bold text-gray-900 dark:text-white group-hover/event:text-primary transition-colors"
+                >
+                  {{ event.title }}
+                </div>
+                <UIcon
+                  name="i-heroicons-arrow-top-right-on-square"
+                  class="w-4 h-4 text-muted group-hover/event:text-primary transition-colors"
+                />
+              </div>
 
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
                 <div>
                   <span class="text-[10px] text-muted block uppercase font-bold">Date</span>
                   <span class="text-sm font-medium">{{ formatDate(event.date) }}</span>
@@ -186,101 +426,28 @@
                 </div>
               </div>
             </div>
-            <p class="text-xs text-muted italic px-1">
-              Note: The goal encompasses all events listed above. To add or remove events, go back
-              to the previous step.
-            </p>
           </div>
         </template>
 
-        <!-- Body Composition/Performance/Consistency fields omitted for brevity but should be kept in final -->
-        <template v-if="selectedType !== 'EVENT'">
-          <!-- Keep existing fields from GoalWizard for these types -->
-          <div v-if="selectedType === 'BODY_COMPOSITION'" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField label="Start Weight">
-                <UInputNumber v-model="form.startValue" size="lg" />
-              </UFormField>
-              <UFormField label="Target Weight">
-                <UInputNumber v-model="form.targetValue" size="lg" />
-              </UFormField>
-            </div>
-            <UFormField label="Target Date">
-              <UInput v-model="form.targetDate" type="date" size="lg" />
-            </UFormField>
-          </div>
-          <!-- ... other types ... -->
-        </template>
-
-        <div class="pt-6 flex justify-end">
-          <UButton
-            v-if="hideApproach"
-            size="xl"
-            color="primary"
-            :loading="saving"
-            icon="i-heroicons-check"
-            class="px-8"
-            @click="saveGoal"
-          >
-            {{ isEditMode ? 'Update Goal' : 'Create Goal' }}
-          </UButton>
-          <UButton
-            v-else
-            size="xl"
-            color="primary"
-            icon="i-heroicons-arrow-right"
-            class="px-8"
-            @click="step = 4"
-          >
-            Next: Training Approach
-          </UButton>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 4: Goal Priority -->
-    <div v-else-if="step === 4" class="space-y-6">
-      <div class="flex items-center gap-3 mb-6">
-        <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" @click="step = 3" />
-        <h3 class="text-xl font-semibold">Goal Priority</h3>
-      </div>
-
-      <div class="space-y-4">
+        <!-- Description Group -->
         <div
-          class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400"
+          class="p-4 bg-gray-50/50 dark:bg-gray-800/20 rounded-xl border border-gray-100 dark:border-gray-800"
         >
-          Set the priority of this goal to help the AI balance your training load if you have
-          multiple overlapping goals.
-        </div>
-
-        <div>
-          <label class="text-sm font-medium mb-3 block">Priority Level</label>
-          <div class="grid grid-cols-1 gap-3">
-            <button
-              v-for="p in priorityOptions"
-              :key="p.value"
-              class="p-4 rounded-lg border-2 text-left transition-all flex items-center gap-4"
-              :class="
-                form.priority === p.value
-                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-primary/50'
-              "
-              @click="form.priority = p.value"
-            >
-              <div class="p-2 rounded bg-gray-100 dark:bg-gray-800" :class="p.color">
-                <UIcon :name="p.icon" class="w-5 h-5" />
+          <UFormField>
+            <template #label>
+              <div class="flex items-center gap-2 text-base font-semibold">
+                <UIcon name="i-heroicons-pencil-square" class="w-5 h-5 text-primary" />
+                Notes & Motivation (Optional)
               </div>
-              <div class="flex-1">
-                <div class="font-semibold">{{ p.label }}</div>
-                <div class="text-sm text-muted">{{ p.description }}</div>
-              </div>
-              <UIcon
-                v-if="form.priority === p.value"
-                name="i-heroicons-check-circle"
-                class="w-6 h-6 text-primary"
-              />
-            </button>
-          </div>
+            </template>
+            <UTextarea
+              v-model="form.description"
+              placeholder="Add some details about why this goal is important, specific sub-goals, or motivation..."
+              :rows="5"
+              size="xl"
+              class="w-full"
+            />
+          </UFormField>
         </div>
 
         <div class="pt-6 flex justify-end">
@@ -289,7 +456,7 @@
             color="primary"
             :loading="saving"
             icon="i-heroicons-check"
-            class="px-8"
+            class="px-10 font-bold"
             @click="saveGoal"
           >
             {{ isEditMode ? 'Update Goal' : 'Create Goal' }}
@@ -307,7 +474,8 @@
   }>()
 
   const emit = defineEmits(['close', 'created', 'updated'])
-  const { formatDate, getUserLocalDate, getUserDateFromLocal, timezone } = useFormat()
+  const { formatDate, formatDateUTC, getUserLocalDate, getUserDateFromLocal, timezone } =
+    useFormat()
 
   const isEditMode = computed(() => !!props.goal)
   const step = ref(1)
@@ -448,6 +616,15 @@
     return userEvents.value.filter((e) => form.eventIds.includes(e.id))
   })
 
+  // Proxy to handle unified date input in Step 3
+  // Decoupled from eventDate to avoid confusing side effects when editing goals
+  const deadline = computed({
+    get: () => form.targetDate,
+    set: (val) => {
+      form.targetDate = val
+    }
+  })
+
   const phaseRecommendation = computed(() => {
     if (!form.eventDate) return "We'll suggest a phase once you set an event date."
 
@@ -499,6 +676,7 @@
         }
 
         form.eventDate = new Date(primaryEvent.date).toISOString().split('T')[0]
+        form.targetDate = form.eventDate // Initialize goal deadline with event date
         form.description = primaryEvent.description || ''
         form.eventId = primaryEvent.id // Keep for compat
 
@@ -546,40 +724,41 @@
       metric: form.metric,
       phase: form.phase,
       eventId: form.eventId,
-      eventIds: form.eventIds
+      eventIds: form.eventIds,
+      targetDate: form.targetDate
+        ? getUserDateFromLocal(form.targetDate, '23:59:59').toISOString()
+        : undefined
     }
 
     // Handle Event Specifics
     if (selectedType.value === 'EVENT') {
-      const isoDate = form.eventDate
-        ? getUserDateFromLocal(form.eventDate, '00:00:00').toISOString()
-        : undefined
-      payload.eventDate = isoDate
-      payload.eventType = form.eventType
-      payload.distance = form.distance
-      payload.elevation = form.elevation
-      payload.duration = form.expectedDuration
-      payload.terrain = form.terrain
-      payload.targetDate = isoDate
+      // Only send event metadata during creation or if explicitly overriding
+      // In edit mode, we only want to update the GOAL itself, not the linked EVENT
+      if (!isEditMode.value) {
+        if (form.eventDate) {
+          payload.eventDate = getUserDateFromLocal(form.eventDate, '00:00:00').toISOString()
+        }
+        payload.eventType = form.eventType
+        payload.distance = form.distance
+        payload.elevation = form.elevation
+        payload.duration = form.expectedDuration
+        payload.terrain = form.terrain
 
-      // If no existing event was selected, we can still create one via eventData
-      if (!form.eventId && (form.externalId || form.eventDate)) {
-        payload.eventData = {
-          externalId: form.externalId,
-          source: form.source,
-          title: form.title,
-          date: isoDate,
-          subType: form.eventType,
-          distance: form.distance,
-          elevation: form.elevation,
-          expectedDuration: form.expectedDuration,
-          terrain: form.terrain
+        // If no existing event was selected, we can still create one via eventData
+        if (!form.eventId && (form.externalId || form.eventDate)) {
+          payload.eventData = {
+            externalId: form.externalId,
+            source: form.source,
+            title: form.title,
+            date: payload.eventDate || payload.targetDate,
+            subType: form.eventType,
+            distance: form.distance,
+            elevation: form.elevation,
+            expectedDuration: form.expectedDuration,
+            terrain: form.terrain
+          }
         }
       }
-    } else {
-      payload.targetDate = form.targetDate
-        ? getUserDateFromLocal(form.targetDate, '23:59:59').toISOString()
-        : undefined
     }
 
     try {
@@ -606,12 +785,13 @@
       form.priority = props.goal.priority || 'MEDIUM'
       form.startValue = props.goal.startValue
       form.targetValue = props.goal.targetValue
-      // Use format to get local date string YYYY-MM-DD from absolute date
+      // Use UTC format to get local date string YYYY-MM-DD from absolute date
+      // This prevents timezone shifting for date-only fields
       form.targetDate = props.goal.targetDate
-        ? formatDate(props.goal.targetDate, 'yyyy-MM-dd')
+        ? formatDateUTC(props.goal.targetDate, 'yyyy-MM-dd')
         : undefined
       form.eventDate = props.goal.eventDate
-        ? formatDate(props.goal.eventDate, 'yyyy-MM-dd')
+        ? formatDateUTC(props.goal.eventDate, 'yyyy-MM-dd')
         : undefined
       form.eventType = props.goal.eventType || 'Road Race'
       form.distance = props.goal.distance
