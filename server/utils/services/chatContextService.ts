@@ -40,6 +40,7 @@ export async function buildAthleteContext(userId: string): Promise<{
         aiModelPreference: true,
         aiAutoAnalyzeWorkouts: true,
         aiAutoAnalyzeNutrition: true,
+        aiContext: true,
         currentFitnessScore: true,
         recoveryCapacityScore: true,
         nutritionComplianceScore: true,
@@ -268,6 +269,11 @@ export async function buildAthleteContext(userId: string): Promise<{
     // AI Preferences
     if (userProfile.aiPersona) {
       athleteContext += `\n- **Coaching Style Preference**: ${userProfile.aiPersona}\n`
+    }
+
+    // User Provided Context
+    if (userProfile.aiContext) {
+      athleteContext += `\n### User Provided Context / About Me\n${userProfile.aiContext}\n`
     }
 
     const scores: string[] = []
