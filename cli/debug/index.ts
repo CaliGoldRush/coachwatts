@@ -16,7 +16,7 @@ import goalsCommand from './goals'
 import intervalsTypesCommand from './intervals-types'
 import calendarNotesCommand from './calendar-notes'
 import verifyLazyProfileCommand from './verify-lazy-profile'
-import deduplicateCommand from './deduplicate' // Importing from where I created it, but logically should move file.
+import deduplicateCommand from './deduplicate'
 import compareIntervalsCommand from './compare-intervals'
 import calendarCommand from './calendar'
 
