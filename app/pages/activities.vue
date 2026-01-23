@@ -187,7 +187,7 @@
           <div v-if="viewMode === 'calendar'" class="overflow-x-auto overflow-y-auto h-full">
             <!-- Desktop Grid View (hidden on mobile) -->
             <div
-              class="hidden lg:grid grid-cols-[80px_repeat(7,minmax(130px,1fr))] gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden min-w-[1000px]"
+              class="hidden lg:grid grid-cols-[100px_repeat(7,minmax(130px,1fr))] gap-px bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden min-w-[1000px]"
             >
               <!-- Header Row -->
               <div
@@ -204,7 +204,10 @@
               </div>
 
               <!-- Week Rows -->
-              <template v-for="({ week, summary }, weekIdx) in calendarWeeksWithSummary" :key="weekIdx">
+              <template
+                v-for="({ week, summary }, weekIdx) in calendarWeeksWithSummary"
+                :key="weekIdx"
+              >
                 <!-- Week Summary Cell -->
                 <div
                   class="bg-gray-50 dark:bg-gray-800/50 p-2 flex flex-col justify-between border-r border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -213,33 +216,47 @@
                   <div class="text-xs font-bold text-gray-400">
                     W{{ week[0] ? getWeekNumber(week[0].date) : '' }}
                   </div>
-                  <div class="space-y-1 mt-2 text-[11px]">
+                  <div class="mt-2 text-[10px] space-y-0.5">
                     <!-- Header -->
-                    <div class="flex items-center justify-between font-bold text-gray-400">
+                    <div
+                      class="grid grid-cols-[30px_1fr_1fr] gap-x-0.5 font-bold text-gray-400 text-right mb-1"
+                    >
                       <span />
-                      <span>Actual</span>
-                      <span>Total</span>
+                      <span>Plan</span>
+                      <span>Act</span>
                     </div>
 
                     <!-- Time -->
-                    <div class="flex items-center justify-between">
+                    <div class="grid grid-cols-[30px_1fr_1fr] gap-x-0.5 items-center">
                       <span class="text-gray-500">Time:</span>
-                      <span class="font-bold">{{ formatDuration(summary.duration) }}</span>
-                      <span class="font-bold text-gray-400">{{ formatDuration(summary.duration + summary.plannedDuration) }}</span>
+                      <span class="font-bold text-gray-400 text-right">{{
+                        formatDuration(summary.duration + summary.plannedDuration)
+                      }}</span>
+                      <span class="font-bold text-right">{{
+                        formatDuration(summary.duration)
+                      }}</span>
                     </div>
 
                     <!-- Distance -->
-                    <div class="flex items-center justify-between">
+                    <div class="grid grid-cols-[30px_1fr_1fr] gap-x-0.5 items-center">
                       <span class="text-gray-500">Dist:</span>
-                      <span class="font-bold">{{ formatDistance(summary.distance) }}</span>
-                      <span class="font-bold text-gray-400">{{ formatDistance(summary.distance + summary.plannedDistance) }}</span>
+                      <span class="font-bold text-gray-400 text-right">{{
+                        formatDistance(summary.distance + summary.plannedDistance)
+                      }}</span>
+                      <span class="font-bold text-right">{{
+                        formatDistance(summary.distance)
+                      }}</span>
                     </div>
 
                     <!-- TSS -->
-                    <div class="flex items-center justify-between">
+                    <div class="grid grid-cols-[30px_1fr_1fr] gap-x-0.5 items-center">
                       <span class="text-gray-500">TSS:</span>
-                      <span class="font-bold text-green-600 dark:text-green-400">{{ Math.round(summary.tss) }}</span>
-                      <span class="font-bold text-gray-400">{{ Math.round(summary.tss + summary.plannedTss) }}</span>
+                      <span class="font-bold text-gray-400 text-right">{{
+                        Math.round(summary.tss + summary.plannedTss)
+                      }}</span>
+                      <span class="font-bold text-green-600 dark:text-green-400 text-right">{{
+                        Math.round(summary.tss)
+                      }}</span>
                     </div>
 
                     <!-- Training Stress Trends -->
@@ -249,9 +266,7 @@
                     >
                       <div class="flex items-center justify-between text-[10px]">
                         <span class="text-gray-500">Fitness:</span>
-                        <span class="font-bold text-blue-600">{{
-                          Math.round(summary.ctl!)
-                        }}</span>
+                        <span class="font-bold text-blue-600">{{ Math.round(summary.ctl!) }}</span>
                       </div>
                       <div class="flex items-center justify-between text-[10px]">
                         <span class="text-gray-500">Form:</span>
@@ -1017,7 +1032,7 @@
   })
 
   const calendarWeeksWithSummary = computed(() => {
-    return calendarWeeks.value.map(week => ({
+    return calendarWeeks.value.map((week) => ({
       week,
       summary: getWeekSummary(week)
     }))
