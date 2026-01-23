@@ -151,8 +151,6 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 - **Discord:** [Join our Server](https://discord.gg/dPYkzg49T9)
 - **GitHub:** [Star us on GitHub](https://github.com/newpush/coach)
 - **Issues:** [Report a Bug](https://github.com/newpush/coach/issues)
-
-
 ---
 
 <p align="center">
