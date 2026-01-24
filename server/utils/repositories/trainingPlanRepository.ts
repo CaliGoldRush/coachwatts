@@ -35,9 +35,13 @@ export const trainingPlanRepository = {
     })
   },
 
-  async create(data: Prisma.TrainingPlanUncheckedCreateInput) {
+  async create(
+    data: Prisma.TrainingPlanUncheckedCreateInput,
+    include?: Prisma.TrainingPlanInclude
+  ) {
     return prisma.trainingPlan.create({
-      data
+      data,
+      include
     })
   },
 

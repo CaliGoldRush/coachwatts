@@ -79,62 +79,71 @@ export default defineEventHandler(async (event) => {
   const blocks = calculateBlocks(start, totalWeeks, strategy, goal)
 
   // 5. Create Plan Skeleton
-  const plan = await trainingPlanRepository.create({
-    userId,
-    goalId,
-    startDate: start,
-    targetDate: end,
-    strategy,
-    status: 'DRAFT',
-    activityTypes: preferredActivityTypes,
-    customInstructions,
-    blocks: {
-      create: blocks.map((block) => ({
-        order: block.order,
-        name: block.name,
-        type: block.type,
-        primaryFocus: block.primaryFocus,
-        startDate: block.startDate,
-        durationWeeks: block.durationWeeks,
-        recoveryWeekIndex: block.recoveryWeekIndex,
-        weeks: {
-          create: Array.from({ length: block.durationWeeks }).map((_, i) => {
-            const weekStart = new Date(block.startDate)
-            weekStart.setUTCDate(weekStart.getUTCDate() + i * 7)
-            const weekEnd = new Date(weekStart)
-            weekEnd.setUTCDate(weekEnd.getUTCDate() + 6)
+  const plan = await trainingPlanRepository.create(
+    {
+      userId,
+      goalId,
+      startDate: start,
+      targetDate: end,
+      strategy,
+      status: 'DRAFT',
+      activityTypes: preferredActivityTypes,
+      customInstructions,
+      blocks: {
+        create: blocks.map((block) => ({
+          order: block.order,
+          name: block.name,
+          type: block.type,
+          primaryFocus: block.primaryFocus,
+          startDate: block.startDate,
+          durationWeeks: block.durationWeeks,
+          recoveryWeekIndex: block.recoveryWeekIndex,
+          weeks: {
+            create: Array.from({ length: block.durationWeeks }).map((_, i) => {
+              const weekStart = new Date(block.startDate)
+              weekStart.setUTCDate(weekStart.getUTCDate() + i * 7)
+              const weekEnd = new Date(weekStart)
+              weekEnd.setUTCDate(weekEnd.getUTCDate() + 6)
 
-            const isRecovery = (i + 1) % (block.recoveryWeekIndex || 4) === 0
+              const isRecovery = (i + 1) % (block.recoveryWeekIndex || 4) === 0
 
-            // Determine target volume
-            let targetMinutes = 450 // Default MID
-            if (volumeHours) {
-              targetMinutes = volumeHours * 60
-              if (isRecovery) targetMinutes = Math.round(targetMinutes * 0.6) // 60% volume on recovery weeks
-            } else {
-              // Fallback to bucket logic
-              if (volumePreference === 'LOW') targetMinutes = 240
-              else if (volumePreference === 'HIGH') targetMinutes = 600
+              // Determine target volume
+              let targetMinutes = 450 // Default MID
+              if (volumeHours) {
+                targetMinutes = volumeHours * 60
+                if (isRecovery) targetMinutes = Math.round(targetMinutes * 0.6) // 60% volume on recovery weeks
+              } else {
+                // Fallback to bucket logic
+                if (volumePreference === 'LOW') targetMinutes = 240
+                else if (volumePreference === 'HIGH') targetMinutes = 600
 
-              if (isRecovery) targetMinutes = Math.round(targetMinutes * 0.6)
-            }
+                if (isRecovery) targetMinutes = Math.round(targetMinutes * 0.6)
+              }
 
-            // Default TSS estimation (0.6 IF avg => 36 TSS/hr)
-            const tssTarget = Math.round((targetMinutes / 60) * 50)
+              // Default TSS estimation (0.6 IF avg => 36 TSS/hr)
+              const tssTarget = Math.round((targetMinutes / 60) * 50)
 
-            return {
-              weekNumber: i + 1,
-              startDate: weekStart,
-              endDate: weekEnd,
-              isRecovery,
-              volumeTargetMinutes: targetMinutes,
-              tssTarget: tssTarget
-            }
-          })
+              return {
+                weekNumber: i + 1,
+                startDate: weekStart,
+                endDate: weekEnd,
+                isRecovery,
+                volumeTargetMinutes: targetMinutes,
+                tssTarget: tssTarget
+              }
+            })
+          }
+        }))
+      }
+    },
+    {
+      blocks: {
+        include: {
+          weeks: true
         }
-      }))
+      }
     }
-  })
+  )
 
   return {
     success: true,
