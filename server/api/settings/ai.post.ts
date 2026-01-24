@@ -21,7 +21,8 @@ defineRouteMeta({
               aiAutoAnalyzeWorkouts: { type: 'boolean' },
               aiAutoAnalyzeNutrition: { type: 'boolean' },
               aiContext: { type: 'string', nullable: true },
-              nutritionTrackingEnabled: { type: 'boolean' }
+              nutritionTrackingEnabled: { type: 'boolean' },
+              nickname: { type: 'string', nullable: true }
             }
           }
         }
@@ -44,7 +45,8 @@ defineRouteMeta({
                     aiAutoAnalyzeWorkouts: { type: 'boolean' },
                     aiAutoAnalyzeNutrition: { type: 'boolean' },
                     aiContext: { type: 'string', nullable: true },
-                    nutritionTrackingEnabled: { type: 'boolean' }
+                    nutritionTrackingEnabled: { type: 'boolean' },
+                    nickname: { type: 'string', nullable: true }
                   }
                 }
               }
@@ -74,7 +76,8 @@ export default defineEventHandler(async (event) => {
     aiAutoAnalyzeWorkouts,
     aiAutoAnalyzeNutrition,
     aiContext,
-    nutritionTrackingEnabled
+    nutritionTrackingEnabled,
+    nickname
   } = body
 
   // Validate inputs
@@ -103,7 +106,8 @@ export default defineEventHandler(async (event) => {
       ...(aiAutoAnalyzeWorkouts !== undefined && { aiAutoAnalyzeWorkouts }),
       ...(aiAutoAnalyzeNutrition !== undefined && { aiAutoAnalyzeNutrition }),
       ...(aiContext !== undefined && { aiContext }),
-      ...(nutritionTrackingEnabled !== undefined && { nutritionTrackingEnabled })
+      ...(nutritionTrackingEnabled !== undefined && { nutritionTrackingEnabled }),
+      ...(nickname !== undefined && { nickname })
     },
     select: {
       aiPersona: true,
@@ -111,7 +115,8 @@ export default defineEventHandler(async (event) => {
       aiAutoAnalyzeWorkouts: true,
       aiAutoAnalyzeNutrition: true,
       aiContext: true,
-      nutritionTrackingEnabled: true
+      nutritionTrackingEnabled: true,
+      nickname: true
     }
   })
 

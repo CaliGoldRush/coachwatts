@@ -23,6 +23,17 @@
         />
       </div>
 
+      <!-- Nickname -->
+      <div>
+        <label class="block text-sm font-medium mb-2">Nickname</label>
+        <p class="text-sm text-muted mb-3">What should the AI coach call you?</p>
+        <UInput
+          v-model="localSettings.nickname"
+          placeholder="e.g. Turbo"
+          @update:model-value="handleChange"
+        />
+      </div>
+
       <!-- Coach Personality -->
       <div>
         <label class="block text-sm font-medium mb-2">Coach Personality</label>
@@ -121,6 +132,7 @@
       aiAutoAnalyzeNutrition: boolean
       aiContext?: string | null
       nutritionTrackingEnabled: boolean
+      nickname?: string | null
     }
   }>()
 

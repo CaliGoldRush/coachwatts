@@ -8,6 +8,7 @@ export interface AiSettings {
   aiAutoAnalyzeNutrition: boolean
   aiContext?: string | null
   nutritionTrackingEnabled: boolean
+  nickname?: string | null
 }
 
 const DEFAULT_SETTINGS: AiSettings = {
@@ -16,7 +17,8 @@ const DEFAULT_SETTINGS: AiSettings = {
   aiAutoAnalyzeWorkouts: false,
   aiAutoAnalyzeNutrition: false,
   aiContext: null,
-  nutritionTrackingEnabled: true
+  nutritionTrackingEnabled: true,
+  nickname: null
 }
 
 export async function getUserAiSettings(userId: string): Promise<AiSettings> {
@@ -28,7 +30,8 @@ export async function getUserAiSettings(userId: string): Promise<AiSettings> {
       aiAutoAnalyzeWorkouts: true,
       aiAutoAnalyzeNutrition: true,
       aiContext: true,
-      nutritionTrackingEnabled: true
+      nutritionTrackingEnabled: true,
+      nickname: true
     }
   })
 
@@ -44,6 +47,7 @@ export async function getUserAiSettings(userId: string): Promise<AiSettings> {
     aiAutoAnalyzeNutrition: user.aiAutoAnalyzeNutrition ?? DEFAULT_SETTINGS.aiAutoAnalyzeNutrition,
     aiContext: user.aiContext,
     nutritionTrackingEnabled:
-      user.nutritionTrackingEnabled ?? DEFAULT_SETTINGS.nutritionTrackingEnabled
+      user.nutritionTrackingEnabled ?? DEFAULT_SETTINGS.nutritionTrackingEnabled,
+    nickname: user.nickname
   }
 }
