@@ -379,6 +379,110 @@
           </div>
         </div>
 
+        <!-- 3.5 Recovery Rhythm (NEW) -->
+        <div class="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <div class="flex justify-between items-center">
+            <div>
+              <label class="block text-sm font-bold">Recovery Cycle (Rhythm)</label>
+              <p class="text-xs text-muted">How often do you need a rest week?</p>
+            </div>
+            <UBadge v-if="userAge >= 45" color="primary" variant="soft" size="xs"
+              >Recommended for Masters</UBadge
+            >
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              class="p-3 rounded-lg border-2 text-left transition-all flex items-start gap-3"
+              :class="
+                recoveryRhythm === 2
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+              "
+              @click="recoveryRhythm = 2"
+            >
+              <div
+                class="w-10 h-10 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
+              >
+                <span class="font-black text-lg">1:1</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">Return to Play</div>
+                <div class="text-[10px] text-muted leading-tight mt-0.5">
+                  1 week build, 1 week recovery. Best for injury recovery or extreme intensity
+                  blocks.
+                </div>
+              </div>
+            </button>
+
+            <button
+              class="p-3 rounded-lg border-2 text-left transition-all flex items-start gap-3"
+              :class="
+                recoveryRhythm === 3
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+              "
+              @click="recoveryRhythm = 3"
+            >
+              <div
+                class="w-10 h-10 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
+              >
+                <span class="font-black text-lg">2:1</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">High Recovery</div>
+                <div class="text-[10px] text-muted leading-tight mt-0.5">
+                  2 weeks build, 1 week rest. Ideal for Masters (45+) and high-stress lifestyles.
+                </div>
+              </div>
+            </button>
+
+            <button
+              class="p-3 rounded-lg border-2 text-left transition-all flex items-start gap-3"
+              :class="
+                recoveryRhythm === 4
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+              "
+              @click="recoveryRhythm = 4"
+            >
+              <div
+                class="w-10 h-10 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
+              >
+                <span class="font-black text-lg">3:1</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">Standard Build</div>
+                <div class="text-[10px] text-muted leading-tight mt-0.5">
+                  3 weeks build, 1 week rest. The classic standard for most healthy athletes.
+                </div>
+              </div>
+            </button>
+
+            <button
+              class="p-3 rounded-lg border-2 text-left transition-all flex items-start gap-3"
+              :class="
+                recoveryRhythm === 5
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+              "
+              @click="recoveryRhythm = 5"
+            >
+              <div
+                class="w-10 h-10 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"
+              >
+                <span class="font-black text-lg">4:1</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">Professional</div>
+                <div class="text-[10px] text-muted leading-tight mt-0.5">
+                  4 weeks build, 1 week rest. Advanced pattern for high-volume, full-time athletes.
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
         <!-- 4. Timeline -->
         <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg space-y-4">
           <div class="flex items-center justify-between">
@@ -762,10 +866,12 @@
 
 <script setup lang="ts">
   import EventGoalWizard from '~/components/goals/EventGoalWizard.vue'
+  import { useUserStore } from '~/stores/user'
 
   const emit = defineEmits(['close', 'plan-created'])
   const toast = useToast()
-  const { formatDate, getUserLocalDate, timezone } = useFormat()
+  const { formatDate, getUserLocalDate, timezone, calculateAge } = useFormat()
+  const userStore = useUserStore()
 
   // State
   const step = ref(1)
@@ -777,6 +883,24 @@
   // Step 2 State
   const volumeHours = ref(6) // Default 6 hours
   const strategy = ref('LINEAR')
+  const recoveryRhythm = ref(4) // Default 3:1
+
+  // Determine age-based recommendation
+  const userAge = computed(() => {
+    if (!userStore.profile?.dob) return 0
+    return calculateAge(userStore.profile.dob)
+  })
+
+  watch(
+    userAge,
+    (newAge) => {
+      if (newAge >= 45) {
+        recoveryRhythm.value = 3 // Set 2:1 for masters
+      }
+    },
+    { immediate: true }
+  )
+
   // Initialize with local today
   const startDate = ref(getUserLocalDate().toISOString().split('T')[0])
   const endDate = ref('')
@@ -1041,7 +1165,8 @@
           volumeHours: volumeHours.value,
           strategy: strategy.value,
           preferredActivityTypes: selectedActivityTypes.value,
-          customInstructions: customInstructions.value
+          customInstructions: customInstructions.value,
+          recoveryRhythm: recoveryRhythm.value
         }
       })
 

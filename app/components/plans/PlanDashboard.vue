@@ -213,25 +213,47 @@
           :class="[selectedBlockId === block.id ? 'z-10' : '']"
           @click="selectedBlockId = block.id"
         >
-          <!-- Label -->
-          <div
-            class="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none pb-2"
-          >
-            <span
-              class="text-[10px] sm:text-xs font-black uppercase tracking-tight truncate w-full px-1"
-              :class="
-                selectedBlockId === block.id
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-gray-600 dark:text-gray-400'
-              "
+          <!-- Content Container (Side-by-side) -->
+          <div class="absolute inset-0 flex items-center justify-between px-2 pb-2">
+            <!-- Text Info -->
+            <div class="flex flex-col min-w-0 justify-center">
+              <span
+                class="text-[10px] sm:text-xs font-black uppercase tracking-tight truncate"
+                :class="
+                  selectedBlockId === block.id
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-gray-600 dark:text-gray-400'
+                "
+              >
+                {{ block.name.split(' ')[0] }}
+              </span>
+              <span
+                class="text-[8px] sm:text-[9px] font-bold text-gray-400 dark:text-gray-500 tabular-nums"
+              >
+                {{ block.durationWeeks }}W
+              </span>
+            </div>
+
+            <!-- Sparkline Rhythm -->
+            <div
+              class="flex items-end gap-0.5 h-6 self-center opacity-60 group-hover:opacity-100 transition-opacity"
             >
-              {{ block.name.split(' ')[0] }}
-            </span>
-            <span
-              class="text-[8px] sm:text-[9px] font-bold text-gray-400 dark:text-gray-500 tabular-nums"
-            >
-              {{ block.durationWeeks }} WEEKS
-            </span>
+              <div
+                v-for="w in block.durationWeeks"
+                :key="w"
+                class="w-1 rounded-t-sm"
+                :style="{
+                  height:
+                    w % (block.recoveryWeekIndex || 4) === 0
+                      ? '4px'
+                      : 6 + (w % (block.recoveryWeekIndex || 4)) * 2 + 'px',
+                  backgroundColor:
+                    w % (block.recoveryWeekIndex || 4) === 0
+                      ? 'rgba(16, 185, 129, 0.6)'
+                      : 'rgba(59, 130, 246, 0.5)'
+                }"
+              />
+            </div>
           </div>
 
           <!-- Bottom Accent Bar -->
