@@ -1687,7 +1687,7 @@
         }
 
         selectedBlockId.value = targetBlock.id
-        console.log('[Dashboard] selectedBlockId initial set', { id: selectedBlockId.value })
+        // console.log('[Dashboard] selectedBlockId initial set', { id: selectedBlockId.value })
 
         if (targetBlock.weeks.length > 0) {
           const currentWeek = targetBlock.weeks.find((w: any) => {

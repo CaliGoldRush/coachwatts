@@ -84,12 +84,14 @@
     },
     (parts) => {
       if (!parts) return
+      /*
       const lastMsg = chat.messages[chat.messages.length - 1]
       if (lastMsg) {
         console.log(
           `[Chat] Watcher: Msg ${lastMsg.id} (${lastMsg.role}) parts updated. Count: ${parts.length}`
         )
       }
+      */
     },
     { deep: true }
   )
@@ -100,20 +102,20 @@
 
     const submittedText = typeof e === 'string' ? e : input.value
 
-    console.log('[Chat Frontend DEBUG] onSubmit called')
-    console.log('[Chat Frontend DEBUG] submittedText:', submittedText)
-    console.log('[Chat Frontend DEBUG] currentRoomId:', currentRoomId.value)
+    // console.log('[Chat Frontend DEBUG] onSubmit called')
+    // console.log('[Chat Frontend DEBUG] submittedText:', submittedText)
+    // console.log('[Chat Frontend DEBUG] currentRoomId:', currentRoomId.value)
 
     if (!submittedText?.trim() || !currentRoomId.value) {
-      console.warn('[Chat Frontend DEBUG] Aborting submit: input empty or no roomId')
+      // console.warn('[Chat Frontend DEBUG] Aborting submit: input empty or no roomId')
       return
     }
 
-    const messagePayload = {
-      role: 'user',
-      content: submittedText
-    }
-    console.log('[Chat Frontend DEBUG] Calling chat.sendMessage with:', messagePayload)
+    // const messagePayload = {
+    //   role: 'user',
+    //   content: submittedText
+    // }
+    // console.log('[Chat Frontend DEBUG] Calling chat.sendMessage with:', messagePayload)
     ;(chat as any).sendMessage({
       text: submittedText
     })
