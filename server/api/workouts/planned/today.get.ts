@@ -46,20 +46,8 @@ export default defineEventHandler(async (event) => {
   const timezone = await getUserTimezone(userId)
   const today = getUserLocalDate(timezone)
 
-  const nextDay = new Date(today)
-  nextDay.setDate(nextDay.getDate() + 1)
-
   const workouts = await plannedWorkoutRepository.list(userId, {
-    startDate: today,
-    endDate: nextDay, // Note: list uses lte, so this might include nextDay midnight? Yes.
-    // Ideally we want lt nextDay.
-    // The repository implementation: where.date = { ... lte: options.endDate }
-    // If nextDay is 00:00:00, lte includes it.
-    // However, usually planned workouts are at 00:00:00.
-    // So if today is 2023-10-25 00:00, nextDay is 2023-10-26 00:00.
-    // If we have a workout on 26th, it will be included.
-    // We should strictly update repo or use a different method.
-    // Or just subtract 1 ms from nextDay.
+    where: { date: today },
     limit: 1,
     orderBy: { createdAt: 'desc' }
   })
