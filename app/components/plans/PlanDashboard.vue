@@ -215,7 +215,7 @@
       </div>
 
       <div
-        class="relative w-full h-14 bg-gray-100/50 dark:bg-gray-900/50 rounded-xl overflow-hidden flex shadow-inner border border-gray-200 dark:border-gray-800"
+        class="relative w-full h-14 bg-gray-100/50 dark:bg-gray-900/50 rounded-xl overflow-hidden flex shadow-inner border border-gray-200 dark:border-gray-800 group/timeline"
       >
         <div
           v-for="block in plan.blocks"
@@ -289,31 +289,68 @@
 
         <!-- Event Markers -->
         <template v-for="event in eventMarkers" :key="event.id">
-          <UTooltip :text="`${event.title} (${formatDateUTC(event.date, 'MMM d')})`">
+          <div
+            class="absolute bottom-1 w-px z-20 pointer-events-auto shadow-sm group/event transition-all duration-300"
+            :style="{
+              left: `${event.position}%`,
+              top: '30px',
+              backgroundColor:
+                event.priority === 'A' ? '#fbbf24' : event.priority === 'B' ? '#94a3b8' : '#cd7f32'
+            }"
+          >
             <div
-              class="absolute top-0 bottom-0 w-0.5 bg-white/60 dark:bg-white/40 z-20 pointer-events-auto"
-              :style="{ left: `${event.position}%` }"
+              class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full border border-white dark:border-gray-900 shadow-sm transition-transform group-hover/timeline:scale-110"
+              :style="{
+                backgroundColor:
+                  event.priority === 'A'
+                    ? '#fbbf24'
+                    : event.priority === 'B'
+                      ? '#94a3b8'
+                      : '#cd7f32'
+              }"
+            />
+            <!-- Hover Label -->
+            <div
+              class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover/timeline:opacity-100 transition-all duration-300 pointer-events-none"
             >
               <div
-                class="absolute -bottom-1 -left-1 w-2 h-2 bg-white rounded-full border border-gray-400"
-              />
+                class="text-[8px] text-white px-1.5 py-0.5 rounded shadow-sm font-bold uppercase tracking-wider whitespace-nowrap"
+                :style="{
+                  backgroundColor:
+                    event.priority === 'A'
+                      ? '#fbbf24'
+                      : event.priority === 'B'
+                        ? '#94a3b8'
+                        : '#cd7f32'
+                }"
+              >
+                {{ event.priority || 'Event' }}: {{ event.title }}
+              </div>
             </div>
-          </UTooltip>
+          </div>
         </template>
 
         <!-- "Now" indicator overlay -->
         <div
           v-if="currentBlockPosition !== null"
-          class="absolute top-0 bottom-0 w-1 bg-primary-500 z-20 shadow-[0_0_10px_rgba(0,220,130,0.5)]"
-          :style="{ left: `${currentBlockPosition}%` }"
+          class="absolute bottom-1 w-[1.5px] bg-blue-600 dark:bg-blue-500 z-30 shadow-[0_0_10px_rgba(37,99,235,0.5)] transition-all duration-300"
+          :style="{
+            left: `${currentBlockPosition}%`,
+            top: '30px'
+          }"
         >
           <div
-            class="absolute -top-1 -left-1 w-3 h-3 bg-primary-500 rounded-full border-2 border-white dark:border-gray-900"
+            class="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-blue-600 dark:bg-blue-500 rounded-full border border-white dark:border-gray-900"
           />
+          <!-- Hover Label -->
           <div
-            class="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary-600 text-[8px] text-white px-1.5 py-0.5 rounded-full shadow-sm font-bold uppercase tracking-wider whitespace-nowrap"
+            class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover/timeline:opacity-100 transition-opacity duration-200 pointer-events-none"
           >
-            Now
+            <div
+              class="bg-blue-600 text-[8px] text-white px-1.5 py-0.5 rounded shadow-sm font-bold uppercase tracking-wider whitespace-nowrap"
+            >
+              Today
+            </div>
           </div>
         </div>
       </div>

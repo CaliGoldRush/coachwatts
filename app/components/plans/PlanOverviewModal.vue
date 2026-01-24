@@ -1,10 +1,5 @@
 <template>
-  <UModal
-    :model-value="open"
-    :title="plan?.name || 'Training Plan'"
-    fullscreen
-    @update:model-value="$emit('update:open', $event)"
-  >
+  <UModal v-model:open="open" :title="plan?.name || 'Training Plan'" fullscreen>
     <template #body>
       <div v-if="loading" class="flex items-center justify-center py-12">
         <div class="text-center">
@@ -167,12 +162,11 @@
   const { formatDate: baseFormatDate, formatDateUTC, formatDuration } = useFormat()
 
   defineProps<{
-    open: boolean
     plan: any
     loading?: boolean
   }>()
 
-  defineEmits(['update:open'])
+  const open = defineModel<boolean>('open', { required: true })
 
   function formatDate(d: string | Date) {
     if (!d) return ''
