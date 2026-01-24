@@ -22,6 +22,15 @@
         <div class="flex gap-2 justify-end mt-0 sm:mt-1">
           <UButton
             size="xs"
+            color="primary"
+            variant="ghost"
+            icon="i-heroicons-squares-plus"
+            @click="showTimelineEditor = true"
+          >
+            <span class="hidden sm:inline">Edit Structure</span>
+          </UButton>
+          <UButton
+            size="xs"
             color="neutral"
             variant="ghost"
             icon="i-heroicons-adjustments-horizontal"
@@ -108,6 +117,25 @@
       </template>
     </UModal>
 
+    <!-- Plan Structure Editor Modal -->
+    <UModal
+      v-model:open="showTimelineEditor"
+      title="Edit Plan Structure"
+      :ui="{ width: 'sm:max-w-2xl' }"
+    >
+      <template #body>
+        <div class="p-4 sm:p-6">
+          <PlanTimelineEditor
+            :plan-id="plan.id"
+            :blocks="plan.blocks"
+            :start-date="plan.startDate"
+            @save="onStructureSaved"
+            @cancel="showTimelineEditor = false"
+          />
+        </div>
+      </template>
+    </UModal>
+
     <UModal
       v-model:open="showAdaptModal"
       title="Adapt Training Plan"
@@ -167,32 +195,91 @@
       @generate="generatePlanWithAI"
     />
 
-    <!-- Block Timeline -->
-    <div class="relative pt-6 pb-2 overflow-x-auto w-full">
-      <div class="min-w-[600px] relative px-2">
-        <div class="h-2 bg-gray-200 dark:bg-gray-800 rounded-full w-full absolute top-9 z-0" />
-        <div class="relative z-10 flex justify-between">
+    <!-- Plan Timeline (Proportional) -->
+    <div class="space-y-2">
+      <div class="flex justify-between items-end px-1">
+        <h3 class="text-xs font-bold uppercase tracking-widest text-muted">Season Timeline</h3>
+        <div class="text-[10px] text-muted font-mono">{{ totalWeeksInPlan }} Weeks Total</div>
+      </div>
+
+      <div
+        class="relative w-full h-14 bg-gray-100/50 dark:bg-gray-900/50 rounded-xl overflow-hidden flex shadow-inner border border-gray-200 dark:border-gray-800"
+      >
+        <div
+          v-for="block in plan.blocks"
+          :key="block.id"
+          class="h-full relative border-r last:border-r-0 border-gray-200/50 dark:border-gray-800/50 transition-all cursor-pointer group bg-white/40 dark:bg-gray-800/20 hover:bg-white/60 dark:hover:bg-gray-800/40"
+          :style="{ flex: block.durationWeeks }"
+          :class="[selectedBlockId === block.id ? 'z-10' : '']"
+          @click="selectedBlockId = block.id"
+        >
+          <!-- Label -->
           <div
-            v-for="block in plan.blocks"
-            :key="block.id"
-            class="flex flex-col items-center cursor-pointer group flex-1"
-            @click="selectedBlockId = block.id"
+            class="absolute inset-0 flex flex-col items-center justify-center p-1 text-center pointer-events-none pb-2"
           >
-            <div v-if="generatingBlockId === block.id" class="mb-2 z-10 bg-white dark:bg-gray-900">
-              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-primary" />
-            </div>
-            <div
-              v-else
-              class="w-4 h-4 rounded-full border-2 transition-all mb-2 bg-white dark:bg-gray-900 z-10"
-              :class="getBlockStatusColor(block)"
-            />
-            <div
-              class="text-xs font-semibold text-center px-1"
-              :class="selectedBlockId === block.id ? 'text-primary' : 'text-muted'"
+            <span
+              class="text-[10px] sm:text-xs font-black uppercase tracking-tight truncate w-full px-1"
+              :class="
+                selectedBlockId === block.id
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-gray-600 dark:text-gray-400'
+              "
             >
-              {{ block.name }}
+              {{ block.name.split(' ')[0] }}
+            </span>
+            <span
+              class="text-[8px] sm:text-[9px] font-bold text-gray-400 dark:text-gray-500 tabular-nums"
+            >
+              {{ block.durationWeeks }} WEEKS
+            </span>
+          </div>
+
+          <!-- Bottom Accent Bar -->
+          <div
+            class="absolute bottom-0 left-0 right-0 transition-all duration-300"
+            :style="{
+              backgroundColor: getBlockTypeColor(block.type),
+              height: selectedBlockId === block.id ? '6px' : '4px'
+            }"
+            :class="
+              selectedBlockId === block.id ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'
+            "
+          />
+
+          <!-- Selection Glow -->
+          <div
+            v-if="selectedBlockId === block.id"
+            class="absolute inset-0 ring-2 ring-inset ring-primary-500/20 pointer-events-none"
+          />
+        </div>
+
+        <!-- Event Markers -->
+        <template v-for="event in eventMarkers" :key="event.id">
+          <UTooltip :text="`${event.title} (${formatDateUTC(event.date, 'MMM d')})`">
+            <div
+              class="absolute top-0 bottom-0 w-0.5 bg-white/60 dark:bg-white/40 z-20 pointer-events-auto"
+              :style="{ left: `${event.position}%` }"
+            >
+              <div
+                class="absolute -bottom-1 -left-1 w-2 h-2 bg-white rounded-full border border-gray-400"
+              />
             </div>
-            <div class="text-[10px] text-muted">{{ block.durationWeeks }}w</div>
+          </UTooltip>
+        </template>
+
+        <!-- "Now" indicator overlay -->
+        <div
+          v-if="currentBlockPosition !== null"
+          class="absolute top-0 bottom-0 w-1 bg-primary-500 z-20 shadow-[0_0_10px_rgba(0,220,130,0.5)]"
+          :style="{ left: `${currentBlockPosition}%` }"
+        >
+          <div
+            class="absolute -top-1 -left-1 w-3 h-3 bg-primary-500 rounded-full border-2 border-white dark:border-gray-900"
+          />
+          <div
+            class="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary-600 text-[8px] text-white px-1.5 py-0.5 rounded-full shadow-sm font-bold uppercase tracking-wider whitespace-nowrap"
+          >
+            Now
           </div>
         </div>
       </div>
@@ -605,6 +692,7 @@
   import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
   import WeeklyZoneSummary from '~/components/ui/WeeklyZoneSummary.vue'
   import PlanAIModal from '~/components/plans/PlanAIModal.vue'
+  import PlanTimelineEditor from '~/components/plans/PlanTimelineEditor.vue'
   import {
     getWorkoutIcon,
     getWorkoutColorClass as getIconColorClass,
@@ -626,6 +714,7 @@
   const selectedWeekId = ref<string | null>(null)
   const showAdaptModal = ref(false)
   const showSaveTemplateModal = ref(false)
+  const showTimelineEditor = ref(false)
   const showAbandonModal = ref(false)
   const showAIPlanModal = ref(false)
   const templateName = ref('')
@@ -646,6 +735,11 @@
   const showIndependentWorkouts = ref(true)
   const independentWorkouts = ref<any[]>([])
   const fetchingIndependent = ref(false)
+
+  function onStructureSaved() {
+    showTimelineEditor.value = false
+    emit('refresh')
+  }
 
   watch([showIndependentWorkouts, selectedWeekId], async ([show, weekId]) => {
     if (show && weekId && selectedWeek.value) {
@@ -763,15 +857,79 @@
     selectedBlock.value?.weeks.find((w: any) => w.id === selectedWeekId.value)
   )
 
+  const totalWeeksInPlan = computed(() => {
+    return props.plan.blocks.reduce((acc: number, b: any) => acc + b.durationWeeks, 0)
+  })
+
+  const currentBlockPosition = computed(() => {
+    if (!props.plan.blocks.length) return null
+
+    // Find how many weeks from start to current block
+    const today = getUserLocalDate()
+    const todayTime = today.getTime()
+
+    let weeksAccumulated = 0
+    let found = false
+
+    for (const b of props.plan.blocks) {
+      const start = new Date(b.startDate).getTime()
+      const end = start + b.durationWeeks * 7 * 24 * 3600 * 1000 - 1
+
+      if (todayTime >= start && todayTime <= end) {
+        // We are in this block. Find exact week within block
+        const diffDays = Math.max(0, Math.floor((todayTime - start) / (1000 * 3600 * 24)))
+        const weekOffset = Math.min(b.durationWeeks - 1, Math.floor(diffDays / 7))
+        weeksAccumulated += weekOffset + 0.5 // Place it in middle of current week
+        found = true
+        break
+      }
+
+      if (todayTime < start) {
+        // We haven't reached this block yet (future)
+        break
+      }
+
+      weeksAccumulated += b.durationWeeks
+    }
+
+    return found ? (weeksAccumulated / totalWeeksInPlan.value) * 100 : null
+  })
+
+  const eventMarkers = computed(() => {
+    if (!props.plan.goal?.events?.length || !props.plan.startDate) return []
+
+    const planStart = new Date(props.plan.startDate).getTime()
+    const planEnd = planStart + totalWeeksInPlan.value * 7 * 24 * 3600 * 1000
+
+    return props.plan.goal.events
+      .map((event: any) => {
+        const eventTime = new Date(event.date).getTime()
+        if (eventTime < planStart || eventTime > planEnd) return null
+
+        const position = ((eventTime - planStart) / (planEnd - planStart)) * 100
+        return {
+          ...event,
+          position
+        }
+      })
+      .filter(Boolean)
+  })
+
   // Helpers
   function formatDay(d: string) {
     return formatDateUTC(d, 'EEE, MMM d')
   }
 
-  function getBlockStatusColor(block: any) {
-    if (selectedBlockId.value === block.id) return 'bg-white border-primary scale-125'
-    // Logic for past/future based on date could go here
-    return 'bg-primary border-primary'
+  function getBlockTypeColor(type: string) {
+    const colors: Record<string, string> = {
+      PREP: 'rgb(148, 163, 184)', // Slate 400
+      BASE: 'rgb(59, 130, 246)', // Blue
+      BUILD: 'rgb(245, 158, 11)', // Amber
+      PEAK: 'rgb(239, 68, 68)', // Red
+      RACE: 'rgb(168, 85, 247)', // Purple
+      TRANSITION: 'rgb(16, 185, 129)' // Green
+    }
+    return colors[type] || 'rgb(0, 220, 130)' // Brand Green
   }
 
   function isLocalWorkout(workout: any) {
