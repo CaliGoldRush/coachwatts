@@ -837,7 +837,7 @@
         end = new Date(endDate.value)
       } else {
         // Use filtered duration
-        const weeks = filteredBlocks.value.reduce((acc, b) => acc + b.durationWeeks, 0)
+        const weeks = filteredBlocks.value.reduce((acc: number, b: any) => acc + b.durationWeeks, 0)
         end.setDate(end.getDate() + weeks * 7)
       }
 
