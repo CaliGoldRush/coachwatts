@@ -337,7 +337,10 @@ ${projectedMetricsContext}
 ${historyContext}
 
 TASK:
-1. Generate a contextually relevant opening remark. It should be motivational, analytical, or friendly based on your persona and the athlete's context (upcoming events, recent performance, etc.). Keep it concise.
+1. Generate a brief opening remark (max 2 sentences).
+   - **DO NOT** summarize the workout plan (e.g., avoid "You have a 2-hour ride today"). The user already sees this.
+   - **DO** focus on *why* these check-in questions are important today (e.g., "Given the heavy load coming up, let's see where your head is at" or "Consistency is key this week, so I want to check your recovery").
+   - Motivate the user to answer the questions below.
 2. Generate a set of 3 to 5 YES/NO questions to assess the athlete's readiness, mental state, and potential issues (niggles, stress, motivation) that might not be captured by the hard data.
 
 STRATEGY:
@@ -355,7 +358,7 @@ REQUIREMENTS:
 
 OUTPUT JSON FORMAT:
 {
-  "openingRemark": "Good morning! I see you have a big climb coming up this weekend. Let's make sure you're ready.",
+  "openingRemark": "To ensure we hit our targets this week, I need to know how you're handling the cumulative fatigue.",
   "questions": [
     { "id": "q1", "text": "Are you feeling any residual soreness in your quads?", "reasoning": "You had a hard interval session yesterday." },
     ...
