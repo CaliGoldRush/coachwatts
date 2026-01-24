@@ -145,6 +145,26 @@ export default defineEventHandler(async (event) => {
     }
   )
 
+  // 6. Trigger background generation for all blocks
+  if (plan.blocks && plan.blocks.length > 0) {
+    for (let i = 0; i < plan.blocks.length; i++) {
+      const block = plan.blocks[i]
+      await tasks.trigger(
+        'generate-training-block',
+        {
+          userId,
+          blockId: block.id,
+          // Only generate detailed intervals for the first week of the first block
+          triggerStructureForWeekNumber: i === 0 ? 1 : undefined
+        },
+        {
+          tags: [`user:${userId}`],
+          concurrencyKey: userId
+        }
+      )
+    }
+  }
+
   return {
     success: true,
     planId: plan.id,

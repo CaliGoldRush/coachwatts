@@ -884,109 +884,121 @@
   const fetchingIndependent = ref(false)
 
   function onStructureSaved() {
-    console.log('[Dashboard] Structure saved, refreshing plan')
     showTimelineEditor.value = false
+
     emit('refresh')
   }
 
   // Week Tuning Methods
+
   async function updateWeekFocus(value: string) {
     if (!selectedWeek.value) return
+
     const focus = TRAINING_BLOCK_FOCUSES.find((f) => f.value === value)
+
     if (!focus) return
 
     try {
-      console.log('[Dashboard] Updating week focus', {
-        weekId: selectedWeek.value.id,
-        focus: value
-      })
       await $fetch(`/api/plans/weeks/${selectedWeek.value.id}`, {
         method: 'PATCH',
+
         body: {
           focusKey: focus.value,
+
           focusLabel: focus.label,
+
           isRecovery: focus.value === 'RECOVERY'
         }
       })
+
       emit('refresh')
+
       toast.add({ title: 'Week focus updated', color: 'success' })
     } catch (e) {
-      console.error('[Dashboard] Failed to update week focus', e)
       toast.add({ title: 'Failed to update focus', color: 'error' })
     }
   }
 
   async function updateWeekVolume(hours: number) {
     if (!selectedWeek.value) return
+
     try {
-      console.log('[Dashboard] Updating week volume', { weekId: selectedWeek.value.id, hours })
       await $fetch(`/api/plans/weeks/${selectedWeek.value.id}`, {
         method: 'PATCH',
+
         body: { volumeTargetMinutes: Math.round(hours * 60) }
       })
+
       emit('refresh')
+
       toast.add({ title: 'Volume target updated', color: 'success' })
     } catch (e) {
-      console.error('[Dashboard] Failed to update volume', e)
       toast.add({ title: 'Failed to update volume', color: 'error' })
     }
   }
 
   async function updateWeekTss(tss: number) {
     if (!selectedWeek.value) return
+
     try {
-      console.log('[Dashboard] Updating week TSS', { weekId: selectedWeek.value.id, tss })
       await $fetch(`/api/plans/weeks/${selectedWeek.value.id}`, {
         method: 'PATCH',
+
         body: { tssTarget: tss }
       })
+
       emit('refresh')
+
       toast.add({ title: 'TSS target updated', color: 'success' })
     } catch (e) {
-      console.error('[Dashboard] Failed to update TSS', e)
       toast.add({ title: 'Failed to update TSS', color: 'error' })
     }
   }
 
   async function toggleWeekRecovery() {
     if (!selectedWeek.value) return
+
     try {
       const newState = !selectedWeek.value.isRecovery
-      console.log('[Dashboard] Toggling week recovery state', {
-        weekId: selectedWeek.value.id,
-        isRecovery: newState
-      })
+
       await $fetch(`/api/plans/weeks/${selectedWeek.value.id}`, {
         method: 'PATCH',
+
         body: { isRecovery: newState }
       })
+
       emit('refresh')
+
       toast.add({
         title: `Week set to ${newState ? 'Recovery' : 'Training'}`,
+
         color: 'success'
       })
     } catch (e) {
-      console.error('[Dashboard] Failed to toggle recovery state', e)
       toast.add({ title: 'Failed to update week type', color: 'error' })
     }
   }
 
   watch([showIndependentWorkouts, selectedWeekId], async ([show, weekId]) => {
     if (show && weekId && selectedWeek.value) {
-      console.log('[Dashboard] Fetching independent workouts for week', { weekId })
       fetchingIndependent.value = true
+
       try {
         const workouts = await $fetch('/api/planned-workouts', {
           query: {
             startDate: selectedWeek.value.startDate,
+
             endDate: selectedWeek.value.endDate,
+
             independentOnly: true,
+
             limit: 50
           }
         })
+
         independentWorkouts.value = workouts
       } catch (e) {
-        console.error('[Dashboard] Failed to fetch independent workouts', e)
+        console.error('Failed to fetch independent workouts', e)
       } finally {
         fetchingIndependent.value = false
       }
@@ -997,6 +1009,7 @@
 
   const visibleWorkouts = computed(() => {
     if (!selectedWeek.value) return []
+
     const baseWorkouts = selectedWeek.value.workouts || []
 
     if (!showIndependentWorkouts.value) return baseWorkouts
@@ -1004,107 +1017,94 @@
     const baseIds = new Set(baseWorkouts.map((w: any) => w.id))
 
     const extras = independentWorkouts.value
+
       .filter((w: any) => !baseIds.has(w.id))
+
       .map((w: any) => ({
         ...w,
+
         isIndependent: true,
+
         syncStatus: w.syncStatus || 'LOCAL_ONLY'
       }))
 
-    const allVisible = [...baseWorkouts, ...extras].sort(
+    return [...baseWorkouts, ...extras].sort(
       (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-    console.log('[Dashboard] visibleWorkouts computed', {
-      total: allVisible.length,
-      planWorkouts: baseWorkouts.length,
-      independent: extras.length
-    })
-    return allVisible
   })
 
   // Background Task Monitoring
+
   const { refresh: refreshRuns } = useUserRuns()
+
   const { onTaskCompleted } = useUserRunsState()
 
   // Listeners
-  onTaskCompleted('generate-training-block', async (run) => {
-    console.log('[Dashboard] Task generate-training-block completed', {
-      runId: run.id,
-      status: run.status
-    })
-    emit('refresh')
-    generatingWorkouts.value = false
-    generatingBlockId.value = null
-    toast.add({ title: 'Block Generated', color: 'success' })
 
-    // Wait for refresh to propagate, then trigger structure generation if needed
-    nextTick(() => {
-      if (selectedBlockId.value) {
-        console.log('[Dashboard] Auto-triggering structure generation after block refresh')
-        generateAllStructureForWeek()
-      }
-    })
+  onTaskCompleted('generate-training-block', async (run) => {
+    emit('refresh')
+
+    generatingWorkouts.value = false
+
+    generatingBlockId.value = null
+
+    toast.add({ title: 'Block Generated', color: 'success' })
   })
 
   onTaskCompleted('generate-structured-workout', async (run) => {
-    console.log('[Dashboard] Task generate-structured-workout completed', { runId: run.id })
     emit('refresh')
+
     generatingStructureForWorkoutId.value = null
   })
 
   onTaskCompleted('adapt-training-plan', async (run) => {
-    console.log('[Dashboard] Task adapt-training-plan completed', { runId: run.id })
     emit('refresh')
+
     adapting.value = null
+
     toast.add({
       title: 'Adaptation Complete',
+
       description: 'Your plan has been updated.',
+
       color: 'success'
     })
   })
 
   onTaskCompleted('generate-weekly-plan', async (run) => {
-    console.log('[Dashboard] Task generate-weekly-plan completed', { runId: run.id })
     emit('refresh')
+
     generatingWorkouts.value = false
+
     toast.add({ title: 'Plan Updated', description: 'Check the new schedule.', color: 'info' })
   })
 
   // Computed
+
   const currentBlock = computed(() => {
     // Find block encompassing "today" in user's timezone
+
     const today = getUserLocalDate()
+
     const todayTime = today.getTime()
 
-    const found =
+    return (
       props.plan.blocks.find((b: any) => {
         const start = new Date(b.startDate).getTime()
+
         const end = start + b.durationWeeks * 7 * 24 * 3600 * 1000 - 1
+
         return todayTime >= start && todayTime <= end
       }) || props.plan.blocks[0]
-
-    console.log('[Dashboard] currentBlock computed', { name: found?.name, id: found?.id })
-    return found
+    )
   })
 
   const selectedBlock = computed(() => {
-    const block = props.plan.blocks.find((b: any) => b.id === selectedBlockId.value)
-    console.log('[Dashboard] selectedBlock computed', {
-      id: selectedBlockId.value,
-      name: block?.name,
-      weeksCount: block?.weeks?.length
-    })
-    return block
+    return props.plan.blocks.find((b: any) => b.id === selectedBlockId.value)
   })
 
   const selectedWeek = computed(() => {
-    const week = selectedBlock.value?.weeks.find((w: any) => w.id === selectedWeekId.value)
-    console.log('[Dashboard] selectedWeek computed', {
-      id: selectedWeekId.value,
-      weekNumber: week?.weekNumber,
-      hasWorkouts: !!week?.workouts?.length
-    })
-    return week
+    return selectedBlock.value?.weeks.find((w: any) => w.id === selectedWeekId.value)
   })
 
   const totalWeeksInPlan = computed(() => {
