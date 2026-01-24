@@ -109,6 +109,80 @@ webhookStatsCommand
       if (totalCount > 0) {
         console.log(`Error Rate: ${((totalFailed / totalCount) * 100).toFixed(2)}%`)
       }
+
+      // --- Last 7 Days Daily Breakdown ---
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      sevenDaysAgo.setHours(0, 0, 0, 0)
+
+      const dailyStats: any[] = await prisma.$queryRaw`
+        SELECT 
+          DATE("createdAt") as day, 
+          COUNT(*)::int as count, 
+          COUNT(*) FILTER (WHERE status = 'FAILED')::int as failed_count
+        FROM "WebhookLog"
+        WHERE "createdAt" >= ${sevenDaysAgo}
+        GROUP BY 1
+        ORDER BY 1 DESC
+      `
+
+      const olderCount = await prisma.webhookLog.count({
+        where: { createdAt: { lt: sevenDaysAgo } }
+      })
+
+      console.log(chalk.bold('\nLast 7 Days Breakdown:'))
+      if (Array.isArray(dailyStats)) {
+        dailyStats.forEach((stat) => {
+          const dateStr = new Date(stat.day).toISOString().split('T')[0]
+          const failedStr =
+            stat.failed_count > 0
+              ? chalk.red(`${stat.failed_count} failed`)
+              : chalk.green('0 failed')
+          console.log(
+            `${chalk.white(dateStr.padEnd(12))}: ${String(stat.count).padEnd(6)} (${failedStr})`
+          )
+        })
+      }
+      console.log(`${chalk.gray('Older'.padEnd(12))}: ${olderCount}`)
+
+      // --- Provider Breakdown ---
+      const providerStats: any[] = await prisma.$queryRaw`
+        SELECT 
+          provider, 
+          COUNT(*)::int as total,
+          COUNT(*) FILTER (WHERE status = 'PROCESSED')::int as processed,
+          COUNT(*) FILTER (WHERE status = 'FAILED')::int as failed,
+          COUNT(*) FILTER (WHERE status = 'IGNORED')::int as ignored
+        FROM "WebhookLog"
+        GROUP BY provider
+        ORDER BY total DESC
+      `
+
+      console.log(chalk.bold('\nBy Webhook Source:'))
+      console.log(
+        chalk.gray(
+          'Provider'.padEnd(15) +
+            'Total'.padEnd(10) +
+            'Processed'.padEnd(12) +
+            'Failed'.padEnd(10) +
+            'Ignored'.padEnd(10)
+        )
+      )
+      console.log(chalk.gray('-'.repeat(57)))
+
+      if (Array.isArray(providerStats)) {
+        providerStats.forEach((stat) => {
+          console.log(
+            chalk.white(stat.provider.padEnd(15)) +
+              String(stat.total).padEnd(10) +
+              chalk.green(String(stat.processed).padEnd(12)) +
+              (stat.failed > 0
+                ? chalk.red(String(stat.failed).padEnd(10))
+                : chalk.gray(String(stat.failed).padEnd(10))) +
+              chalk.gray(String(stat.ignored).padEnd(10))
+          )
+        })
+      }
     } catch (error: any) {
       console.error(chalk.red('Error fetching stats:'), error.message)
     } finally {
