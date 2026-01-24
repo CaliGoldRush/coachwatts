@@ -7,7 +7,23 @@
           class="flex flex-col items-center justify-center py-8 space-y-4"
         >
           <UIcon name="i-heroicons-arrow-path" class="w-10 h-10 animate-spin text-primary-500" />
-          <p class="text-sm text-gray-500">Generating your personalized check-in...</p>
+
+          <div class="h-6 relative w-full text-center">
+            <Transition
+              mode="out-in"
+              enter-active-class="transition duration-300 ease-out"
+              enter-from-class="transform translate-y-2 opacity-0"
+              enter-to-class="transform translate-y-0 opacity-100"
+              leave-active-class="transition duration-300 ease-in"
+              leave-from-class="transform translate-y-0 opacity-100"
+              leave-to-class="transform -translate-y-2 opacity-0"
+            >
+              <p :key="currentLoadingMessage" class="text-sm text-gray-500 absolute w-full left-0">
+                {{ currentLoadingMessage }}
+              </p>
+            </Transition>
+          </div>
+
           <UButton
             v-if="showManualRefresh"
             label="Taking too long? Click to retry"
@@ -180,12 +196,49 @@
   const localQuestions = ref<any[]>([])
   const expandedQuestions = ref<Set<string>>(new Set())
 
+  // Dynamic Loading Messages
+  const loadingMessages = [
+    'Generating your personalized check-in...',
+    "Crunching the numbers on yesterday's ride...",
+    'Analyzing your heart rate variability...',
+    'Evaluating your training stress balance...',
+    'Checking if you really did those intervals...',
+    'Consulting with your digital physiologist...',
+    'Formulating the perfect questions...'
+  ]
+  const currentLoadingMessage = ref(loadingMessages[0])
+  const loadingMessageIndex = ref(0)
+
   const isPending = computed(() => {
     return checkin.value?.status === 'PENDING' || checkin.value?.status === 'PROCESSING'
   })
 
+  // Rotate loading messages
+  const { pause: pauseMessages, resume: resumeMessages } = useIntervalFn(
+    () => {
+      loadingMessageIndex.value = (loadingMessageIndex.value + 1) % loadingMessages.length
+      currentLoadingMessage.value = loadingMessages[loadingMessageIndex.value]
+    },
+    4000,
+    { immediate: false }
+  )
+
+  watch(
+    () => loading.value || isPending.value,
+    (busy) => {
+      if (busy) {
+        resumeMessages()
+      } else {
+        pauseMessages()
+        // Reset message for next time
+        loadingMessageIndex.value = 0
+        currentLoadingMessage.value = loadingMessages[0]
+      }
+    }
+  )
+
   // Poll while pending
-  const { pause, resume } = useIntervalFn(
+  const { pause: pausePoll, resume: resumePoll } = useIntervalFn(
     async () => {
       if (isOpen.value && isPending.value) {
         await fetchToday(true) // silent fetch
@@ -196,11 +249,11 @@
   )
 
   watch(isPending, (pending) => {
-    if (pending) resume()
-    else pause()
+    if (pending) resumePoll()
+    else pausePoll()
   })
 
-  // Show manual refresh if taking too long
+  // Show manual refresh if taking too long (15s)
   let refreshTimer: NodeJS.Timeout | null = null
   watch(
     () => loading.value || isPending.value,
@@ -210,7 +263,7 @@
         if (refreshTimer) clearTimeout(refreshTimer)
         refreshTimer = setTimeout(() => {
           showManualRefresh.value = true
-        }, 5000)
+        }, 15000)
       } else {
         showManualRefresh.value = false
         if (refreshTimer) clearTimeout(refreshTimer)
@@ -345,7 +398,8 @@
       if (isOpen) {
         fetchToday()
       } else {
-        pause()
+        pausePoll()
+        pauseMessages()
       }
     }
   )
