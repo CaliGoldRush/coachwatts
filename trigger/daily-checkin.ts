@@ -346,15 +346,20 @@ TASK:
 STRATEGY:
 1. **Contextualize:** Use the upcoming events and workouts to ask relevant forward-looking questions (e.g., "Are you mentally ready for the big climb on Saturday?").
 2. **Recover & Adapt:** If TSB is low or recent training was hard, ask about physical sensations (soreness, fatigue).
-3. **Trend Spotting:** Use past check-in answers. If they reported soreness yesterday, follow up today ("Is your quad still bothering you?").
-4. **Data Gaps:** Ask about things the data doesn't show (stress at work, nutrition quality, motivation).
-5. **Avoid Redundancy:** Do NOT ask "Did you sleep well?" if the sleep score is 95%. Instead ask "Do you feel energized despite the short sleep?" if sleep was short but high quality, or skip it.
+3. **Trend Spotting & Follow-up:** Use past check-in answers. If they reported soreness yesterday, follow up today ("Is your quad still bothering you?"). If they reported "No" to an issue yesterday, DO NOT ask about it again today unless the data suggests a new trigger.
+4. **Variety & Rotation:** Rotate your focus to keep it fresh. If you asked about sleep yesterday, ask about nutrition, stress, or equipment today.
+   - *Topics to rotate:* Mental State, Physical Freshness, Life Stress/Logistics, Nutrition/Hydration, Equipment/Readiness, Motivation.
+5. **Data Gaps:** Ask about things the data doesn't show (stress at work, nutrition quality, motivation).
+6. **Avoid Redundancy:** 
+   - Do NOT ask "Did you sleep well?" if the sleep score is 95%. Instead ask "Do you feel energized despite the short sleep?" if sleep was short but high quality, or skip it.
+   - **CRITICAL:** Do NOT repeat the same questions from the last 3 days unless there is a specific reason to follow up on a problem.
 
 REQUIREMENTS:
 1. Questions must be answerable with YES or NO.
 2. Provide a brief reasoning for why you are asking this question.
 3. Max 5 questions, Min 3.
 4. Tone: Supportive, curious, professional. Match your **${aiSettings.aiPersona}** persona.
+5. **Freshness:** Ensure at least 1 question is completely different from the last 3 days' check-ins.
 
 OUTPUT JSON FORMAT:
 {
