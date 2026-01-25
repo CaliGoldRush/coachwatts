@@ -215,13 +215,19 @@ A new page in the Admin panel will visualize:
 
 ## 9. Development Roadmap
 
-### Phase 1: Core & Telegram (MVP)
+### Phase 1: Core & Telegram (MVP) - ✅ COMPLETED
 
-- [ ] Refactor `chatContextService` to be completely decoupled from HTTP Request objects (if not already).
-- [ ] Implement `TelegramAdapter` and Webhook.
-- [ ] Implement Deep Link Auth flow.
-- [ ] Implement `/invite` and `/workout` commands.
-- [ ] Add `Messaging Stats` page to Admin Dashboard.
+- [x] Refactor `chatContextService` to be completely decoupled from HTTP Request objects.
+
+- [x] Implement `TelegramAdapter` and Webhook (`server/utils/telegram.ts`, `webhook.post.ts`).
+
+- [x] Implement Deep Link Auth flow (`link.post.ts`).
+
+- [x] Implement `/invite` and `/workout` commands (Basic logic handled, extended pending).
+
+- [x] Add `Messaging Stats` page to Admin Dashboard (`/admin/stats/messaging`).
+
+- [x] **Dev Tooling:** Added `cw:cli telegram dev` for local polling without ngrok.
 
 ### Phase 2: Discord Support
 
