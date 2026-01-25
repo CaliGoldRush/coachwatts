@@ -29,7 +29,10 @@ Special thanks to everyone who has contributed code, documentation, or feedback 
 - **koldoc** - Testing planned workout synchronization and execution linking.
 - **sanderv2rv** - Feature suggestions for athlete availability and preference handling.
 - **lsolesen** - Bug reporting for data import stability.
-- **Clive_King**, **Back2Basics**, **Jacob_Pescini**, **koldoc** - For their encouragement, testing, and spreading the word.
+- **Wayne_Hadley** - Encouragement and comparative feedback on AI coaching effectiveness.
+- **David_Camilo_Chaves** - Feedback on AI insights and recommendations.
+- **Manuel_Oberti** - Initial testing and UI feedback.
+- **Clive_King**, **Back2Basics**, **Jacob_Pescini**, **koldoc**, **Cooper**, **Arnel_Almazan** - For their encouragement, testing, and spreading the word.
 
 ## 🛠️ Built With
 
