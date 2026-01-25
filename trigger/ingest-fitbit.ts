@@ -83,23 +83,6 @@ export const ingestFitbitTask = task({
 
       for (const date of dates) {
         try {
-          logger.log(`[${date}] Fetching Fitbit nutrition logs...`)
-
-          const foodLog = await fetchFitbitFoodLog(integration, date)
-          // Small delay to avoid immediate back-to-back rate limit hits
-          await new Promise((resolve) => setTimeout(resolve, 300))
-          const waterLog = await fetchFitbitWaterLog(integration, date)
-
-          const foodsCount = foodLog?.foods?.length || 0
-          const calories = foodLog?.summary?.calories || 0
-          const water = waterLog?.summary?.water || 0
-
-          if (foodsCount === 0 && calories === 0 && water === 0) {
-            skippedCount++
-            logger.log(`[${date}] ⊘ Skipping - no nutrition data logged`)
-            continue
-          }
-
           const dateObj = new Date(
             Date.UTC(
               parseInt(date.split('-')[0]!),
@@ -120,6 +103,23 @@ export const ingestFitbitTask = task({
             }
           } else {
             logger.log(`[${date}] Recent date - will update even if data exists`)
+          }
+
+          logger.log(`[${date}] Fetching Fitbit nutrition logs...`)
+
+          const foodLog = await fetchFitbitFoodLog(integration, date)
+          // Small delay to avoid immediate back-to-back rate limit hits
+          await new Promise((resolve) => setTimeout(resolve, 300))
+          const waterLog = await fetchFitbitWaterLog(integration, date)
+
+          const foodsCount = foodLog?.foods?.length || 0
+          const calories = foodLog?.summary?.calories || 0
+          const water = waterLog?.summary?.water || 0
+
+          if (foodsCount === 0 && calories === 0 && water === 0) {
+            skippedCount++
+            logger.log(`[${date}] ⊘ Skipping - no nutrition data logged`)
+            continue
           }
 
           const nutrition = normalizeFitbitNutrition(foodLog, waterLog, foodGoals, userId, date)
