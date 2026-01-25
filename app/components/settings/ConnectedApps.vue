@@ -404,6 +404,46 @@
       </div>
     </UCard>
 
+    <!-- Telegram -->
+    <UCard :ui="{ body: 'flex flex-col h-full justify-between gap-4' }">
+      <div class="flex items-start gap-4">
+        <div
+          class="w-12 h-12 bg-white rounded-lg flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"
+        >
+          <UIcon name="i-simple-icons-telegram" class="w-8 h-8 text-[#26A5E4]" />
+        </div>
+        <div>
+          <h3 class="font-semibold">Telegram</h3>
+          <p class="text-sm text-muted">Chat with your AI Coach on the go</p>
+        </div>
+      </div>
+
+      <div
+        class="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto"
+      >
+        <div v-if="!telegramConnected">
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-heroicons-paper-airplane"
+            @click="$emit('connect-telegram')"
+          >
+            Connect Bot
+          </UButton>
+        </div>
+        <div v-else class="flex items-center gap-2">
+          <UBadge color="success" variant="soft" size="sm">Connected</UBadge>
+          <UButton
+            color="error"
+            variant="ghost"
+            size="sm"
+            icon="i-heroicons-trash"
+            @click="$emit('disconnect', 'telegram')"
+          />
+        </div>
+      </div>
+    </UCard>
+
     <UModal v-model:open="advancedSyncModalOpen" title="Advanced Sync">
       <template #body>
         <div class="space-y-4">
@@ -449,6 +489,7 @@
     fitbitConnected: boolean
     stravaConnected: boolean
     hevyConnected: boolean
+    telegramConnected: boolean
     syncingProviders: Set<string>
   }>()
 
@@ -459,6 +500,7 @@
     disconnect: [provider: string]
     sync: [provider: string, days?: number]
     'sync-profile': [provider: string]
+    'connect-telegram': []
     updateSetting: [provider: string, setting: string, value: any]
   }>()
 

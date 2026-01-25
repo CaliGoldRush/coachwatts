@@ -23,10 +23,12 @@
       :fitbit-connected="fitbitConnected"
       :strava-connected="stravaConnected"
       :hevy-connected="hevyConnected"
+      :telegram-connected="telegramConnected"
       :syncing-providers="syncingProviders"
       @disconnect="disconnectIntegration"
       @sync="syncIntegration"
       @sync-profile="syncProfile"
+      @connect-telegram="connectTelegram"
       @update-setting="updateIntegrationSetting"
     />
   </div>
@@ -101,7 +103,29 @@
     () => integrationStatus.value?.integrations?.some((i: any) => i.provider === 'hevy') ?? false
   )
 
+  const telegramConnected = computed(
+    () =>
+      integrationStatus.value?.integrations?.some((i: any) => i.provider === 'telegram') ?? false
+  )
+
   const syncingProviders = ref(new Set<string>())
+
+  const connectTelegram = async () => {
+    try {
+      const res: any = await $fetch('/api/integrations/telegram/link', {
+        method: 'POST'
+      })
+      if (res.url) {
+        window.open(res.url, '_blank')
+      }
+    } catch (error: any) {
+      toast.add({
+        title: 'Connection Failed',
+        description: error.data?.message || 'Failed to generate Telegram link',
+        color: 'error'
+      })
+    }
+  }
 
   const syncProfile = async (provider: string) => {
     try {
@@ -145,9 +169,11 @@
                 ? 'Yazio'
                 : provider === 'fitbit'
                   ? 'Fitbit'
-                : provider === 'hevy'
-                  ? 'Hevy'
-                  : 'Strava'
+                  : provider === 'hevy'
+                    ? 'Hevy'
+                    : provider === 'telegram'
+                      ? 'Telegram'
+                      : 'Strava'
 
       toast.add({
         title: 'Sync Started',
@@ -193,7 +219,9 @@
                 ? 'Yazio'
                 : provider === 'fitbit'
                   ? 'Fitbit'
-                : 'Strava'
+                  : provider === 'telegram'
+                    ? 'Telegram'
+                    : 'Strava'
 
       toast.add({
         title: 'Disconnected',
