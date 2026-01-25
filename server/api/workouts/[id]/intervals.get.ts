@@ -167,11 +167,41 @@ export default defineEventHandler(async (event) => {
   const effectiveFtp = workout.ftp || user.ftp
 
   // 1. Detect Intervals
-  // Priority: Power > Pace (Velocity) > HR
+  // Priority: Use Intervals.icu data > Power > Pace (Velocity) > HR
   let detectedIntervals: any[] = []
   let detectionMetric = ''
 
-  if (hasWatts) {
+  const raw = workout.rawJson as any
+  const icuIntervals = raw?.icu_intervals || raw?.intervals
+
+  if (icuIntervals && Array.isArray(icuIntervals) && icuIntervals.length > 0) {
+    // USE SYNCED DATA
+    detectionMetric = 'intervals.icu' // Label to indicate source
+
+    detectedIntervals = icuIntervals.map((i: any) => {
+      // Map Intervals.icu format to our internal format
+      // Intervals.icu 'start_index' is array index. 'start_time' is seconds.
+      return {
+        start_index: i.start_index,
+        end_index: i.end_index,
+        start_time: i.start_time,
+        end_time: i.end_time,
+        duration: i.duration || i.end_time - i.start_time,
+        type: i.type, // WORK, RECOVERY, etc.
+
+        // Metrics
+        avg_power: i.average_watts,
+        max_power: i.max_watts,
+        avg_heartrate: i.average_heartrate,
+        max_heartrate: i.max_heartrate,
+        avg_pace: i.average_speed, // m/s
+        avg_cadence: i.average_cadence,
+        distance: i.distance,
+
+        label: i.label // e.g. "10m 200w"
+      }
+    })
+  } else if (hasWatts) {
     // Detect based on Power
     detectionMetric = 'power'
     // Use FTP as threshold if available, otherwise auto-baseline

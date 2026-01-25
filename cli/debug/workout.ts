@@ -30,6 +30,7 @@ troubleshootWorkoutsCommand
   .option('--source <source>', 'Filter by source (intervals, strava, etc.)', 'intervals')
   .option('--check-streams', 'Verify streams against external API and DB')
   .option('--re-sync-streams', 'Re-fetch and recalculate stream data from external API')
+  .option('--re-sync-activity', 'Force re-fetch of detailed activity data (including intervals)')
   .option('-v, --verbose', 'Show all fields even if they match')
   .action(async (url, options) => {
     let workoutId = options.id
@@ -126,6 +127,39 @@ troubleshootWorkoutsCommand
       let totalDiscrepancies = 0
 
       for (const w of workouts) {
+        // RE-SYNC ACTIVITY LOGIC
+        if (options.reSyncActivity && w.source === 'intervals') {
+          console.log(chalk.bold.yellow(`\n=== Re-Syncing Activity (Detailed) ===`))
+          try {
+            // Re-sync this specific workout date range (start = date, end = date)
+            // IntervalsService.syncActivities expects dates.
+            // We use the workout date.
+            const date = new Date(w.date)
+            const startDate = new Date(date)
+            startDate.setHours(0, 0, 0, 0)
+            const endDate = new Date(date)
+            endDate.setHours(23, 59, 59, 999)
+
+            console.log(
+              chalk.gray(`Syncing range: ${startDate.toISOString()} - ${endDate.toISOString()}`)
+            )
+
+            // We need to await this
+            const result = await IntervalsService.syncActivities(w.userId, startDate, endDate)
+            console.log(chalk.green(`✓ Successfully re-synced ${result} activities.`))
+
+            // Re-fetch the workout from DB to show updated data
+            const updatedW = await prisma.workout.findUnique({ where: { id: w.id } })
+            if (updatedW) {
+              // Update local 'w' reference for further checks if possible, or just log
+              w.rawJson = updatedW.rawJson
+              console.log(chalk.green(`✓ Refreshed local workout record.`))
+            }
+          } catch (err: any) {
+            console.log(chalk.red(`❌ Error during activity re-sync: ${err.message}`))
+          }
+        }
+
         console.log(
           chalk.bold.cyan(`
 === Workout Details ===`)
@@ -144,6 +178,16 @@ troubleshootWorkoutsCommand
 
         const raw: any = w.rawJson
         console.log(`Intervals Source: ${chalk.yellow(raw.source || 'Unknown')}`)
+
+        // Check for Intervals.icu specific detailed data
+        if (raw.icu_intervals && Array.isArray(raw.icu_intervals) && raw.icu_intervals.length > 0) {
+          console.log(
+            chalk.green(`✅ Intervals Data: Present (${raw.icu_intervals.length} intervals)`)
+          )
+        } else {
+          console.log(chalk.yellow(`⚠️ Intervals Data: Missing (icu_intervals not found or empty)`))
+        }
+
         console.log(chalk.gray(`Original data captured: Yes (rawJson present)`))
 
         const checks: { label: string; db: any; raw: any; tolerance: number; unit?: string }[] = []

@@ -495,6 +495,49 @@ export async function fetchIntervalsWorkouts(
   return await response.json()
 }
 
+export async function fetchIntervalsActivity(
+  integration: Integration,
+  activityId: string
+): Promise<IntervalsActivity> {
+  const headers = getIntervalsHeaders(integration)
+  const url = `https://intervals.icu/api/v1/activity/${activityId}`
+
+  console.log(`[Intervals Sync] Fetching detailed activity from: ${url}`)
+
+  const response = await fetchWithRetry(url, { headers })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error(`[Intervals Sync] ❌ Error fetching activity ${activityId}: ${errorText}`)
+    throw new Error(`Intervals API error: ${response.status} ${response.statusText}`)
+  }
+
+  const activity = await response.json()
+
+  // Also fetch the intervals analysis which is often separate or missing from main payload
+  try {
+    const intervalsUrl = `https://intervals.icu/api/v1/activity/${activityId}/intervals`
+    console.log(`[Intervals Sync] Fetching intervals analysis from: ${intervalsUrl}`)
+    const intervalsResponse = await fetchWithRetry(intervalsUrl, { headers })
+
+    if (intervalsResponse.ok) {
+      const intervalsData = await intervalsResponse.json()
+      if (intervalsData && Array.isArray(intervalsData.icu_intervals)) {
+        console.log(
+          `[Intervals Sync] Merging ${intervalsData.icu_intervals.length} intervals into activity`
+        )
+        activity.icu_intervals = intervalsData.icu_intervals
+        activity.icu_groups = intervalsData.icu_groups
+      }
+    }
+  } catch (error) {
+    console.warn(`[Intervals Sync] Failed to fetch intervals analysis for ${activityId}:`, error)
+    // Continue without intervals, don't fail the whole sync
+  }
+
+  return activity
+}
+
 export async function fetchIntervalsAthlete(
   accessToken: string,
   athleteId?: string
@@ -1242,9 +1285,23 @@ export async function fetchIntervalsActivityStreams(
   if (Array.isArray(data)) {
     for (const item of data) {
       if (item.type && item.data) {
-        // Special handling for latlng which might be split into lat and lon in some versions,
-        // but here we map the common ones.
-        streams[item.type] = { type: item.type, data: item.data }
+        // Special handling for latlng
+        if (item.type === 'latlng') {
+          // Validate structure: must be array of arrays [[lat, lng], ...]
+          // Intervals sometimes returns a flat array of latitudes labeled as 'latlng' (bug?)
+          if (Array.isArray(item.data) && item.data.length > 0) {
+            const firstPoint = item.data[0]
+            if (Array.isArray(firstPoint) && firstPoint.length >= 2) {
+              streams.latlng = { type: 'latlng', data: item.data }
+            } else {
+              console.warn(
+                `[Intervals Sync] Invalid latlng format detected (expected tuples, got scalars). Discarding map data.`
+              )
+            }
+          }
+        } else {
+          streams[item.type] = { type: item.type, data: item.data }
+        }
       }
     }
 

@@ -87,6 +87,24 @@ export const analyzePlanAdherenceTask = task({
       - Norm Power: ${workout.normalizedPower || 'N/A'}W
       - Avg HR: ${workout.averageHr || 'N/A'}bpm
       - Description: ${workout.description || 'N/A'}
+      - Intervals Data: ${(() => {
+        const raw = workout.rawJson as any
+        if (raw?.icu_intervals && Array.isArray(raw.icu_intervals)) {
+          // Provide summary of intervals for AI analysis
+          return JSON.stringify(
+            raw.icu_intervals.map((i: any) => ({
+              type: i.type,
+              duration: i.duration,
+              avgWatts: i.average_watts,
+              avgHr: i.average_heartrate,
+              distance: i.distance,
+              pace: i.pace,
+              avgGrade: i.average_grade
+            }))
+          ).substring(0, 3000)
+        }
+        return 'N/A'
+      })()}
       
       USER CONTEXT:
       - FTP: ${workout.user.ftp || 'N/A'}W

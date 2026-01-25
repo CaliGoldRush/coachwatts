@@ -494,7 +494,21 @@ export const IntervalsService = {
     ])
 
     // Identify orphans (Local IDs NOT present in Remote Response)
-    const orphans = [...allLocalIds].filter((id) => !validExternalIds.has(id))
+    // SAFETY: Only consider numeric IDs as "Intervals IDs".
+    // If an ID is non-numeric (e.g. "ai-gen-...", "adhoc-...", or UUID), it is a local workout
+    // that hasn't been synced yet, so we MUST NOT delete it.
+    const orphans = [...allLocalIds].filter((id) => {
+      // If it exists in remote, keep it (not an orphan)
+      if (validExternalIds.has(id)) return false
+
+      // If it's missing from remote, check if it's a local ID
+      // Intervals.icu IDs are strictly numeric.
+      const isIntervalsId = /^\d+$/.test(id)
+
+      // If it looks like an Intervals ID but is missing, it's a ghost -> Delete (return true)
+      // If it's non-numeric, it's local -> Keep (return false)
+      return isIntervalsId
+    })
 
     if (orphans.length > 0) {
       console.log(
