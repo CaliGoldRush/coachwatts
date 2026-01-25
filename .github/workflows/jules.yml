@@ -36,7 +36,8 @@ jobs:
             ${{ github.event_name == 'issue_comment' && format('User Instruction: {0}', github.event.comment.body) || '' }}
 
             Constraints & Instructions:
-            - Read GEMINI.md and RULES.md to understand the project conventions and guidelines.
+            - Read GEMINI.md, RULES.md, and sub-documents under docs/ to understand the project conventions, guidelines, and existing patterns.
+            - When dealing with Nuxt or Nuxt UI components, you MUST read the up-to-date documentation located in .gemini/skills/nuxt and .gemini/skills/nuxt-ui (including SKILL.md and references).
             - Do NOT pull docker containers.
             - Do NOT test the web UI manually or via E2E (the user will test it).
             - Write unit tests when possible.

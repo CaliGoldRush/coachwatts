@@ -34,3 +34,4 @@
 - Resolved `DailyCheckin` schema drift where `userNotes` column was missing in Prod/migrations but present in schema/local. Fixed by manually creating the migration file and resolving it locally. Enforced `npx prisma migrate dev` workflow in `RULES.md` to prevent recurrence.
 - The project uses `pnpm` as the primary package manager in the development environment. All dependency management and script execution should be performed using `pnpm`.
 - Server logs can be found in `./logs/dev.log` (the file is overwritten every time the developer fully restarts the server).
+- Updated Jules Agent instructions in `.github/workflows/jules.yml` to ensure it reads up-to-date documentation for Nuxt/Nuxt UI in `.gemini/skills/` and project patterns in `GEMINI.md`, `RULES.md`, and `docs/`.
