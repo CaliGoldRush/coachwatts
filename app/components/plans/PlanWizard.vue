@@ -516,6 +516,70 @@
           </div>
         </div>
 
+        <!-- 3.6 Starting Readiness (NEW) -->
+        <div class="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <div>
+            <label class="block text-sm font-bold">Starting Point</label>
+            <p class="text-xs text-muted">What is your current fitness readiness?</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              class="p-3 rounded-lg border-2 text-left transition-all flex flex-col gap-2"
+              :class="
+                startingPhase === 'BASE'
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+              "
+              @click="startingPhase = 'BASE'"
+            >
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-green-500" />
+                <span class="font-bold text-sm">Fresh Start</span>
+              </div>
+              <div class="text-xs text-muted">
+                Start from the beginning with Base training. Best for building aerobic foundation.
+              </div>
+            </button>
+
+            <button
+              class="p-3 rounded-lg border-2 text-left transition-all flex flex-col gap-2"
+              :class="
+                startingPhase === 'BUILD'
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+              "
+              @click="startingPhase = 'BUILD'"
+            >
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-arrow-trending-up" class="w-5 h-5 text-amber-500" />
+                <span class="font-bold text-sm">Development Ready</span>
+              </div>
+              <div class="text-xs text-muted">
+                Skip Base phase. Jump straight into Build (Threshold/VO2) work. For active athletes.
+              </div>
+            </button>
+
+            <button
+              class="p-3 rounded-lg border-2 text-left transition-all flex flex-col gap-2"
+              :class="
+                startingPhase === 'PEAK'
+                  ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                  : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+              "
+              @click="startingPhase = 'PEAK'"
+            >
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-trophy" class="w-5 h-5 text-red-500" />
+                <span class="font-bold text-sm">Competition Ready</span>
+              </div>
+              <div class="text-xs text-muted">
+                Final preparation only. Focus on race specificity and tapering.
+              </div>
+            </button>
+          </div>
+        </div>
+
         <!-- 4. Timeline -->
         <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg space-y-4">
           <div class="flex items-center justify-between">
@@ -557,48 +621,45 @@
         </div>
       </div>
 
-      <!-- Step 3: Phase Selection -->
+      <!-- Step 3: Review Timeline -->
       <div v-else-if="step === 3" class="space-y-6">
         <div class="flex items-center gap-3 mb-2">
           <UButton icon="i-heroicons-arrow-left" variant="ghost" size="sm" @click="step = 2" />
-          <h3 class="text-xl font-semibold">Step 3: Select Starting Phase</h3>
+          <h3 class="text-xl font-semibold">Step 3: Review Timeline</h3>
         </div>
 
         <div v-if="generatedPlan" class="space-y-6">
+          <!-- AI Rationale -->
+          <div
+            v-if="generatedPlan.description"
+            class="bg-primary/5 p-4 rounded-lg flex items-start gap-3 border border-primary/10"
+          >
+            <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+            <div class="text-sm text-primary/90 italic leading-relaxed">
+              &ldquo;{{ generatedPlan.description }}&rdquo;
+            </div>
+          </div>
+
           <p class="text-sm text-muted">
-            Based on your timeline, we've designed these training phases. You can choose to start
-            from any phase if you're already in mid-season form.
+            Based on your starting point ({{ startingPhase }}) and timeline, we've designed this
+            schedule.
           </p>
 
           <div class="space-y-4">
-            <button
+            <div
               v-for="block in generatedPlan.blocks"
               :key="block.id"
-              class="w-full border-2 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center transition-all text-left"
-              :class="
-                startingBlockId === block.id
-                  ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary'
-                  : 'border-gray-200 dark:border-gray-800 hover:border-primary/50'
-              "
-              @click="startingBlockId = block.id"
+              class="w-full border-2 border-gray-200 dark:border-gray-800 rounded-lg p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white dark:bg-gray-900"
             >
               <div class="flex items-center gap-3 w-full">
                 <div
-                  class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                  :class="
-                    startingBlockId === block.id
-                      ? 'border-primary bg-primary'
-                      : 'border-gray-300 dark:border-gray-600'
-                  "
+                  class="w-6 h-6 rounded-full border-2 border-primary bg-primary flex items-center justify-center flex-shrink-0"
                 >
-                  <div v-if="startingBlockId === block.id" class="w-2 h-2 rounded-full bg-white" />
+                  <div class="w-2 h-2 rounded-full bg-white" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex justify-between items-center">
-                    <h4
-                      class="font-bold truncate"
-                      :class="startingBlockId === block.id ? 'text-primary' : ''"
-                    >
+                    <h4 class="font-bold truncate text-gray-900 dark:text-white">
                       {{ block.name.split('[')[0].trim() }}
                     </h4>
                     <UBadge size="xs" color="neutral" variant="soft">{{ block.type }}</UBadge>
@@ -614,9 +675,39 @@
                       Starts: {{ formatDate(block.startDate, 'MMM d') }}
                     </span>
                   </div>
+
+                  <!-- Events in this Block -->
+                  <div
+                    v-if="getEventsInBlock(block).length > 0"
+                    class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2"
+                  >
+                    <div class="text-[10px] font-bold uppercase text-muted tracking-wider">
+                      Key Events
+                    </div>
+                    <div
+                      v-for="event in getEventsInBlock(block)"
+                      :key="event.id"
+                      class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 p-2 rounded border border-gray-100 dark:border-gray-800"
+                    >
+                      <UBadge
+                        :color="event.priority === 'A' ? 'primary' : 'neutral'"
+                        size="xs"
+                        variant="solid"
+                        class="w-5 h-5 flex items-center justify-center p-0"
+                      >
+                        {{ event.priority }}
+                      </UBadge>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-xs font-bold truncate">{{ event.title }}</div>
+                        <div class="text-[10px] text-muted">
+                          {{ formatDate(event.date, 'EEE, MMM d') }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </button>
+            </div>
           </div>
         </div>
       </div>
@@ -756,6 +847,17 @@
         </div>
 
         <div v-if="generatedPlan" class="space-y-6">
+          <!-- AI Rationale -->
+          <div
+            v-if="generatedPlan.description"
+            class="bg-primary/5 p-4 rounded-lg flex items-start gap-3 border border-primary/10"
+          >
+            <UIcon name="i-heroicons-sparkles" class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+            <div class="text-sm text-primary/90 italic leading-relaxed">
+              &ldquo;{{ generatedPlan.description }}&rdquo;
+            </div>
+          </div>
+
           <div
             class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-sm text-blue-800 dark:text-blue-200"
           >
@@ -917,6 +1019,7 @@
   const volumeHours = ref(6) // Default 6 hours
   const strategy = ref('LINEAR')
   const recoveryRhythm = ref(4) // Default 3:1
+  const startingPhase = ref('BASE')
 
   // Determine age-based recommendation
   const userAge = computed(() => {
@@ -959,18 +1062,14 @@
   ]
 
   // Step 3 State (NEW)
-  const startingBlockId = ref<string | null>(null)
   const selectedBlock = computed(() => {
     if (!generatedPlan.value?.blocks) return null
-    return (
-      generatedPlan.value.blocks.find((b: any) => b.id === startingBlockId.value) ||
-      generatedPlan.value.blocks[0]
-    )
+    return generatedPlan.value.blocks[0]
   })
 
   const filteredBlocks = computed(() => {
-    if (!generatedPlan.value?.blocks || !selectedBlock.value) return []
-    return generatedPlan.value.blocks.filter((b: any) => b.order >= selectedBlock.value.order)
+    if (!generatedPlan.value?.blocks) return []
+    return generatedPlan.value.blocks
   })
 
   // Step 4 State
@@ -1136,6 +1235,20 @@
     }
   }
 
+  function getEventsInBlock(block: any) {
+    if (!selectedGoal.value?.events) return []
+
+    const blockStart = new Date(block.startDate).getTime()
+    const blockEnd = blockStart + block.durationWeeks * 7 * 24 * 60 * 60 * 1000
+
+    return selectedGoal.value.events
+      .filter((e: any) => {
+        const eDate = new Date(e.date).getTime()
+        return eDate >= blockStart && eDate < blockEnd
+      })
+      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }
+
   function recommendStrategy() {
     // Simple logic for now, could be LLM powered later
     if (volumeHours.value > 10) {
@@ -1199,12 +1312,12 @@
           strategy: strategy.value,
           preferredActivityTypes: selectedActivityTypes.value,
           customInstructions: customInstructions.value,
-          recoveryRhythm: recoveryRhythm.value
+          recoveryRhythm: recoveryRhythm.value,
+          startingPhase: startingPhase.value
         }
       })
 
       generatedPlan.value = response.plan
-      startingBlockId.value = response.plan.blocks[0]?.id
       step.value = 3
     } catch (error: any) {
       toast.add({
@@ -1225,8 +1338,7 @@
       await $fetch(`/api/plans/${generatedPlan.value.id}/activate`, {
         method: 'POST',
         body: {
-          startDate: selectedBlock.value?.startDate || generatedPlan.value.startDate,
-          startingBlockId: startingBlockId.value,
+          startDate: generatedPlan.value.startDate,
           anchorWorkoutIds: anchorWorkoutIds.value
         }
       })
