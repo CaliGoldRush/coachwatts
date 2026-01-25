@@ -40,6 +40,15 @@ export async function syncPlannedWorkoutToIntervals(
         result = await createIntervalsPlannedWorkout(integration, workoutData)
         break
       case 'UPDATE':
+        // If externalId is local (non-numeric), we can't update it on Intervals.
+        // TODO: Should we CREATE it instead? For now, skip to avoid 404/429.
+        if (!/^\d+$/.test(workoutData.externalId)) {
+          return {
+            success: true,
+            synced: false,
+            message: 'Skipped Intervals sync for local-only workout (non-numeric ID).'
+          }
+        }
         result = await updateIntervalsPlannedWorkout(
           integration,
           workoutData.externalId,
@@ -47,6 +56,14 @@ export async function syncPlannedWorkoutToIntervals(
         )
         break
       case 'DELETE':
+        // If externalId is local (non-numeric), it doesn't exist on Intervals.
+        if (!/^\d+$/.test(workoutData.externalId)) {
+          return {
+            success: true,
+            synced: false,
+            message: 'Local workout deleted locally. Skipped Intervals sync.'
+          }
+        }
         result = await deleteIntervalsPlannedWorkout(integration, workoutData.externalId)
         break
       default:
