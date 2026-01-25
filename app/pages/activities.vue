@@ -34,6 +34,17 @@
             </UButton>
 
             <UButton
+              icon="i-heroicons-trash"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              class="font-bold"
+              @click="showBulkDeleteModal = true"
+            >
+              <span class="hidden sm:inline">Manage</span>
+            </UButton>
+
+            <UButton
               icon="i-heroicons-arrow-path"
               color="neutral"
               variant="outline"
@@ -698,6 +709,8 @@
 
   <DeduplicateModal v-model:open="showDeduplicateModal" @updated="() => refresh()" />
 
+  <BulkDeleteModal v-model="showBulkDeleteModal" @deleted="refresh" />
+
   <WellnessModal
     v-if="showWellnessModal"
     v-model:open="showWellnessModal"
@@ -803,6 +816,7 @@
   import WorkoutMatcher from '~/components/workouts/WorkoutMatcher.vue'
   import MiniWorkoutChart from '~/components/workouts/MiniWorkoutChart.vue'
   import DeduplicateModal from '~/components/activities/DeduplicateModal.vue'
+  import BulkDeleteModal from '~/components/workouts/BulkDeleteModal.vue'
   import { getDefaultSportSettings } from '~/utils/sportSettings'
 
   definePageMeta({
@@ -835,6 +849,7 @@
 
   // Modal state
   const showDeduplicateModal = ref(false)
+  const showBulkDeleteModal = ref(false)
   const showPlannedWorkoutModal = ref(false)
   const selectedPlannedWorkout = ref<any>(null)
   const showWorkoutModal = ref(false)
