@@ -148,6 +148,17 @@
               View Invoices
             </UButton>
 
+            <UButton
+              v-if="userStore.user?.stripeCustomerId"
+              color="neutral"
+              variant="ghost"
+              :loading="syncing"
+              @click="handleSync"
+            >
+              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
+              Sync Status
+            </UButton>
+
             <p
               v-if="userStore.user?.subscriptionTier === 'FREE'"
               class="text-xs text-neutral-500 italic mt-2 w-full"
@@ -232,6 +243,7 @@
   const { openCustomerPortal } = useStripe()
 
   const loadingPortal = ref(false)
+  const syncing = ref(false)
   const showSuccessMessage = ref(route.query.success === 'true')
   const showCanceledMessage = ref(route.query.canceled === 'true')
 
@@ -331,5 +343,29 @@
     loadingPortal.value = true
     await openCustomerPortal(window.location.href)
     loadingPortal.value = false
+  }
+
+  async function handleSync() {
+    syncing.value = true
+    try {
+      await $fetch('/api/stripe/sync', { method: 'POST' })
+      await userStore.fetchUser()
+
+      const toast = useToast()
+      toast.add({
+        title: 'Subscription Synced',
+        description: 'Your subscription status has been updated from Stripe.',
+        color: 'success'
+      })
+    } catch (e) {
+      const toast = useToast()
+      toast.add({
+        title: 'Sync Failed',
+        description: 'Could not sync subscription status. Please try again later.',
+        color: 'error'
+      })
+    } finally {
+      syncing.value = false
+    }
   }
 </script>
