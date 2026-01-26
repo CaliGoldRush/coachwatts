@@ -22,7 +22,12 @@
     },
     "trigger": {
       "command": "npx",
-      "args": ["trigger.dev@latest", "mcp", "--api-url", "https://trigger.newpush.com/"]
+      "args": [
+        "trigger.dev@latest",
+        "mcp",
+        "--api-url",
+        "https://trigger.newpush.com/"
+      ]
     },
     "chrome-devtools": {
       "command": "npx",
@@ -36,7 +41,10 @@
     },
     "analytics-mcp": {
       "command": "pipx",
-      "args": ["run", "analytics-mcp"],
+      "args": [
+        "run",
+        "analytics-mcp"
+      ],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "/Users/hdkiller/.secrets/application_default_credentials.json",
         "GOOGLE_PROJECT_ID": "coach-app-481412"
@@ -81,7 +89,12 @@
       "Bash(tsx:*)",
       "Bash(rm:*)"
     ],
-    "deny": ["Read(./.env)", "Read(./.env.local)", "Read(./.env.production)", "Read(./secrets/**)"]
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.production)",
+      "Read(./secrets/**)"
+    ]
   },
   "hooks": {
     "AfterTool": [

@@ -10,6 +10,24 @@ datasource db {
 }
 
 // --------------------------------------
+// Subscription Enums
+// --------------------------------------
+
+enum SubscriptionTier {
+  FREE
+  SUPPORTER
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED      // User canceled, but period hasn't ended yet
+  PAST_DUE      // Payment failed, retrying
+  UNPAID        // Payment failed multiple times
+  NONE          // Never subscribed or fully expired
+}
+
+// --------------------------------------
 // User & Auth (NuxtAuth / NextAuth Standard)
 // --------------------------------------
 
@@ -66,9 +84,19 @@ model User {
   aiModelPreference    String?  @default("flash") // "flash" (faster, cheaper) or "pro" (higher quality, more expensive)
   aiAutoAnalyzeWorkouts Boolean @default(false) // Auto-analyze workouts on sync
   aiAutoAnalyzeNutrition Boolean @default(false) // Auto-analyze nutrition logs on sync
+  aiAutoAnalyzeReadiness Boolean @default(false) // Auto-analyze readiness on dashboard
   aiContext            String?  @db.Text
   nutritionTrackingEnabled Boolean @default(true) // User can disable nutrition tracking
   recoverySensitivity String? @default("MEDIUM") // "LOW", "MEDIUM", "HIGH"
+  aiProactivityEnabled Boolean @default(false) // New: Enable proactive AI suggestions
+  aiDeepAnalysisEnabled Boolean @default(false) // New: Enable deep reasoning for analysis
+
+  // Subscription Fields
+  stripeCustomerId       String?   @unique // The customer ID in Stripe
+  stripeSubscriptionId   String?   @unique // The active subscription ID
+  subscriptionTier       SubscriptionTier @default(FREE)
+  subscriptionStatus     SubscriptionStatus @default(NONE)
+  subscriptionPeriodEnd  DateTime? // Access is valid until this date
 
   // Athlete Profile Scores (1-10 scale, updated periodically from profile generation)
   currentFitnessScore       Int?      // Current overall fitness level
@@ -142,6 +170,7 @@ model User {
   sportSettings SportSettings[]
 
   @@index([createdAt])
+  @@index([subscriptionTier])
 }
 
 // --------------------------------------

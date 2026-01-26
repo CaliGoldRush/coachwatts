@@ -154,6 +154,17 @@ export default defineNuxtConfig({
 
     // Redis / DragonflyDB
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+
+    // Stripe Configuration
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    stripeSupporterProductId: process.env.STRIPE_SUPPORTER_PRODUCT_ID || '',
+    stripeSupporterMonthlyPriceId: process.env.STRIPE_SUPPORTER_MONTHLY_PRICE_ID || '',
+    stripeSupporterAnnualPriceId: process.env.STRIPE_SUPPORTER_ANNUAL_PRICE_ID || '',
+    stripeProProductId: process.env.STRIPE_PRO_PRODUCT_ID || '',
+    stripeProMonthlyPriceId: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
+    stripeProAnnualPriceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '',
+
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3099',
       version: pkg.version,
@@ -163,6 +174,7 @@ export default defineNuxtConfig({
       authBypassEnabled: !!process.env.AUTH_BYPASS_USER,
       authBypassUser: process.env.AUTH_BYPASS_USER || '',
       authBypassName: process.env.AUTH_BYPASS_NAME || '',
+      stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
       gtag: {
         id: 'GTM-WJK5K3HK'
       }
@@ -226,7 +238,8 @@ export default defineNuxtConfig({
       '/api/integrations/withings/webhook',
       '/api/integrations/whoop/webhook',
       '/api/integrations/intervals/webhook',
-      '/api/integrations/fitbit/webhook'
+      '/api/integrations/fitbit/webhook',
+      '/api/stripe/webhook'
     ],
     retryAfterHeader: true
   }
