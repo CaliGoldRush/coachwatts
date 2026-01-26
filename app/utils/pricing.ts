@@ -54,6 +54,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     description: 'Your full-service Digital Twin and Coach.',
     features: [
       'Everything in Supporter',
+      'Access to Pro models',
       'Deep Reasoning AI engine',
       'Proactive AI coaching',
       'Priority processing',
