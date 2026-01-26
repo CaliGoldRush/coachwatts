@@ -794,38 +794,50 @@ When analyzing "Execution" and "Effort", specifically reference how well the ath
   }
 
   // Only include power metrics for cardio workouts where they're relevant
-  if (
-    isCardio &&
-    (workoutData.avg_power || workoutData.max_power || workoutData.normalized_power)
-  ) {
+  if (isCardio) {
     prompt += '\n## Power Metrics\n'
-    if (workoutData.avg_power) prompt += `- Average Power: ${workoutData.avg_power}W\n`
-    if (workoutData.max_power) prompt += `- Max Power: ${workoutData.max_power}W\n`
-    if (workoutData.normalized_power)
-      prompt += `- Normalized Power: ${workoutData.normalized_power}W\n`
-    if (workoutData.weighted_avg_power)
-      prompt += `- Weighted Avg Power: ${workoutData.weighted_avg_power}W\n`
-    if (workoutData.ftp) prompt += `- FTP at time: ${workoutData.ftp}W\n`
-    if (workoutData.intensity)
-      prompt += `- Intensity Factor: ${formatMetric(workoutData.intensity, 3)}\n`
+    if (
+      workoutData.avg_power ||
+      workoutData.max_power ||
+      workoutData.normalized_power ||
+      workoutData.weighted_avg_power
+    ) {
+      if (workoutData.avg_power) prompt += `- Average Power: ${workoutData.avg_power}W\n`
+      if (workoutData.max_power) prompt += `- Max Power: ${workoutData.max_power}W\n`
+      if (workoutData.normalized_power)
+        prompt += `- Normalized Power: ${workoutData.normalized_power}W\n`
+      if (workoutData.weighted_avg_power)
+        prompt += `- Weighted Avg Power: ${workoutData.weighted_avg_power}W\n`
+      if (workoutData.ftp) prompt += `- FTP at time: ${workoutData.ftp}W\n`
+      if (workoutData.intensity)
+        prompt += `- Intensity Factor: ${formatMetric(workoutData.intensity, 3)}\n`
+    } else {
+      prompt += `- Average Power: N/A\n`
+      prompt += `- Normalized Power: N/A\n`
+      prompt += `- Note: Power data appears to be missing from the global summary.\n`
+    }
   }
 
   // Heart rate is relevant for all workout types
-  if (workoutData.avg_hr || workoutData.max_hr || workoutData.avg_cadence) {
+  if (workoutData.avg_hr || workoutData.max_hr || workoutData.avg_cadence || isCardio) {
     prompt += '\n## Heart Rate'
     // Only include cadence label for cardio workouts
-    if (isCardio && workoutData.avg_cadence) {
+    if (isCardio) {
       prompt += ' & Cadence'
     }
     prompt += '\n'
 
     if (workoutData.avg_hr) prompt += `- Average HR: ${workoutData.avg_hr} bpm\n`
+    else if (isCardio) prompt += `- Average HR: N/A\n`
+
     if (workoutData.max_hr) prompt += `- Max HR: ${workoutData.max_hr} bpm\n`
 
     // Cadence is only relevant for cardio (cycling/running)
     if (isCardio) {
       if (workoutData.avg_cadence)
         prompt += `- Average Cadence: ${workoutData.avg_cadence} ${workoutType.toLowerCase().includes('run') ? 'spm' : 'rpm'}\n`
+      else prompt += `- Average Cadence: N/A\n`
+
       if (workoutData.max_cadence)
         prompt += `- Max Cadence: ${workoutData.max_cadence} ${workoutType.toLowerCase().includes('run') ? 'spm' : 'rpm'}\n`
     }
