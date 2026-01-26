@@ -856,6 +856,7 @@ export function normalizeIntervalsWorkout(activity: IntervalsActivity, userId: s
     // Training load
     tss: activity.tss || null,
     trainingLoad: activity.icu_training_load || null,
+    hrLoad: activity.icu_hrss || null,
 
     // FIX: Normalize intensity to 0-1 scale
     intensity: (() => {
