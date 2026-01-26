@@ -241,10 +241,10 @@
   const showSuccessMessage = ref(route.query.success === 'true')
   const showCanceledMessage = ref(route.query.canceled === 'true')
 
-  // Refresh user data on success
-  if (showSuccessMessage.value) {
+  // Always refresh user data on mount to ensure latest subscription status
+  onMounted(() => {
     userStore.fetchUser()
-  }
+  })
 
   // Computed
   const entitlements = computed(() => {
