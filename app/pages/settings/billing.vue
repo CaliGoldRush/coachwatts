@@ -148,13 +148,7 @@
               View Invoices
             </UButton>
 
-            <UButton
-              v-if="userStore.user?.stripeCustomerId"
-              color="neutral"
-              variant="ghost"
-              :loading="syncing"
-              @click="handleSync"
-            >
+            <UButton color="neutral" variant="ghost" :loading="syncing" @click="handleSync">
               <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
               Sync Status
             </UButton>
