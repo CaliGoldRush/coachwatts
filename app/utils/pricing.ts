@@ -39,7 +39,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       'Everything in Free',
       'Automatic sync mode',
-      'Always-on automatic analysis',
+      'Always-on analysis',
       'Priority processing',
       'Standard AI engine (Fast)'
     ],
