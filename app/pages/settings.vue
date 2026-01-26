@@ -106,6 +106,10 @@
   }
 
   const isFullWidth = computed(() => {
-    return route.path === '/settings/ai' || route.path.startsWith('/settings/llm')
+    return (
+      route.path === '/settings/ai' ||
+      route.path === '/settings/billing' ||
+      route.path.startsWith('/settings/llm')
+    )
   })
 </script>
