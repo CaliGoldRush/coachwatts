@@ -12,6 +12,7 @@
           <UButton
             :variant="isActive('/settings/apps') ? 'solid' : 'ghost'"
             :color="isActive('/settings/apps') ? 'primary' : 'neutral'"
+            class="whitespace-nowrap"
             @click="navigateTo('/settings/apps')"
           >
             <UIcon name="i-lucide-plug" class="w-4 h-4 mr-2" />
@@ -20,6 +21,7 @@
           <UButton
             :variant="isActive('/settings/ai') ? 'solid' : 'ghost'"
             :color="isActive('/settings/ai') ? 'primary' : 'neutral'"
+            class="whitespace-nowrap"
             @click="navigateTo('/settings/ai')"
           >
             <UIcon name="i-heroicons-sparkles" class="w-4 h-4 mr-2" />
@@ -28,6 +30,7 @@
           <UButton
             :variant="isActive('/settings/coaching') ? 'solid' : 'ghost'"
             :color="isActive('/settings/coaching') ? 'primary' : 'neutral'"
+            class="whitespace-nowrap"
             @click="navigateTo('/settings/coaching')"
           >
             <UIcon name="i-lucide-users-round" class="w-4 h-4 mr-2" />
@@ -36,6 +39,7 @@
           <UButton
             :variant="isActive('/settings/billing') ? 'solid' : 'ghost'"
             :color="isActive('/settings/billing') ? 'primary' : 'neutral'"
+            class="whitespace-nowrap"
             @click="navigateTo('/settings/billing')"
           >
             <UIcon name="i-heroicons-credit-card" class="w-4 h-4 mr-2" />
@@ -44,6 +48,7 @@
           <UButton
             :variant="isActive('/settings/developer') ? 'solid' : 'ghost'"
             :color="isActive('/settings/developer') ? 'primary' : 'neutral'"
+            class="whitespace-nowrap"
             @click="navigateTo('/settings/developer')"
           >
             <UIcon name="i-heroicons-code-bracket" class="w-4 h-4 mr-2" />
@@ -52,6 +57,7 @@
           <UButton
             :variant="isActive('/settings/danger') ? 'solid' : 'ghost'"
             :color="isActive('/settings/danger') ? 'primary' : 'neutral'"
+            class="whitespace-nowrap"
             @click="navigateTo('/settings/danger')"
           >
             <UIcon name="i-lucide-alert-triangle" class="w-4 h-4 mr-2" />
@@ -60,6 +66,7 @@
           <UButton
             :variant="isActive('/settings/changelog') ? 'solid' : 'ghost'"
             :color="isActive('/settings/changelog') ? 'primary' : 'neutral'"
+            class="whitespace-nowrap"
             @click="navigateTo('/settings/changelog')"
           >
             <UIcon name="i-lucide-list" class="w-4 h-4 mr-2" />
