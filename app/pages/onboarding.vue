@@ -30,12 +30,8 @@
           "
           @click="acceptedTerms = !acceptedTerms"
         >
-          <div class="flex h-6 items-center">
-            <UCheckbox
-              v-model="acceptedTerms"
-              name="terms"
-              :ui="{ wrapper: 'pointer-events-none' }"
-            />
+          <div class="flex h-6 items-center" @click.stop>
+            <UCheckbox v-model="acceptedTerms" name="terms" />
           </div>
           <div class="ml-3 text-sm leading-6">
             <label
@@ -74,12 +70,8 @@
           "
           @click="acceptedHealth = !acceptedHealth"
         >
-          <div class="flex h-6 items-center">
-            <UCheckbox
-              v-model="acceptedHealth"
-              name="health"
-              :ui="{ wrapper: 'pointer-events-none' }"
-            />
+          <div class="flex h-6 items-center" @click.stop>
+            <UCheckbox v-model="acceptedHealth" name="health" />
           </div>
           <div class="ml-3 text-sm leading-6">
             <label
