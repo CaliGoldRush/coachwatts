@@ -2,22 +2,18 @@ import { defineWebSocketHandler } from 'h3'
 import { runs } from '@trigger.dev/sdk/v3'
 import { verifyWsToken } from '../utils/ws-auth'
 import { buildAthleteContext } from '../utils/services/chatContextService'
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import { chatToolDeclarations, executeToolCall } from '../utils/chat-tools'
 import { prisma } from '../utils/db'
-import { generateCoachAnalysis } from '../utils/gemini'
+import { generateCoachAnalysis, MODEL_NAMES } from '../utils/gemini'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { streamText, convertToModelMessages } from 'ai'
+import { getToolsWithContext } from '../utils/ai-tools'
+import { getUserTimezone } from '../utils/date'
+import { getUserAiSettings } from '../utils/ai-settings'
 
 // Map to store active subscriptions cancel functions per peer
 const subscriptions = new Map<any, Set<() => void>>()
 // Map to store peer authentication status
 const peerContext = new Map<any, { userId?: string }>()
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-
-const MODEL_NAMES = {
-  flash: 'gemini-flash-latest',
-  pro: 'gemini-pro-latest'
-} as const
 
 export default defineWebSocketHandler({
   open(peer) {
@@ -159,7 +155,7 @@ function startSubscription(peer: any, iteratorFn: () => AsyncIterable<any>, subI
   })()
 }
 
-// Chat Message Handler with Streaming
+// Chat Message Handler with Streaming (Vercel AI SDK)
 async function handleChatMessage(
   peer: any,
   userId: string,
@@ -190,8 +186,11 @@ async function handleChatMessage(
       })
     )
 
-    // 2. Build Context
+    // 2. Build Context & Tools
     const { userProfile, systemInstruction } = await buildAthleteContext(userId)
+    const timezone = await getUserTimezone(userId)
+    const aiSettings = await getUserAiSettings(userId)
+    const tools = getToolsWithContext(userId, timezone, aiSettings)
 
     // 3. Fetch History
     const history = await prisma.chatMessage.findMany({
@@ -201,149 +200,113 @@ async function handleChatMessage(
     })
     const chronologicalHistory = history.reverse()
 
-    // 4. Prepare History for Model
-    let historyForModel = chronologicalHistory.map((msg: any) => ({
-      role: msg.senderId === 'ai_agent' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }))
+    // 4. Prepare History for AI SDK
+    // Convert DB messages to AI SDK CoreMessage format
+    // Simple conversion for now: map user/model roles.
+    // Note: This simplistic conversion might lose tool call history in legacy messages.
+    // A robust converter would parse metadata for toolCalls.
+    const historyForModel = chronologicalHistory.map((msg: any) => ({
+      role: msg.senderId === 'ai_agent' ? 'assistant' : 'user',
+      content: msg.content
+    })) as any[]
 
-    // Remove leading model messages
+    // Remove leading assistant messages (invalid for some models)
     while (
       historyForModel.length > 0 &&
       historyForModel[0] &&
-      historyForModel[0].role === 'model'
+      historyForModel[0].role === 'assistant'
     ) {
       historyForModel = historyForModel.slice(1)
     }
 
-    // 5. Initialize Model
-    const modelName =
-      userProfile?.aiModelPreference === 'flash' ? MODEL_NAMES.flash : MODEL_NAMES.pro
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction,
-      tools: [{ functionDeclarations: chatToolDeclarations }]
+    // 5. Initialize Provider
+    const google = createGoogleGenerativeAI({
+      apiKey: process.env.GEMINI_API_KEY
     })
+    const modelName = MODEL_NAMES[aiSettings.aiModelPreference]
 
-    const chat = model.startChat({ history: historyForModel })
-
-    // 6. Send Message & Stream Loop
-    let roundCount = 0
-    const MAX_ROUNDS = 5
-    const toolCallsUsed: Array<{ name: string; args: any; response: any; timestamp: string }> = []
+    // 6. Stream Text with Tools
+    const allToolResults: any[] = []
     let fullResponseText = ''
-    let isComplete = false
 
-    // Initial message payload
-    let messagePayload: any = content
-
-    while (roundCount < MAX_ROUNDS && !isComplete) {
-      // Send message stream
-      const result = await chat.sendMessageStream(messagePayload)
-      let chunkText = ''
-
-      // Iterate chunks
-      for await (const chunk of result.stream) {
-        const text = chunk.text()
-        if (text) {
-          chunkText += text
-          fullResponseText += text
-          // Stream token to client
+    const result = await streamText({
+      model: google(modelName),
+      system: systemInstruction,
+      messages: historyForModel,
+      tools,
+      maxSteps: 5, // Enable multi-step tool calls automatically
+      onStepFinish: async ({ text, toolCalls, toolResults, finishReason, usage }) => {
+        // Notify client about tool execution
+        if (toolCalls && toolCalls.length > 0) {
           peer.send(
             JSON.stringify({
-              type: 'chat_token',
+              type: 'tool_start',
               roomId,
-              text
+              tools: toolCalls.map((tc) => tc.toolName)
             })
           )
         }
-      }
 
-      // Wait for stream to fully complete to check for function calls in the aggregated response
-      const response = await result.response
-      const functionCalls = response.functionCalls()
-
-      if (functionCalls && functionCalls.length > 0) {
-        roundCount++
-        console.log(
-          `[WS Chat] Round ${roundCount}: Processing ${functionCalls.length} function calls`
-        )
-
-        // Notify client about tool execution
-        peer.send(
-          JSON.stringify({
-            type: 'tool_start',
-            roomId,
-            tools: functionCalls.map((fc) => fc.name)
-          })
-        )
-
-        // Execute tools
-        const functionResponses = await Promise.all(
-          functionCalls.map(async (call) => {
-            const callTimestamp = new Date().toISOString()
-            try {
-              const toolResult = await executeToolCall(call.name, call.args, userId)
-
-              // Store metadata
-              toolCallsUsed.push({
-                name: call.name,
-                args: call.args,
-                response: toolResult,
-                timestamp: callTimestamp
-              })
-
-              return {
-                functionResponse: {
-                  name: call.name,
-                  response: toolResult
-                }
-              }
-            } catch (err: any) {
-              const errorResponse = { error: err.message || 'Unknown error' }
-              toolCallsUsed.push({
-                name: call.name,
-                args: call.args,
-                response: errorResponse,
-                timestamp: callTimestamp
-              })
-              return {
-                functionResponse: {
-                  name: call.name,
-                  response: errorResponse
-                }
-              }
+        if (toolResults && toolResults.length > 0) {
+          // Collect results for metadata
+          const detailedResults = toolResults.map((tr) => {
+            const call = toolCalls?.find((tc) => tc.toolCallId === tr.toolCallId)
+            return {
+              ...tr,
+              args: tr.args,
+              toolName: tr.toolName,
+              result: tr.result
             }
           })
+          allToolResults.push(...detailedResults)
+
+          // Notify client tool finished
+          peer.send(JSON.stringify({ type: 'tool_end', roomId }))
+        }
+      },
+      onFinish: async (event) => {
+        // This is called when the ENTIRE stream (including all steps) is done
+      }
+    })
+
+    // 7. Iterate Stream for Tokens
+    for await (const part of result.fullStream) {
+      if (part.type === 'text-delta') {
+        fullResponseText += part.textDelta
+        peer.send(
+          JSON.stringify({
+            type: 'chat_token',
+            roomId,
+            text: part.textDelta
+          })
         )
-
-        // Notify client tool execution finished (optional, or just implied by next token)
-        peer.send(JSON.stringify({ type: 'tool_end', roomId }))
-
-        // Set payload for next iteration (sending function responses back)
-        messagePayload = functionResponses
-      } else {
-        // No function calls, we are done
-        isComplete = true
       }
     }
 
-    // 7. Save AI Response
+    // 8. Save AI Response
     const aiMessage = await prisma.chatMessage.create({
       data: {
-        content: fullResponseText,
+        content: fullResponseText || ' ',
         roomId,
         senderId: 'ai_agent',
         seen: {}
       }
     })
 
-    // 8. Extract Charts & Metadata
-    const chartToolCalls = toolCallsUsed.filter((t) => t.name === 'create_chart')
-    const charts = chartToolCalls.map((call, index) => ({
-      id: `chart-${aiMessage.id}-${index}`,
-      ...call.args
+    // 9. Extract Charts & Metadata
+    const toolCallsUsed = allToolResults.map((tr: any) => ({
+      name: tr.toolName,
+      args: tr.args,
+      response: tr.result,
+      timestamp: new Date().toISOString()
     }))
+
+    const charts = toolCallsUsed
+      .filter((t) => t.name === 'create_chart')
+      .map((call, index) => ({
+        id: `chart-${aiMessage.id}-${index}`,
+        ...call.args
+      }))
 
     if (charts.length > 0 || toolCallsUsed.length > 0) {
       await prisma.chatMessage.update({
@@ -359,7 +322,7 @@ async function handleChatMessage(
       })
     }
 
-    // 9. Send Completion Event
+    // 10. Send Completion Event
     peer.send(
       JSON.stringify({
         type: 'chat_complete',
@@ -373,16 +336,11 @@ async function handleChatMessage(
       })
     )
 
-    // 10. Auto-rename room (same logic as before)
+    // 11. Auto-rename room
     const messageCount = await prisma.chatMessage.count({ where: { roomId } })
     if (messageCount === 2) {
-      const titlePrompt = `Based on this conversation, generate a very concise, descriptive title (max 6 words). Just return the title, nothing else.
-
-User: ${content}
-AI: ${fullResponseText.substring(0, 500)}
-
-Title:`
       try {
+        const titlePrompt = `Based on this conversation, generate a very concise, descriptive title (max 6 words). Just return the title, nothing else.\n\nUser: ${content}\nAI: ${fullResponseText.substring(0, 500)}\n\nTitle:`
         let roomTitle = await generateCoachAnalysis(titlePrompt, 'flash', {
           userId,
           operation: 'chat_title_generation',
@@ -394,8 +352,6 @@ Title:`
           .replace(/^["']|["']$/g, '')
           .substring(0, 60)
         await prisma.chatRoom.update({ where: { id: roomId }, data: { name: roomTitle } })
-
-        // Notify client of rename
         peer.send(JSON.stringify({ type: 'room_renamed', roomId, name: roomTitle }))
       } catch (e) {
         // Ignore rename errors
