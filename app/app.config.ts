@@ -28,6 +28,12 @@ export default defineAppConfig({
         overlay: 'backdrop-blur-sm',
         content: 'rounded-xl shadow-xl ring-1 ring-gray-200 dark:ring-gray-800'
       }
+    },
+    dashboardNavbar: {
+      slots: {
+        title: 'hidden sm:flex items-center gap-1.5 font-semibold text-highlighted truncate',
+        icon: 'hidden sm:block shrink-0 size-5 self-center me-1.5'
+      }
     }
   },
   // Custom design tokens for consistent usage
