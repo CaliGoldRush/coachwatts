@@ -585,7 +585,7 @@ async function handleGeneratePlan(args: any, userId: string) {
   const handle = await tasks.trigger('generate-weekly-plan', {
     userId,
     startDate: args.start_date || new Date(),
-    daysToPlann: args.days || 7
+    daysToPlan: args.days || 7
   })
 
   return {

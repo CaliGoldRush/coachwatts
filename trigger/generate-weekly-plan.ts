@@ -569,7 +569,7 @@ No active goals set. Plan for general fitness maintenance and improvement.
     }
 
     // Build prompt
-    const prompt = `You are a **${aiSettings.aiPersona}** expert cycling coach creating a personalized ${daysToPlann}-day training plan.
+    const prompt = `You are a **${aiSettings.aiPersona}** expert cycling coach creating a personalized ${daysToPlan}-day training plan.
 Adapt your planning strategy and reasoning to match your **${aiSettings.aiPersona}** persona.
 
 ${phaseInstruction}

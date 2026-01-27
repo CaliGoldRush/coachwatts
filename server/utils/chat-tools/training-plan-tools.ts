@@ -634,7 +634,7 @@ export async function generateTrainingPlan(
   }
 
   try {
-    const daysToPlann = days || 7
+    const daysToPlan = days || 7
     let startDate: Date
 
     if (start_date) {
@@ -658,7 +658,7 @@ export async function generateTrainingPlan(
       {
         userId,
         startDate,
-        daysToPlann
+        daysToPlan
       },
       {
         concurrencyKey: userId
@@ -670,7 +670,7 @@ export async function generateTrainingPlan(
       message: `Training plan generation started! It may take a minute or two to complete.`,
       job_id: handle.id,
       details: {
-        days: daysToPlann,
+        days: daysToPlan,
         start_date: formatUserDate(startDate, timezone)
       }
     }
