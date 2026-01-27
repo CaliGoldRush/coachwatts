@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
     {
       userId: (session.user as any).id,
       startDate: week.startDate,
-      daysToPlann: 7, // Always plan the full week
+      daysToPlan: 7, // Always plan the full week
       userInstructions: instructions, // Pass the new instructions
       trainingWeekId: week.id, // Pass the specific training week ID to link to
       anchorWorkoutIds // Pass anchors

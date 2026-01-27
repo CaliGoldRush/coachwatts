@@ -96,14 +96,21 @@ export const generateWeeklyPlanTask = task({
   id: 'generate-weekly-plan',
   maxDuration: 600, // 10 minutes for complex AI planning
   queue: userBackgroundQueue,
-  run: async (payload: { userId: string; startDate: Date; daysToPlann: number }) => {
-    const { userId, startDate, daysToPlann, userInstructions, trainingWeekId, anchorWorkoutIds } =
+  run: async (payload: {
+    userId: string
+    startDate: Date
+    daysToPlan: number
+    userInstructions?: string
+    trainingWeekId?: string
+    anchorWorkoutIds?: string[]
+  }) => {
+    const { userId, startDate, daysToPlan, userInstructions, trainingWeekId, anchorWorkoutIds } =
       payload
 
     logger.log('Starting weekly plan generation', {
       userId,
       startDate,
-      daysToPlann,
+      daysToPlan,
       userInstructions,
       trainingWeekId,
       anchorWorkoutIds
@@ -174,7 +181,7 @@ export const generateWeeklyPlanTask = task({
     // So getStartOfDayUTC is correct.
 
     const alignedWeekEnd = new Date(alignedWeekStart)
-    alignedWeekEnd.setUTCDate(alignedWeekEnd.getUTCDate() + (daysToPlann - 1))
+    alignedWeekEnd.setUTCDate(alignedWeekEnd.getUTCDate() + (daysToPlan - 1))
     // Set to end of day in local time -> UTC
     const alignedWeekEndUTC = getEndOfDayUTC(timezone, alignedWeekEnd)
 
@@ -620,7 +627,7 @@ RECENT RECOVERY (Last 7 days):
 PLANNING PERIOD:
 - Start: ${formatUserDate(alignedWeekStart, timezone)} (YYYY-MM-DD)
 - End: ${formatUserDate(alignedWeekEndUTC, timezone)} (YYYY-MM-DD)
-- Days to plan: ${daysToPlann}
+- Days to plan: ${daysToPlan}
 
 INSTRUCTIONS:
 1. **PRIORITIZE USER INSTRUCTIONS**: If the user asks for specific changes (e.g., "no rides this week"), STRICTLY follow them, even if it contradicts standard training principles.
@@ -636,7 +643,7 @@ INSTRUCTIONS:
 6. **CONTEXT**: Consider the "Current Planned Workouts" to understand what the user is replacing or modifying.
 7. **MULTI-SPORT THRESHOLDS**: When planning a specific sport (e.g. Run), refer to the sport-specific FTP/LTHR if provided in the context.
 
-Create a structured, progressive plan for the next ${daysToPlann} days.
+Create a structured, progressive plan for the next ${daysToPlan} days.
 Maintain your **${aiSettings.aiPersona}** persona throughout the plan's reasoning and descriptions.`
 
     logger.log(`Generating plan with Gemini (${aiSettings.aiModelPreference})`)
@@ -674,7 +681,7 @@ Maintain your **${aiSettings.aiPersona}** persona throughout the plan's reasonin
       userId,
       weekStartDate: alignedWeekStart,
       weekEndDate: alignedWeekEndUTC,
-      daysPlanned: daysToPlann,
+      daysPlanned: daysToPlan,
       status: 'ACTIVE',
       generatedBy: 'AI',
       modelVersion: aiSettings.aiModelPreference,
@@ -958,7 +965,7 @@ Maintain your **${aiSettings.aiPersona}** persona throughout the plan's reasonin
       userId,
       weekStart: alignedWeekStart.toISOString(),
       weekEnd: alignedWeekEndUTC.toISOString(),
-      daysPlanned: daysToPlann,
+      daysPlanned: daysToPlan,
       totalTSS: savedPlan.totalTSS,
       workoutCount: savedPlan.workoutCount
     }

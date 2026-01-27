@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
   // Default to 7 days if not specified
-  const daysToPlann = body.days || 7
+  const daysToPlan = body.days || 7
   const startDate = body.startDate ? new Date(body.startDate) : new Date()
 
   // Trigger the plan generation job with per-user concurrency
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
     {
       userId,
       startDate,
-      daysToPlann
+      daysToPlan
     },
     {
       concurrencyKey: userId,
@@ -74,6 +74,6 @@ export default defineEventHandler(async (event) => {
   return {
     success: true,
     jobId: handle.id,
-    message: `Generating ${daysToPlann}-day training plan`
+    message: `Generating ${daysToPlan}-day training plan`
   }
 })
