@@ -1,16 +1,5 @@
 <template>
   <div class="workout-chart-container">
-    <!-- Tooltip -->
-    <div
-      v-if="tooltip.visible"
-      class="fixed z-50 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 whitespace-nowrap dark:bg-gray-700"
-      :style="{ left: `${tooltip.x}px`, top: `${tooltip.y - 8}px` }"
-    >
-      {{ tooltip.content }}
-      <div
-        class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"
-      ></div>
-    </div>
     <div
       v-if="!workout || !workout.steps || workout.steps.length === 0"
       class="text-center py-8 text-muted text-sm"
@@ -53,19 +42,14 @@
 
             <!-- Intensity bars -->
             <div class="absolute inset-0 flex items-end gap-0.5">
-              <div
+              <UTooltip
                 v-for="(step, index) in workout.steps"
                 :key="index"
+                :popper="{ placement: 'top' }"
                 :style="getStepStyle(step)"
-                class="relative group cursor-pointer transition-all hover:opacity-80"
-                @mouseenter="hoveredStep = step"
-                @mouseleave="hoveredStep = null"
+                class="relative group"
               >
-                <!-- Tooltip -->
-                <div
-                  v-if="hoveredStep === step"
-                  class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg shadow-lg whitespace-nowrap z-50"
-                >
+                <template #text>
                   <div class="font-semibold">{{ step.name }}</div>
                   <div class="text-[10px] opacity-80 mt-1">
                     {{ formatDuration(step.durationSeconds || step.duration || 0) }} @
@@ -87,8 +71,9 @@
                     </span>
                     <span v-else> {{ getInferredIntensity(step) * 100 }}% (Inferred) </span>
                   </div>
-                </div>
-              </div>
+                </template>
+                <div class="w-full h-full" />
+              </UTooltip>
             </div>
           </div>
         </div>
@@ -224,19 +209,20 @@
         <!-- Stacked Horizontal Bar -->
         <div
           class="h-6 w-full rounded-md overflow-hidden flex relative bg-gray-100 dark:bg-gray-700 mb-3"
-          @mouseleave="hideTooltip"
         >
-          <div
+          <UTooltip
             v-for="(zone, index) in zoneDistribution"
             :key="index"
-            class="h-full relative group first:rounded-l-md last:rounded-r-md transition-all hover:opacity-90"
+            :text="getZoneSegmentTooltip(zone)"
+            :popper="{ placement: 'top' }"
+            class="h-full relative group transition-all hover:opacity-90"
             :style="{
               width: `${(zone.duration / totalDuration) * 100}%`,
               backgroundColor: zone.color
             }"
-            @mouseenter="showTooltip($event, `${zone.name}: ${formatDuration(zone.duration)}`)"
-            @mousemove="moveTooltip($event)"
-          />
+          >
+            <div class="w-full h-full" />
+          </UTooltip>
         </div>
 
         <!-- Legend -->
@@ -267,13 +253,9 @@
 <script setup lang="ts">
   import { ZONE_COLORS } from '~/utils/zone-colors'
 
-  const { tooltip, showTooltip, moveTooltip, hideTooltip } = useTooltip()
-
   const props = defineProps<{
     workout: any // structuredWorkout JSON
   }>()
-
-  const hoveredStep = ref<any>(null)
 
   // Computed properties
   const totalDuration = computed(() => {
@@ -309,6 +291,11 @@
   })
 
   // Functions
+  function getZoneSegmentTooltip(zone: any) {
+    const percent = Math.round((zone.duration / totalDuration.value) * 100)
+    return `${zone.name}: ${formatDuration(zone.duration)} (${percent}%) (HR)`
+  }
+
   function getStepIntensity(step: any): number {
     const hr = step.heartRate?.range
       ? (step.heartRate.range.start + step.heartRate.range.end) / 2

@@ -1,24 +1,15 @@
 <template>
-  <div class="mini-chart-container h-8 w-24 relative flex items-end gap-px" @mouseleave="hideTooltip">
-    <div
+  <div class="mini-chart-container h-8 w-24 relative flex items-end gap-px">
+    <UTooltip
       v-for="(step, index) in steps"
       :key="index"
-      class="rounded-xs"
-      :style="getStepStyle(step)"
-      @mouseenter="showTooltip($event, `${step.name}: ${formatDuration(step.durationSeconds || step.duration || 0)}`)"
-      @mousemove="moveTooltip($event)"
-    />
-    <!-- Tooltip -->
-    <div
-      v-if="tooltip.visible"
-      class="fixed z-50 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 whitespace-nowrap dark:bg-gray-700"
-      :style="{ left: `${tooltip.x}px`, top: `${tooltip.y - 8}px` }"
+      :text="`${step.name}: ${formatDuration(step.durationSeconds || step.duration || 0)}`"
+      :popper="{ placement: 'top' }"
+      :style="{ width: getStepWidth(step) + '%' }"
+      class="h-full flex items-end"
     >
-      {{ tooltip.content }}
-      <div
-        class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"
-      ></div>
-    </div>
+      <div class="rounded-xs w-full" :style="getStepStyle(step)" />
+    </UTooltip>
   </div>
 </template>
 
@@ -26,8 +17,6 @@
   const props = defineProps<{
     workout: any // structuredWorkout JSON
   }>()
-
-  const { tooltip, showTooltip, moveTooltip, hideTooltip } = useTooltip()
 
   const steps = computed(() => {
     if (!props.workout?.steps || props.workout.steps.length === 0) return []
@@ -41,8 +30,11 @@
     )
   })
 
+  function getStepWidth(step: any) {
+    return ((step.durationSeconds || step.duration || 0) / totalDuration.value) * 100
+  }
+
   function getStepStyle(step: any) {
-    const widthPercent = ((step.durationSeconds || step.duration || 0) / totalDuration.value) * 100
     const color = getStepColor(step.type)
     const maxScale = 1.2 // 120% is top of chart
 
@@ -54,7 +46,7 @@
 
       return {
         height: '100%',
-        width: `${widthPercent}%`,
+        width: '100%',
         backgroundColor: color,
         clipPath: `polygon(0% ${100 - startH}%, 100% ${100 - endH}%, 100% 100%, 0% 100%)`
       }
@@ -65,7 +57,7 @@
     const height = Math.min((value * 100) / maxScale, 100)
     return {
       height: `${Math.max(height, 10)}%`, // Minimum height for visibility
-      width: `${widthPercent}%`,
+      width: '100%',
       backgroundColor: color
     }
   }

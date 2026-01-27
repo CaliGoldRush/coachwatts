@@ -1,22 +1,24 @@
 <template>
   <div v-if="hasData" class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
     <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Training Zones</div>
-    <UTooltip text="Click for details" :popper="{ placement: 'right' }">
-      <div
-        class="w-full h-4 flex gap-[1px] rounded overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
-        @click="$emit('click')"
+    <div
+      class="w-full h-4 flex gap-[1px] rounded overflow-hidden shadow-sm hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
+      @click="$emit('click')"
+    >
+      <UTooltip
+        v-for="(segment, index) in zoneSegments"
+        :key="index"
+        :text="getSegmentTooltip(segment)"
+        :popper="{ placement: 'top' }"
+        :style="{ width: segment.percentage + '%' }"
+        class="h-full"
       >
         <div
-          v-for="(segment, index) in zoneSegments"
-          :key="index"
-          :style="{
-            width: segment.percentage + '%',
-            backgroundColor: segment.color
-          }"
-          class="transition-all duration-200 first:rounded-l last:rounded-r"
+          :style="{ backgroundColor: segment.color }"
+          class="h-full w-full transition-all duration-200 first:rounded-l last:rounded-r"
         />
-      </div>
-    </UTooltip>
+      </UTooltip>
+    </div>
   </div>
   <div v-else-if="loading" class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
     <div class="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Training Zones</div>
@@ -68,30 +70,22 @@
       .filter((seg) => seg.percentage > 0)
   })
 
-  const tooltipText = computed(() => {
-    if (!hasData.value || !props.userZones) return ''
+  function getSegmentTooltip(segment: any) {
+    if (!props.userZones) return 'Click for details'
 
-    const type = zoneType.value === 'hr' ? 'Heart Rate' : 'Power'
     const zones = zoneType.value === 'hr' ? props.userZones.hrZones : props.userZones.powerZones
+    if (!zones) return ''
 
-    if (!zones || zones.length === 0) return ''
+    const zone = zones[segment.zone - 1]
+    if (!zone) return ''
 
-    const zoneDetails = zoneSegments.value
-      .map((seg) => {
-        const zone = zones[seg.zone - 1]
-        if (!zone) return null
+    const hours = Math.floor(segment.time / 3600)
+    const minutes = Math.floor((segment.time % 3600) / 60)
+    const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
 
-        const hours = Math.floor(seg.time / 3600)
-        const minutes = Math.floor((seg.time % 3600) / 60)
-        const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
-
-        return `${zone.name}: ${timeStr} (${seg.percentage.toFixed(1)}%)`
-      })
-      .filter(Boolean)
-      .join('\n')
-
-    return `Weekly ${type} Zone Distribution:\n${zoneDetails}`
-  })
+    const suffix = zoneType.value === 'hr' ? ' (HR)' : ' (Power)'
+    return `${zone.name}: ${timeStr} (${segment.percentage.toFixed(1)}%)${suffix}`
+  }
 
   async function fetchData() {
     if (import.meta.server) return

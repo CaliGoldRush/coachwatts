@@ -1,17 +1,19 @@
 <template>
-  <UTooltip v-if="hasData" :text="tooltipText" :popper="{ placement: 'top' }">
-    <div class="w-full h-6 flex gap-[1px] rounded overflow-hidden shadow-sm cursor-help">
+  <div v-if="hasData" class="w-full h-6 flex gap-[1px] rounded overflow-hidden shadow-sm">
+    <UTooltip
+      v-for="(segment, index) in zoneSegments"
+      :key="index"
+      :text="getSegmentTooltip(segment)"
+      :popper="{ placement: 'top' }"
+      :style="{ width: segment.percentage + '%' }"
+      class="h-full"
+    >
       <div
-        v-for="(segment, index) in zoneSegments"
-        :key="index"
-        :style="{
-          width: segment.percentage + '%',
-          backgroundColor: segment.color
-        }"
-        class="transition-all duration-200 hover:opacity-80 first:rounded-l last:rounded-r"
+        :style="{ backgroundColor: segment.color }"
+        class="h-full w-full transition-all duration-200 hover:opacity-80 first:rounded-l last:rounded-r"
       />
-    </div>
-  </UTooltip>
+    </UTooltip>
+  </div>
   <div v-else-if="loading" class="w-full h-6 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
   <div v-else-if="error" class="w-full h-6 flex items-center justify-center text-xs text-gray-400">
     <!-- Silent fail - no zone data -->
@@ -44,27 +46,17 @@
     return zoneSegments.value.length > 0
   })
 
-  const tooltipText = computed(() => {
-    if (!hasData.value || !zonesData.value || zoneSegments.value.length === 0) return ''
-
-    const type = zoneType.value === 'hr' ? 'Heart Rate' : 'Power'
+  function getSegmentTooltip(segment: any) {
+    if (!zonesData.value) return ''
     const zones = zoneType.value === 'hr' ? zonesData.value.hrZones : zonesData.value.powerZones
+    if (!zones) return ''
 
-    if (!zones || zones.length === 0) return ''
+    const zone = zones[segment.zone - 1]
+    if (!zone) return ''
 
-    // Create simple zone breakdown with percentages only (no time calculation to avoid dependency issues)
-    const zoneDetails = zoneSegments.value
-      .map((seg) => {
-        const zone = zones[seg.zone - 1]
-        if (!zone) return null
-
-        return `${zone.name}: ${seg.percentage.toFixed(1)}%`
-      })
-      .filter(Boolean)
-      .join('\n')
-
-    return `${type} Zone Distribution:\n${zoneDetails}`
-  })
+    const suffix = zoneType.value === 'hr' ? ' (HR)' : ' (Power)'
+    return `${zone.name}: ${segment.percentage.toFixed(1)}%${suffix}`
+  }
 
   const zoneSegments = computed(() => {
     if (!dataStream.value || !zonesData.value) return []

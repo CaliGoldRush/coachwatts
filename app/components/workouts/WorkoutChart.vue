@@ -1,16 +1,5 @@
 <template>
   <div class="workout-chart-container">
-    <!-- Tooltip -->
-    <div
-      v-if="tooltip.visible"
-      class="fixed z-50 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full mb-2 whitespace-nowrap dark:bg-gray-700"
-      :style="{ left: `${tooltip.x}px`, top: `${tooltip.y - 8}px` }"
-    >
-      {{ tooltip.content }}
-      <div
-        class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"
-      ></div>
-    </div>
     <div
       v-if="!workout || !workout.steps || workout.steps.length === 0"
       class="text-center py-8 text-muted text-sm"
@@ -52,27 +41,14 @@
 
             <!-- Power bars -->
             <div class="absolute inset-0 flex items-end gap-0.5">
-              <div
+              <UTooltip
                 v-for="(step, index) in workout.steps"
                 :key="index"
-                class="relative flex items-end h-full"
-                :class="{ 'z-30': hoveredStep === step }"
+                :popper="{ placement: 'top' }"
                 :style="getStepContainerStyle(step)"
-                @mouseenter="hoveredStep = step"
-                @mouseleave="hoveredStep = null"
+                class="relative flex items-end h-full"
               >
-                <!-- Bar -->
-                <div
-                  :style="getStepBarStyle(step)"
-                  class="w-full transition-all hover:opacity-80 cursor-pointer"
-                />
-
-                <!-- Tooltip -->
-                <div
-                  v-if="hoveredStep === step"
-                  class="absolute left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg shadow-lg whitespace-nowrap z-50 pointer-events-none"
-                  :style="{ bottom: getStepTooltipBottom(step) + '%' }"
-                >
+                <template #text>
                   <div class="font-semibold">{{ step.name }}</div>
                   <div class="text-[10px] opacity-80 mt-1">
                     {{ formatDuration(step.durationSeconds || step.duration || 0) }} @
@@ -97,8 +73,14 @@
                   >
                     Target Cadence: {{ step.cadence }} RPM
                   </div>
-                </div>
-              </div>
+                </template>
+
+                <!-- Bar -->
+                <div
+                  :style="getStepBarStyle(step)"
+                  class="w-full transition-all hover:opacity-80"
+                />
+              </UTooltip>
             </div>
 
             <!-- Cadence Line Overlay -->
@@ -265,19 +247,20 @@
         <!-- Stacked Horizontal Bar -->
         <div
           class="h-6 w-full rounded-md overflow-hidden flex relative bg-gray-100 dark:bg-gray-700 mb-3"
-          @mouseleave="hideTooltip"
         >
-          <div
+          <UTooltip
             v-for="(zone, index) in zoneDistribution"
             :key="index"
-            class="h-full relative group first:rounded-l-md last:rounded-r-md transition-all hover:opacity-90"
+            :text="getZoneSegmentTooltip(zone)"
+            :popper="{ placement: 'top' }"
+            class="h-full relative group transition-all hover:opacity-90"
             :style="{
               width: `${(zone.duration / totalDuration) * 100}%`,
               backgroundColor: zone.color
             }"
-            @mouseenter="showTooltip($event, `${zone.name}: ${formatDuration(zone.duration)}`)"
-            @mousemove="moveTooltip($event)"
-          />
+          >
+            <div class="w-full h-full" />
+          </UTooltip>
         </div>
 
         <!-- Legend -->
@@ -330,14 +313,10 @@
 <script setup lang="ts">
   import { ZONE_COLORS } from '~/utils/zone-colors'
 
-  const { tooltip, showTooltip, moveTooltip, hideTooltip } = useTooltip()
-
   const props = defineProps<{
     workout: any // structuredWorkout JSON
     userFtp?: number
   }>()
-
-  const hoveredStep = ref<any>(null)
 
   const totalDuration = computed(() => {
     if (!props.workout?.steps) return 0
@@ -444,24 +423,8 @@
         ? (step.power.range.start + step.power.range.end) / 2
         : step.power?.value || 0
 
-      // Use HR if no power?
-      // If val is 0, maybe check heartRate?
-      // For now assume power is primary if present or if structure is for cycling.
-      // If running, we might need a different chart or mapping.
-
       const power = val
       const duration = step.durationSeconds || step.duration || 0
-
-      // Find zone
-      // Use < for upper bound to align with standard Coggan zones where Z2 ends at 75% inclusive?
-      // Actually Coggan is:
-      // Z1 < 55%
-      // Z2 56-75%
-      // Z3 76-90%
-      // Z4 91-105%
-      // Z5 106-120%
-      // Z6 121%+
-      // So <= 0.55 is Z1. >0.55 and <=0.75 is Z2.
 
       const zone = distribution.find((z) => power <= z.max) || distribution[distribution.length - 1]
       if (zone) zone.duration += duration
@@ -504,17 +467,9 @@
     }
   }
 
-  function getStepTooltipBottom(step: any): number {
-    const maxScale = chartMaxPower.value
-    if (step.power?.range) {
-      // Ramp logic - position at the average height of the ramp
-      const startH = Math.min(step.power.range.start / maxScale, 1) * 100
-      const endH = Math.min(step.power.range.end / maxScale, 1) * 100
-      return (startH + endH) / 2
-    } else {
-      // Flat logic - position at the top of the bar
-      return Math.min((step.power?.value || 0) / maxScale, 1) * 100
-    }
+  function getZoneSegmentTooltip(zone: any) {
+    const percent = Math.round((zone.duration / totalDuration.value) * 100)
+    return `${zone.name}: ${formatDuration(zone.duration)} (${percent}%) (Power)`
   }
 
   function getZone(power: number): string {
