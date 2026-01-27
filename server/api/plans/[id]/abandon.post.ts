@@ -31,9 +31,9 @@ export default defineEventHandler(async (event) => {
   const timezone = await getUserTimezone(userId)
   const today = getUserLocalDate(timezone)
 
-  // Scope: Future workouts belonging to this plan
+  // Scope: Future and today's workouts belonging to this plan
   const planScope = {
-    date: { gt: today },
+    date: { gte: today },
     trainingWeek: {
       block: {
         trainingPlanId: planId

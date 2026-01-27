@@ -1,4 +1,5 @@
 import { getServerSession } from '../../utils/session'
+import { prisma } from '../../utils/db'
 import { trainingPlanRepository } from '../../utils/repositories/trainingPlanRepository'
 
 export default defineEventHandler(async (event) => {
@@ -26,6 +27,19 @@ export default defineEventHandler(async (event) => {
         'Only drafts or templates can be permanently deleted. Active plans should be abandoned or archived.'
     })
   }
+
+  // Manual cleanup of AI-managed workouts (Cascade setNull leaves them as orphans)
+  await prisma.plannedWorkout.deleteMany({
+    where: {
+      userId,
+      trainingWeek: {
+        block: {
+          trainingPlanId: id
+        }
+      },
+      managedBy: 'COACH_WATTS'
+    }
+  })
 
   await trainingPlanRepository.delete(id, userId)
 

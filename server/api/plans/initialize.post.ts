@@ -74,6 +74,36 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Goal must have a target date' })
   }
 
+  // 0. Clean up any existing DRAFT plans for this user
+  // This prevents multiple overlapping draft plans from cluttering the calendar
+  // We first fetch them to manually delete AI-managed workouts because of SetNull cascade
+  const existingDrafts = await prisma.trainingPlan.findMany({
+    where: { userId, status: 'DRAFT' },
+    select: { id: true }
+  })
+
+  if (existingDrafts.length > 0) {
+    const draftIds = existingDrafts.map((d) => d.id)
+
+    // Delete AI-managed workouts for these drafts
+    await prisma.plannedWorkout.deleteMany({
+      where: {
+        userId,
+        trainingWeek: {
+          block: {
+            trainingPlanId: { in: draftIds }
+          }
+        },
+        managedBy: 'COACH_WATTS'
+      }
+    })
+
+    // Delete the plans themselves (cascades to blocks/weeks)
+    await prisma.trainingPlan.deleteMany({
+      where: { id: { in: draftIds } }
+    })
+  }
+
   // 2. Calculate Timeline
   // Force start date to UTC midnight of the calendar day
   const timezone = await getUserTimezone(userId)
