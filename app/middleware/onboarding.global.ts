@@ -25,8 +25,8 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // 2. User HAS accepted terms
   if (termsAccepted) {
-    // If trying to visit onboarding again, send them to dashboard
-    if (to.path === '/onboarding') {
+    // If trying to visit onboarding again, send them to dashboard UNLESS in testing mode
+    if (to.path === '/onboarding' && to.query.testing !== '1') {
       return navigateTo('/dashboard')
     }
   }
