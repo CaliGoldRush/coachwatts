@@ -20,7 +20,8 @@ defineRouteMeta({
                   'NUTRITION',
                   'PLANNED_WORKOUT',
                   'TRAINING_PLAN',
-                  'WELLNESS'
+                  'WELLNESS',
+                  'CHAT_ROOM'
                 ]
               },
               resourceId: { type: 'string' },
@@ -99,6 +100,15 @@ export default defineEventHandler(async (event) => {
       where: { id: resourceId, userId }
     })
     resourceExists = !!wellness
+  } else if (resourceType === 'CHAT_ROOM') {
+    const room = await prisma.chatRoom.findFirst({
+      where: {
+        id: resourceId,
+        users: { some: { userId } },
+        deletedAt: null
+      }
+    })
+    resourceExists = !!room
   }
 
   if (!resourceExists) {
@@ -143,6 +153,9 @@ export default defineEventHandler(async (event) => {
       break
     case 'WELLNESS':
       sharePath = '/share/wellness'
+      break
+    case 'CHAT_ROOM':
+      sharePath = '/share/chat'
       break
     default:
       sharePath = `/share/${resourceType.toLowerCase()}`

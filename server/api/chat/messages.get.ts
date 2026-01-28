@@ -88,72 +88,134 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  // Return messages in AI SDK v5 format
-  return messages.map((msg) => {
-    const parts: any[] = []
+  // Return messages in AI SDK format, expanding multi-step turns
+  const expandedMessages: any[] = []
 
-    // Add text part if content exists or if it's an assistant message (to avoid empty content)
-    if (msg.content || msg.senderId === 'ai_agent') {
-      parts.push({
-        type: 'text',
-        text: msg.content || ' '
+  for (const msg of messages) {
+    const metadata = (msg.metadata as any) || {}
+    const role =
+      msg.senderId === 'ai_agent' ? 'assistant' : msg.senderId === 'system_tool' ? 'tool' : 'user'
+
+    // Case 1: Standard User or Tool message
+    if (role !== 'assistant') {
+      const parts: any[] = []
+      if (msg.content) parts.push({ type: 'text', text: msg.content })
+
+      // Add tool responses if this is a tool message
+      if (metadata.toolResponse && Array.isArray(metadata.toolResponse)) {
+        metadata.toolResponse.forEach((part: any) => parts.push(part))
+      }
+
+      expandedMessages.push({
+        id: msg.id,
+        role,
+        parts: parts.length > 0 ? parts : undefined,
+        content: msg.content || '',
+        metadata: {
+          ...metadata,
+          createdAt: msg.createdAt,
+          senderId: msg.senderId
+        }
       })
+      continue
     }
 
-    // Add tool invocation parts from metadata
-    const metadata = (msg.metadata as any) || {}
+    // Case 2: Assistant message (potentially multi-step)
+    const hasToolCalls =
+      metadata.toolCalls && Array.isArray(metadata.toolCalls) && metadata.toolCalls.length > 0
+    const hasApprovals =
+      metadata.toolApprovals &&
+      Array.isArray(metadata.toolApprovals) &&
+      metadata.toolApprovals.length > 0
 
-    // Add tool approvals (pending)
-    if (metadata.toolApprovals && Array.isArray(metadata.toolApprovals)) {
+    if (!hasToolCalls && !hasApprovals) {
+      // Simple text assistant message
+      expandedMessages.push({
+        id: msg.id,
+        role: 'assistant',
+        parts: [{ type: 'text', text: msg.content || ' ' }],
+        content: msg.content || '',
+        metadata: {
+          ...metadata,
+          createdAt: msg.createdAt,
+          senderId: msg.senderId
+        }
+      })
+      continue
+    }
+
+    // Expand collapsed multi-step assistant turn:
+
+    const parts: any[] = []
+
+    if (hasApprovals) {
       metadata.toolApprovals.forEach((approval: any) => {
         parts.push({
-          type: 'tool-approval-request',
-          approvalId: approval.approvalId || approval.toolCallId, // Prefer stored approvalId
+          type: `tool-${approval.name}`,
+
           toolCallId: approval.toolCallId,
-          toolCall: {
-            toolName: approval.name,
-            args: approval.args,
-            toolCallId: approval.toolCallId
+
+          state: 'approval-requested',
+
+          input: approval.args || {},
+
+          approval: {
+            id: approval.approvalId || approval.toolCallId
           }
         })
       })
     }
 
-    // Add tool response from metadata (for tool-approval-response or tool results)
-    if (metadata.toolResponse && Array.isArray(metadata.toolResponse)) {
-      metadata.toolResponse.forEach((part: any) => {
-        parts.push(part)
-      })
-    }
-
-    if (metadata.toolCalls && Array.isArray(metadata.toolCalls)) {
+    if (hasToolCalls) {
       metadata.toolCalls.forEach((tc: any, index: number) => {
         parts.push({
-          type: 'tool-invocation',
+          type: `tool-${tc.name}`,
+
           toolCallId: tc.toolCallId || `call-${msg.id}-${index}`,
-          toolName: tc.name,
-          args: tc.args || {}, // Ensure args is never undefined
-          state: 'result',
-          result: tc.response
+
+          state: 'output-available',
+
+          input: tc.args || {},
+
+          output: tc.response
         })
       })
     }
 
-    return {
+    // Add text part if content exists
+
+    if (msg.content) {
+      parts.push({
+        type: 'text',
+
+        text: msg.content
+      })
+    }
+
+    // Ensure at least one part for assistant
+
+    if (parts.length === 0) {
+      parts.push({ type: 'text', text: ' ' })
+    }
+
+    expandedMessages.push({
       id: msg.id,
-      role:
-        msg.senderId === 'ai_agent'
-          ? 'assistant'
-          : msg.senderId === 'system_tool'
-            ? 'tool'
-            : 'user',
+
+      role: 'assistant',
+
       parts,
-      content: msg.content || '', // Ensure top-level content is also set for compatibility
+
+      content: msg.content || ' ',
+
       metadata: {
         ...metadata,
+
         createdAt: msg.createdAt,
+
         senderId: msg.senderId
       }
-    }
-  })
+    })
+  }
+
+  return expandedMessages
 })
