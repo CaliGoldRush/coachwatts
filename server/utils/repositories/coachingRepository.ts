@@ -14,7 +14,11 @@ export const coachingRepository = {
             email: true,
             image: true,
             currentFitnessScore: true,
-            profileLastUpdated: true
+            profileLastUpdated: true,
+            recommendations: {
+              orderBy: { generatedAt: 'desc' },
+              take: 1
+            }
           }
         }
       }
@@ -50,12 +54,10 @@ export const coachingRepository = {
   },
 
   async removeRelationship(coachId: string, athleteId: string) {
-    return (prisma as any).coachingRelationship.delete({
+    return (prisma as any).coachingRelationship.deleteMany({
       where: {
-        coachId_athleteId: {
-          coachId,
-          athleteId
-        }
+        coachId,
+        athleteId
       }
     })
   },
