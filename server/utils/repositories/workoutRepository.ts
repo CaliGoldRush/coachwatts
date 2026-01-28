@@ -63,13 +63,23 @@ export const workoutRepository = {
     userId: string,
     options: {
       include?: Prisma.WorkoutInclude
+      select?: Prisma.WorkoutSelect
     } = {}
   ) {
+    const where: Prisma.WorkoutWhereInput = {
+      id: workoutId,
+      userId
+    }
+
+    if (options.select) {
+      return prisma.workout.findFirst({
+        where,
+        select: options.select
+      })
+    }
+
     return prisma.workout.findFirst({
-      where: {
-        id: workoutId,
-        userId
-      },
+      where,
       include: options.include
     })
   },

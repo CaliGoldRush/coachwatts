@@ -107,20 +107,71 @@ export const workoutTools = (userId: string, timezone: string) => ({
 
   get_workout_details: tool({
     description:
-      'Get detailed metrics for a specific workout, including intervals, power curve, and heart rate data.',
+      'Get detailed metrics for a specific workout, including summary scores, planned targets, and metadata.',
     inputSchema: z.object({
       workout_id: z.string().describe('The ID of the workout to analyze')
     }),
     execute: async ({ workout_id }) => {
-      const workout = await workoutRepository.getById(workout_id, userId)
+      const workout = (await workoutRepository.getById(workout_id, userId, {
+        include: {
+          plannedWorkout: true,
+          streams: true
+        }
+      })) as any
 
       if (!workout) return { error: 'Workout not found' }
 
       return {
         ...workout,
         date: formatUserDate(workout.date, timezone),
-        power_curve: 'Not available', // Placeholder
-        intervals: [] // Placeholder
+        // Clean up large stream data for context safety while keeping computed metrics
+        streams: workout.streams
+          ? {
+              avgPacePerKm: workout.streams.avgPacePerKm,
+              paceVariability: workout.streams.paceVariability,
+              hrZoneTimes: workout.streams.hrZoneTimes,
+              powerZoneTimes: workout.streams.powerZoneTimes,
+              paceZones: workout.streams.paceZones,
+              pacingStrategy: workout.streams.pacingStrategy
+            }
+          : null
+      }
+    }
+  }),
+
+  get_workout_analysis: tool({
+    description:
+      'Get the deep AI-generated analysis and performance scores for a specific workout. Use this when the user asks "how did I do?" or "show me the analysis for this workout".',
+    inputSchema: z.object({
+      workout_id: z.string().describe('The ID of the workout to get analysis for')
+    }),
+    execute: async ({ workout_id }) => {
+      const workout = await workoutRepository.getById(workout_id, userId, {
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          aiAnalysis: true,
+          aiAnalysisJson: true,
+          aiAnalysisStatus: true,
+          overallScore: true,
+          technicalScore: true,
+          effortScore: true,
+          pacingScore: true,
+          executionScore: true,
+          overallQualityExplanation: true,
+          technicalExecutionExplanation: true,
+          effortManagementExplanation: true,
+          pacingStrategyExplanation: true,
+          executionConsistencyExplanation: true
+        } as any
+      })
+
+      if (!workout) return { error: 'Workout not found' }
+
+      return {
+        ...workout,
+        date: formatUserDate(workout.date, timezone)
       }
     }
   }),
