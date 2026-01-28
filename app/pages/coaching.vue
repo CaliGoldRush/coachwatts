@@ -30,14 +30,9 @@
       <div class="p-4 sm:p-6 space-y-6">
         <CoachingBanner />
 
-        <UTabs
-          v-model="selectedTab"
-          :items="tabItems"
-          class="w-full"
-          @update:model-value="onTabChange"
-        >
-          <template #athletes>
-            <div class="space-y-6 pt-4">
+        <UTabs v-model="selectedTab" :items="tabItems" class="w-full">
+          <template #content="{ item }">
+            <div v-if="item.value === 'athletes'" class="space-y-6 pt-4">
               <div class="flex items-center justify-between">
                 <div>
                   <h2 class="text-xl font-bold text-gray-900 dark:text-white">My Athletes</h2>
@@ -80,81 +75,17 @@
               </div>
 
               <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <UCard
+                <CoachingAthleteCard
                   v-for="rel in athletes"
                   :key="rel.id"
-                  class="flex flex-col h-full hover:ring-2 hover:ring-primary-500 transition-all cursor-pointer"
-                  @click="viewAthlete(rel.athlete)"
-                >
-                  <template #header>
-                    <div class="flex items-start justify-between">
-                      <div class="flex items-center gap-3">
-                        <UAvatar :src="rel.athlete.image" :alt="rel.athlete.name" size="lg" />
-                        <div class="min-w-0">
-                          <h4 class="font-bold text-gray-900 dark:text-white truncate">
-                            {{ rel.athlete.name }}
-                          </h4>
-                          <p class="text-xs text-neutral-500 truncate">{{ rel.athlete.email }}</p>
-                        </div>
-                      </div>
-                      <UBadge
-                        v-if="rel.athlete.recommendations?.length"
-                        :color="
-                          getRecommendationColor(rel.athlete.recommendations[0].recommendation)
-                        "
-                        size="xs"
-                        variant="subtle"
-                      >
-                        {{ getRecommendationLabel(rel.athlete.recommendations[0].recommendation) }}
-                      </UBadge>
-                    </div>
-                  </template>
-
-                  <div class="grid grid-cols-2 gap-3 mb-2">
-                    <div class="bg-neutral-50 dark:bg-neutral-800/50 p-2 rounded text-center">
-                      <p class="text-[10px] text-neutral-500 uppercase font-bold">Fitness</p>
-                      <p class="text-lg font-bold text-primary-600">
-                        {{ rel.athlete.currentFitnessScore || '--' }}
-                      </p>
-                    </div>
-                    <div class="bg-neutral-50 dark:bg-neutral-800/50 p-2 rounded text-center">
-                      <p class="text-[10px] text-neutral-500 uppercase font-bold">Updated</p>
-                      <p class="text-xs font-medium truncate">
-                        {{
-                          rel.athlete.profileLastUpdated
-                            ? formatDate(rel.athlete.profileLastUpdated)
-                            : 'Never'
-                        }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <template #footer>
-                    <div class="flex gap-2">
-                      <UButton
-                        class="flex-1"
-                        label="Analyze"
-                        icon="i-heroicons-chart-bar"
-                        variant="soft"
-                        size="sm"
-                        @click.stop="viewAthlete(rel.athlete)"
-                      />
-                      <UButton
-                        color="neutral"
-                        variant="ghost"
-                        icon="i-heroicons-chat-bubble-left-right"
-                        size="sm"
-                        @click.stop="messageAthlete(rel.athlete)"
-                      />
-                    </div>
-                  </template>
-                </UCard>
+                  :athlete="rel.athlete"
+                  @view="viewAthlete"
+                  @message="messageAthlete"
+                />
               </div>
             </div>
-          </template>
 
-          <template #coaches>
-            <div class="space-y-8 pt-4">
+            <div v-else-if="item.value === 'coaches'" class="space-y-8 pt-4">
               <!-- Invite Section -->
               <UCard
                 :ui="{
@@ -314,8 +245,8 @@
 
   const selectedTab = ref('coaches')
   const tabItems = [
-    { slot: 'athletes', label: 'My Athletes', icon: 'i-heroicons-users' },
-    { slot: 'coaches', label: 'My Coaches', icon: 'i-heroicons-academic-cap' }
+    { value: 'athletes', label: 'My Athletes', icon: 'i-heroicons-users' },
+    { value: 'coaches', label: 'My Coaches', icon: 'i-heroicons-academic-cap' }
   ]
 
   const athletes = ref<any[]>([])
@@ -352,6 +283,8 @@
       // Default to athletes tab if we have athletes, otherwise keep it on coaches
       if (athletes.value.length > 0) {
         selectedTab.value = 'athletes'
+      } else {
+        selectedTab.value = 'coaches'
       }
     } catch (e) {
       console.error(e)
