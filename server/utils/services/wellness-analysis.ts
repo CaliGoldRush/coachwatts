@@ -7,7 +7,9 @@ import {
   getStressLabel,
   getFatigueLabel,
   getSorenessLabel,
-  getMotivationLabel
+  getMotivationLabel,
+  getHydrationLabel,
+  getInjuryLabel
 } from '../wellness'
 
 // Define the schema for the AI analysis

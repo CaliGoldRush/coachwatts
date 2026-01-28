@@ -6,7 +6,9 @@ import {
   getStressLabel,
   getFatigueLabel,
   getSorenessLabel,
-  getMotivationLabel
+  getMotivationLabel,
+  getHydrationLabel,
+  getInjuryLabel
 } from './wellness'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)

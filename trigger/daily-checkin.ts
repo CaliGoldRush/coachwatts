@@ -14,7 +14,9 @@ import {
   getStressLabel,
   getFatigueLabel,
   getSorenessLabel,
-  getMotivationLabel
+  getMotivationLabel,
+  getHydrationLabel,
+  getInjuryLabel
 } from '../server/utils/wellness'
 
 const checkinSchema = {
