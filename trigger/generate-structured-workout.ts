@@ -125,7 +125,10 @@ export const generateStructuredWorkoutTask = task({
       }
     })
 
-    if (!workout) throw new Error('Workout not found')
+    if (!workout) {
+      logger.warn('Workout not found, skipping structured generation', { plannedWorkoutId })
+      return { success: false, error: 'Workout not found' }
+    }
 
     // Fetch Sport Specific Settings
     const sportSettings = await sportSettingsRepository.getForActivityType(
