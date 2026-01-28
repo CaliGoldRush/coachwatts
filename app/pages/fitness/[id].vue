@@ -66,7 +66,7 @@
               <div>
                 <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-1">
                   <UIcon name="i-heroicons-calendar" class="w-4 h-4" />
-                  {{ formatDate(wellness.date) }}
+                  {{ formatDateUTC(wellness.date) }}
                 </div>
                 <h1 class="text-xl font-bold text-gray-900 dark:text-white">Daily Wellness</h1>
               </div>
@@ -384,7 +384,7 @@
                 class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700"
               >
                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                  Analyzed on {{ formatDate(wellness.aiAnalyzedAt) }}
+                  Analyzed on {{ formatDateUTC(wellness.aiAnalyzedAt) }}
                 </div>
                 <AiFeedback
                   v-if="wellness.llmUsageId"
@@ -929,6 +929,7 @@
 
   const route = useRoute()
   const toast = useToast()
+  const { formatDateUTC, timezone } = useFormat()
   const wellness = ref<any>(null)
   const loading = ref(true)
   const error = ref<string | null>(null)
@@ -1064,16 +1065,8 @@
   }
 
   // Utility functions
-  function formatDate(date: string | Date) {
-    // Parse date in UTC to avoid timezone conversion issues
-    // Database stores dates as YYYY-MM-DD (date-only, no time component)
-    return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC' // Force UTC to prevent timezone shifts
-    })
+  function formatLongDate(date: string | Date) {
+    return formatDateUTC(date, 'EEEE, MMMM d, yyyy')
   }
 
   function formatStatus(status: string) {
@@ -1137,7 +1130,7 @@
   }
 
   useHead(() => {
-    const dateStr = wellness.value ? formatDate(wellness.value.date) : ''
+    const dateStr = wellness.value ? formatLongDate(wellness.value.date) : ''
     return {
       title: wellness.value ? `Wellness: ${dateStr}` : 'Wellness Details',
       meta: [

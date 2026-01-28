@@ -42,7 +42,7 @@
       <DashboardActivityCardHero
         v-if="heroItem"
         :item="heroItem"
-        :date-label="getDateLabel(heroItem.date)"
+        :date-label="getDateLabel(heroItem.date, heroItem.type)"
         @click="navigateActivity(heroItem)"
       />
 
@@ -57,7 +57,7 @@
           v-for="item in listItems"
           :key="item.id"
           :item="item"
-          :date-label="getDateLabel(item.date)"
+          :date-label="getDateLabel(item.date, item.type)"
           @click="navigateActivity(item)"
         />
       </div>
@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
   const activityStore = useActivityStore()
-  const { formatDate, getUserLocalDate } = useFormat()
+  const { formatDate, formatDateUTC, getUserLocalDate } = useFormat()
 
   function navigateActivity(item: any) {
     if (item.link) {
@@ -76,7 +76,7 @@
   }
 
   // Format date for timeline display
-  function getDateLabel(date: string | Date): string {
+  function getDateLabel(date: string | Date, type?: string): string {
     if (!date) return ''
     const activityDate = new Date(date)
     const today = getUserLocalDate()
@@ -84,16 +84,21 @@
     yesterday.setDate(yesterday.getDate() - 1)
 
     // Create day-only strings for comparison
-    const activityDateStr = formatDate(activityDate, 'yyyy-MM-dd')
-    const todayStr = today.toISOString().split('T')[0]
-    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    // Use UTC for date-only fields (wellness, nutrition)
+    const isDateOnly = type === 'wellness' || type === 'nutrition'
+    const activityDateStr = isDateOnly
+      ? formatDateUTC(activityDate, 'yyyy-MM-dd')
+      : formatDate(activityDate, 'yyyy-MM-dd')
+
+    const todayStr = formatDateUTC(today, 'yyyy-MM-dd')
+    const yesterdayStr = formatDateUTC(yesterday, 'yyyy-MM-dd')
 
     if (activityDateStr === todayStr) {
       return 'Today'
     } else if (activityDateStr === yesterdayStr) {
       return 'Yesterday'
     } else {
-      return formatDate(activityDate, 'MMM d')
+      return isDateOnly ? formatDateUTC(activityDate, 'MMM d') : formatDate(activityDate, 'MMM d')
     }
   }
 

@@ -1019,7 +1019,7 @@
       const dayStr = formatDateUTC(day, 'yyyy-MM-dd')
       const dayActivities = (activities.value || []).filter((a) => {
         const dateStr =
-          a.source === 'planned'
+          a.source === 'planned' || a.source === 'wellness' || a.source === 'nutrition'
             ? formatDateUTC(a.date, 'yyyy-MM-dd')
             : formatDate(a.date, 'yyyy-MM-dd')
         return dateStr === dayStr

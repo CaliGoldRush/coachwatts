@@ -578,7 +578,7 @@
     'update:open': [value: boolean]
   }>()
 
-  const { formatDate, timezone } = useFormat()
+  const { formatDate, formatDateUTC, timezone } = useFormat()
   const toast = useToast()
   const { checkWellnessStale } = useDataStatus()
 
@@ -589,7 +589,7 @@
 
   const wellnessStatus = computed(() => {
     if (!props.date) return { isStale: false, label: '' }
-    const dateStr = formatDateFns(props.date, 'yyyy-MM-dd')
+    const dateStr = formatDateUTC(props.date, 'yyyy-MM-dd')
     return checkWellnessStale(dateStr)
   })
   const isStale = computed(() => wellnessStatus.value.isStale)
@@ -645,14 +645,14 @@
     loading.value = true
 
     try {
-      const dateStr = formatDateFns(date, 'yyyy-MM-dd')
+      const dateStr = formatDateUTC(date, 'yyyy-MM-dd')
 
       // Fetch wellness data for the specific date
       const response = await $fetch(`/api/wellness/${dateStr}`)
       wellnessData.value = response
 
       // Fetch 7-day trend data
-      const startDate = formatDateFns(subDays(date, 6), 'yyyy-MM-dd')
+      const startDate = formatDateUTC(subDays(date, 6), 'yyyy-MM-dd')
       const endDate = dateStr
       const trendResponse = await $fetch<any[]>(
         `/api/wellness/trend?startDate=${startDate}&endDate=${endDate}`

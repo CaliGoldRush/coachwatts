@@ -560,7 +560,7 @@
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
 
-    const dStr = formatDate(date, 'yyyy-MM-dd')
+    const dStr = formatDateUTC(date, 'yyyy-MM-dd')
     const tStr = formatDateUTC(today, 'yyyy-MM-dd')
     const yStr = formatDateUTC(yesterday, 'yyyy-MM-dd')
 
@@ -569,6 +569,6 @@
 
     const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
     if (diffDays > 1 && diffDays < 7) return `${diffDays} days ago`
-    return formatDate(date, 'MMM d')
+    return formatDateUTC(date, 'MMM d')
   }
 </script>
