@@ -228,8 +228,18 @@ const data = await prisma.model.findUnique({
 
 ---
 
-## 12. Git & Source Control
+## 13. AI Chat Development
 
-### Main Branch Protection
+Refer to the comprehensive [Chat Development Guide](docs/04-guides/chat-development.md) for strict message schemas and sequencing requirements.
 
-- **ALWAYS** request explicit developer approval before pushing any changes directly to the `master` branch.
+### Core Principles
+
+- **Message Schema**: Adhere strictly to the **AI SDK v5 `UIMessage` schema** (Role: `user`, `assistant`, `system` only).
+- **Tool Mapping**: ALWAYS represent tool calls and results as `parts` within an `assistant` message using the `tool-NAME` type.
+- **Conversion**: ALWAYS use `convertToModelMessages(history, { tools })` to transform history for the model. **Never reconstruct tool turns manually.**
+- **Sequencing**: Gemini requires strict role alternation (`Assistant (calls) -> Tool (results) -> Assistant (text)`).
+- **Normalization**: All history must pass through the normalization pipeline in `server/api/chat/messages.post.ts` to merge roles and strip orphaned tool calls.
+
+### Documentation
+
+- **Mandatory Reading**: Before modifying chat logic, read the relevant files in `vercel-ai-docs/`, specifically `07-reference/01-ai-sdk-core/31-ui-message.mdx` and `04-ai-sdk-ui/03-chatbot-tool-usage.mdx`.
