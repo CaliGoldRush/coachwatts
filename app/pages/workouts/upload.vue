@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel id="upload">
     <template #header>
-      <UDashboardNavbar title="Upload Workout">
+      <UDashboardNavbar title="Upload Workouts">
         <template #leading>
           <UDashboardSidebarCollapse />
           <UButton to="/data" color="neutral" variant="ghost" icon="i-heroicons-arrow-left">
@@ -20,9 +20,10 @@
       <div class="max-w-2xl mx-auto p-6 space-y-6">
         <div class="text-center">
           <UIcon name="i-heroicons-cloud-arrow-up" class="w-12 h-12 mx-auto text-gray-400" />
-          <h2 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white">Upload FIT File</h2>
+          <h2 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white">Upload FIT Files</h2>
           <p class="mt-2 text-sm text-gray-500">
-            Upload your workout file (.fit) manually. We'll analyze it and add it to your history.
+            Upload your workout files (.fit) manually. We'll analyze them and add them to your
+            history.
           </p>
         </div>
 
@@ -39,32 +40,50 @@
               type="file"
               class="hidden"
               accept=".fit"
+              multiple
               @change="handleFileSelect"
             />
 
-            <div v-if="!selectedFile" class="text-center">
+            <div v-if="selectedFiles.length === 0" class="text-center">
               <UButton color="primary" variant="soft" class="mb-4" @click="fileInput?.click()">
-                Select File
+                Select Files
               </UButton>
               <p class="text-xs text-gray-500">or drag and drop here</p>
             </div>
 
-            <div v-else class="w-full text-center">
-              <div class="flex items-center justify-center gap-2 mb-4">
-                <UIcon name="i-heroicons-document" class="w-6 h-6 text-gray-400" />
-                <span class="font-medium">{{ selectedFile.name }}</span>
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-heroicons-x-mark"
-                  size="xs"
-                  @click="clearFile"
-                />
+            <div v-else class="w-full">
+              <div class="max-h-60 overflow-y-auto mb-4 space-y-2">
+                <div
+                  v-for="(file, index) in selectedFiles"
+                  :key="index"
+                  class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md"
+                >
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-heroicons-document" class="w-5 h-5 text-gray-400" />
+                    <span class="text-sm font-medium truncate max-w-[200px]">{{ file.name }}</span>
+                    <span class="text-xs text-gray-500">({{ formatFileSize(file.size) }})</span>
+                  </div>
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-heroicons-x-mark"
+                    size="xs"
+                    @click="removeFile(index)"
+                  />
+                </div>
               </div>
 
-              <UButton :loading="uploading" color="primary" block @click="uploadFile">
-                {{ uploading ? 'Uploading...' : 'Upload Workout' }}
-              </UButton>
+              <div
+                class="flex items-center justify-between mt-4 border-t pt-4 dark:border-gray-700"
+              >
+                <span class="text-sm text-gray-500">{{ selectedFiles.length }} files selected</span>
+                <div class="flex gap-2">
+                  <UButton color="neutral" variant="ghost" @click="clearFiles">Clear All</UButton>
+                  <UButton :loading="uploading" color="primary" @click="uploadFiles">
+                    {{ uploading ? 'Uploading...' : 'Upload Workouts' }}
+                  </UButton>
+                </div>
+              </div>
             </div>
           </div>
         </UCard>
@@ -98,6 +117,14 @@
                 {{ uploadResult.message }}
               </h3>
               <div
+                v-if="uploadResult.results && uploadResult.results.errors.length > 0"
+                class="mt-2 text-sm text-red-700 dark:text-red-300"
+              >
+                <ul class="list-disc list-inside">
+                  <li v-for="err in uploadResult.results.errors" :key="err">{{ err }}</li>
+                </ul>
+              </div>
+              <div
                 v-if="uploadResult.success"
                 class="mt-2 text-sm text-green-700 dark:text-green-300"
               >
@@ -121,44 +148,63 @@
 
   const fileInput = ref<HTMLInputElement | null>(null)
   const isDragging = ref(false)
-  const selectedFile = ref<File | null>(null)
+  const selectedFiles = ref<File[]>([])
   const uploading = ref(false)
-  const uploadResult = ref<{ success: boolean; message: string } | null>(null)
+  const uploadResult = ref<{ success: boolean; message: string; results?: any } | null>(null)
 
   function handleDrop(e: DragEvent) {
     isDragging.value = false
     const files = e.dataTransfer?.files
-    if (files?.length && files[0]) {
-      validateAndSelectFile(files[0])
+    if (files?.length) {
+      addFiles(Array.from(files))
     }
   }
 
   function handleFileSelect(e: Event) {
     const files = (e.target as HTMLInputElement).files
-    if (files?.length && files[0]) {
-      validateAndSelectFile(files[0])
+    if (files?.length) {
+      addFiles(Array.from(files))
     }
   }
 
-  function validateAndSelectFile(file: File) {
-    if (!file.name.toLowerCase().endsWith('.fit')) {
+  function addFiles(files: File[]) {
+    const validFiles = files.filter((file) => file.name.toLowerCase().endsWith('.fit'))
+
+    if (validFiles.length < files.length) {
       useToast().add({
-        title: 'Invalid File',
-        description: 'Please upload a valid .fit file',
-        color: 'error'
+        title: 'Invalid Files Skipped',
+        description: 'Only .fit files are allowed.',
+        color: 'warning'
       })
-      return
     }
-    selectedFile.value = file
+
+    // Avoid duplicates by name + size (simple check)
+    const newFiles = validFiles.filter(
+      (nf) => !selectedFiles.value.some((sf) => sf.name === nf.name && sf.size === nf.size)
+    )
+
+    selectedFiles.value = [...selectedFiles.value, ...newFiles]
     uploadResult.value = null
   }
 
-  function clearFile() {
-    selectedFile.value = null
+  function removeFile(index: number) {
+    selectedFiles.value.splice(index, 1)
+  }
+
+  function clearFiles() {
+    selectedFiles.value = []
     if (fileInput.value) {
       fileInput.value.value = ''
     }
     uploadResult.value = null
+  }
+
+  function formatFileSize(bytes: number) {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
   }
 
   const { refresh: refreshRuns } = useUserRuns()
@@ -166,46 +212,42 @@
 
   // Listen for completion
   onTaskCompleted('ingest-fit-file', async (run) => {
-    // Ideally we would link to the new workout, but we'd need to fetch the fit file or workout by run ID
     useToast().add({
       title: 'Processing Complete',
-      description: 'Your workout file has been analyzed and added to your history.',
+      description: 'A workout file has been analyzed and added to your history.',
       color: 'success',
-      icon: 'i-heroicons-check-circle',
-      actions: [
-        {
-          label: 'View Workouts',
-          onClick: () => {
-            navigateTo('/workouts')
-          }
-        }
-      ]
+      icon: 'i-heroicons-check-circle'
     })
   })
 
-  async function uploadFile() {
-    if (!selectedFile.value) return
+  async function uploadFiles() {
+    if (selectedFiles.value.length === 0) return
 
     uploading.value = true
     const formData = new FormData()
-    formData.append('file', selectedFile.value)
+    selectedFiles.value.forEach((file) => {
+      formData.append('file', file)
+    })
 
     try {
-      const response = await $fetch('/api/workouts/upload-fit', {
+      const response = await $fetch<any>('/api/workouts/upload-fit', {
         method: 'POST',
         body: formData
       })
 
       uploadResult.value = {
-        success: true,
-        message: response.message
+        success: response.success,
+        message: response.message,
+        results: response.results
       }
       refreshRuns()
 
-      // Clear file after successful upload
-      setTimeout(() => {
-        clearFile()
-      }, 2000)
+      if (response.success) {
+        // Clear files after successful upload
+        setTimeout(() => {
+          clearFiles()
+        }, 2000)
+      }
     } catch (error: any) {
       uploadResult.value = {
         success: false,
@@ -217,7 +259,7 @@
   }
 
   useHead({
-    title: 'Upload Workout',
+    title: 'Upload Workouts',
     meta: [{ name: 'description', content: 'Manually upload FIT files to your training history.' }]
   })
 </script>

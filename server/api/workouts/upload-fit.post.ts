@@ -35,8 +35,16 @@ defineRouteMeta({
               properties: {
                 success: { type: 'boolean' },
                 message: { type: 'string' },
-                fitFileId: { type: 'string' },
-                duplicate: { type: 'boolean', nullable: true }
+                results: {
+                  type: 'object',
+                  properties: {
+                    total: { type: 'integer' },
+                    processed: { type: 'integer' },
+                    duplicates: { type: 'integer' },
+                    failed: { type: 'integer' },
+                    errors: { type: 'array', items: { type: 'string' } }
+                  }
+                }
               }
             }
           }
@@ -78,69 +86,82 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Find the file part
-  const filePart = body.find((part) => part.name === 'file')
-  if (!filePart) {
+  // Find all file parts
+  const fileParts = body.filter((part) => part.name === 'file')
+  if (fileParts.length === 0) {
     throw createError({
       statusCode: 400,
       statusMessage: 'File field missing'
     })
   }
 
-  // Validate filename
-  const filename = filePart.filename || 'upload.fit'
-  if (!filename.toLowerCase().endsWith('.fit')) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid file type. Only .fit files are supported.'
-    })
+  const results = {
+    total: fileParts.length,
+    processed: 0,
+    duplicates: 0,
+    failed: 0,
+    errors: [] as string[]
   }
 
-  const fileData = filePart.data
+  // Process each file
+  for (const filePart of fileParts) {
+    try {
+      // Validate filename
+      const filename = filePart.filename || 'upload.fit'
+      if (!filename.toLowerCase().endsWith('.fit')) {
+        results.failed++
+        results.errors.push(`${filename}: Invalid file type`)
+        continue
+      }
 
-  // Calculate hash
-  const hash = crypto.createHash('sha256').update(fileData).digest('hex')
+      const fileData = filePart.data
 
-  // Check for duplicates
-  const existingFile = await prisma.fitFile.findFirst({
-    where: { hash }
-  })
+      // Calculate hash
+      const hash = crypto.createHash('sha256').update(fileData).digest('hex')
 
-  if (existingFile) {
-    return {
-      success: true,
-      message: 'File already uploaded',
-      fitFileId: existingFile.id,
-      duplicate: true
+      // Check for duplicates
+      const existingFile = await prisma.fitFile.findFirst({
+        where: { hash }
+      })
+
+      if (existingFile) {
+        results.duplicates++
+        continue
+      }
+
+      // Store file in DB
+      const fitFile = await prisma.fitFile.create({
+        data: {
+          userId: user.id,
+          filename,
+          fileData: Buffer.from(fileData),
+          hash
+        }
+      })
+
+      // Trigger ingestion task
+      await tasks.trigger(
+        'ingest-fit-file',
+        {
+          userId: user.id,
+          fitFileId: fitFile.id
+        },
+        {
+          concurrencyKey: user.id,
+          tags: [`user:${user.id}`]
+        }
+      )
+
+      results.processed++
+    } catch (error: any) {
+      results.failed++
+      results.errors.push(`${filePart.filename}: ${error.message}`)
     }
   }
-
-  // Store file in DB
-  const fitFile = await prisma.fitFile.create({
-    data: {
-      userId: user.id,
-      filename,
-      fileData: Buffer.from(fileData),
-      hash
-    }
-  })
-
-  // Trigger ingestion task
-  await tasks.trigger(
-    'ingest-fit-file',
-    {
-      userId: user.id,
-      fitFileId: fitFile.id
-    },
-    {
-      concurrencyKey: user.id,
-      tags: [`user:${user.id}`]
-    }
-  )
 
   return {
-    success: true,
-    message: 'File uploaded and processing started',
-    fitFileId: fitFile.id
+    success: results.processed > 0 || results.duplicates > 0,
+    message: `Processed ${results.processed} files. ${results.duplicates} duplicates. ${results.failed} failed.`,
+    results
   }
 })
