@@ -303,5 +303,10 @@
     </UDashboardSidebar>
 
     <slot />
+
+    <ClientOnly>
+      <ImpersonationBanner />
+      <CoachingBanner />
+    </ClientOnly>
   </UDashboardGroup>
 </template>

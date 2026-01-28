@@ -427,6 +427,8 @@
 
     <ClientOnly>
       <DashboardTriggerMonitor v-model="showTriggerMonitor" />
+      <ImpersonationBanner />
+      <CoachingBanner />
     </ClientOnly>
   </UDashboardGroup>
 </template>
