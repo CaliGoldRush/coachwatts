@@ -1,3 +1,55 @@
+# 🚀 Coach Watts v0.5.16 Release: Deeper Insights & Enhanced Coaching Tools
+
+Hello Athletes and Coaches! We've just shipped a major update focusing on deeper performance metrics, new integrations, and powerful tools for athlete management. Get ready for smarter analysis and a much smoother user experience!
+
+Here’s what’s new in v0.5.16:
+
+---
+
+## 🔗 New Integrations & Data Power-Ups
+
+### Oura Ring Integration is Here! 🌙
+
+Connect your Oura Ring to Coach Watts to bring sleep, readiness, and recovery data directly into your performance analysis. This gives the AI and your coach a complete picture of your total training load and recovery status.
+
+- **Benefit:** Smarter training decisions based on genuine recovery data.
+
+### Next-Level Training Intelligence 🧠
+
+We've significantly upgraded the depth of our analysis:
+
+- **Optimal Cadence Calculation:** Coach Watts now calculates your optimal cycling cadence based on anthropometric factors (your body measurements). Get more precise targets for efficiency!
+- **Enhanced Training Load (CTL/ATL):** We've improved how training load is calculated and recorded, ensuring the charts and summary metrics (like your weekly intensity) are consistent and highly accurate.
+- **Smarter Workout Adherence:** The AI is now better than ever at analyzing your completed workouts. It uses highly detailed structured plan steps to give you precise feedback on where you nailed the effort and where you missed the targets.
+
+---
+
+## 📈 Tools for Coaches: Dashboard Overhaul
+
+Coaches, your dashboard just got a major upgrade to make athlete management clearer and faster:
+
+- **Rich Athlete Cards:** The main athlete list is now modular, showing essential information like **adherence statistics** and **wellness history** right on the card.
+- **Streamlined Management:** We've enhanced the coaching dashboard with dedicated sections for inviting and managing your roster of athletes.
+- **Smoother Impersonation:** Moving between your coach view and your athlete's profile is now more seamless, making it easier to review data and adjust plans.
+
+---
+
+## ✨ User Experience & Stability Improvements
+
+We spent a lot of time tightening the screws and polishing the interface:
+
+- **Improved Billing & Plans:** We've introduced a clean, dedicated Billing page. Upgrading, downgrading, or managing your subscription is now much clearer and easier.
+- **Better Mobile Experience:** If you save Coach Watts to your iOS home screen (as a Progressive Web App), you'll now see the proper app icon and enjoy a better full-screen experience. 📱
+- **Consistent Chart Tooltips:** All performance charts now feature standardized, immediate feedback tooltips for better data comprehension.
+- **Fitbit Reliability:** We’ve made the Fitbit integration more robust, especially when dealing with rate limits, ensuring your data syncs reliably.
+- **Workout Acceptance Fixed:** We resolved an issue that occasionally prevented workout acceptance or incorrectly handled rest days. Training plan execution is now much smoother!
+
+---
+
+Happy Training!
+
+— The Coach Watts Team ⚡️
+
 ## 🎉 Coach Watts Release v0.5.15: The Planning & Integration Update!
 
 We've shipped one of our biggest updates yet, focused on giving you more control over your training plans, deeper data integration, and a smarter AI experience. Get ready for better planning, improved sync, and brand new connections!
