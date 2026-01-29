@@ -1,6 +1,65 @@
 import { format, toZonedTime, fromZonedTime } from 'date-fns-tz'
 import { formatDistanceToNow } from 'date-fns'
 
+/**
+ * Format a date in UTC without timezone shifting.
+ * Useful for @db.Date columns which are stored as UTC midnight.
+ */
+export const formatDateUTC = (date: string | Date, formatStr: string = 'MMM d, yyyy') => {
+  if (!date) return ''
+  try {
+    // Explicitly convert to UTC zone first to ensure format respects it
+    // regardless of environment fallback behavior
+    const utcDate = toZonedTime(new Date(date), 'UTC')
+    return format(utcDate, formatStr, { timeZone: 'UTC' })
+  } catch (e) {
+    return ''
+  }
+}
+
+/**
+ * Format a date with a specific timezone (manual override)
+ */
+export const formatUserDate = (
+  date: string | Date,
+  tz: string,
+  formatStr: string = 'yyyy-MM-dd'
+) => {
+  if (!date) return ''
+  try {
+    return format(toZonedTime(new Date(date), tz), formatStr)
+  } catch (e) {
+    return ''
+  }
+}
+
+export const calculateAge = (dob: Date | string | null | undefined): number => {
+  if (!dob) return 0
+  try {
+    const birthDate = new Date(dob)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const m = today.getMonth() - birthDate.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  } catch (e) {
+    return 0
+  }
+}
+
+export const formatDuration = (seconds: number) => {
+  if (!seconds) return '-'
+  const hours = Math.floor(seconds / 3600)
+  const mins = Math.round((seconds % 3600) / 60)
+
+  if (hours > 0) {
+    return `${hours}h ${mins}m`
+  }
+  return `${mins}m`
+}
+
 export const useFormat = () => {
   const { data } = useAuth()
 
@@ -35,22 +94,6 @@ export const useFormat = () => {
     }
   }
 
-  /**
-   * Format a date in UTC without timezone shifting.
-   * Useful for @db.Date columns which are stored as UTC midnight.
-   */
-  const formatDateUTC = (date: string | Date, formatStr: string = 'MMM d, yyyy') => {
-    if (!date) return ''
-    try {
-      // Explicitly convert to UTC zone first to ensure format respects it
-      // regardless of environment fallback behavior
-      const utcDate = toZonedTime(new Date(date), 'UTC')
-      return format(utcDate, formatStr, { timeZone: 'UTC' })
-    } catch (e) {
-      return ''
-    }
-  }
-
   const formatShortDate = (date: string | Date) => {
     return formatDate(date, 'MMM d')
   }
@@ -63,18 +106,6 @@ export const useFormat = () => {
     if (!date) return ''
     try {
       return formatDistanceToNow(new Date(date), { addSuffix: true })
-    } catch (e) {
-      return ''
-    }
-  }
-
-  /**
-   * Format a date with a specific timezone (manual override)
-   */
-  const formatUserDate = (date: string | Date, tz: string, formatStr: string = 'yyyy-MM-dd') => {
-    if (!date) return ''
-    try {
-      return format(toZonedTime(new Date(date), tz), formatStr)
     } catch (e) {
       return ''
     }
@@ -117,33 +148,6 @@ export const useFormat = () => {
       // Fallback to simple UTC construction if invalid
       return new Date(`${dateStr}T${timeStr}Z`)
     }
-  }
-
-  const calculateAge = (dob: Date | string | null | undefined): number => {
-    if (!dob) return 0
-    try {
-      const birthDate = new Date(dob)
-      const today = new Date()
-      let age = today.getFullYear() - birthDate.getFullYear()
-      const m = today.getMonth() - birthDate.getMonth()
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--
-      }
-      return age
-    } catch (e) {
-      return 0
-    }
-  }
-
-  const formatDuration = (seconds: number) => {
-    if (!seconds) return '-'
-    const hours = Math.floor(seconds / 3600)
-    const mins = Math.round((seconds % 3600) / 60)
-
-    if (hours > 0) {
-      return `${hours}h ${mins}m`
-    }
-    return `${mins}m`
   }
 
   return {
