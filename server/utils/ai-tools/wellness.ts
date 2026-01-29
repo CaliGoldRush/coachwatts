@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { prisma } from '../../utils/db'
-import { getStartOfDayUTC, getEndOfDayUTC, formatUserDate } from '../../utils/date'
+import { getStartOfDayUTC, getEndOfDayUTC, formatUserDate, formatDateUTC } from '../../utils/date'
 
 export const wellnessTools = (userId: string, timezone: string) => ({
   get_wellness_metrics: tool({
@@ -73,7 +73,7 @@ export const wellnessTools = (userId: string, timezone: string) => ({
           end: end_date || start_date
         },
         metrics: wellness.map((w) => ({
-          date: formatUserDate(w.date, timezone),
+          date: formatDateUTC(w.date),
           recovery: {
             recovery_score: w.recoveryScore,
             hrv: w.hrv,

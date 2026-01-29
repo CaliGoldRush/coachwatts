@@ -1,5 +1,5 @@
 import { dailyCheckinRepository } from '../repositories/dailyCheckinRepository'
-import { formatUserDate, getUserLocalDate, getUserTimezone } from '../date'
+import { formatUserDate, formatDateUTC, getUserLocalDate, getUserTimezone } from '../date'
 import { generateDailyCheckinTask } from '../../../trigger/daily-checkin'
 import { auditLogRepository } from '../repositories/auditLogRepository'
 
@@ -72,7 +72,8 @@ export async function getCheckinHistoryContext(
 
       if (answeredQuestions.length === 0 && !c.userNotes) return null
 
-      const dateStr = formatUserDate(c.date, timezone, 'yyyy-MM-dd')
+      // Use formatDateUTC for DailyCheckin.date which is a @db.Date
+      const dateStr = formatDateUTC(c.date, 'yyyy-MM-dd')
       let content = ''
 
       if (answeredQuestions.length > 0) {

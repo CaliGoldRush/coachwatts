@@ -417,7 +417,7 @@ export async function buildAthleteContext(userId: string): Promise<{
     if (recentNutrition.length > 0) {
       athleteContext += `\n### Nutrition (${recentNutrition.length} days logged)\n`
       for (const nutrition of recentNutrition) {
-        athleteContext += `- **${formatUserDate(nutrition.date, userTimezone)}**: `
+        athleteContext += `- **${formatDateUTC(nutrition.date)}**: `
         athleteContext += `${nutrition.calories || 0} kcal`
         if (nutrition.protein) athleteContext += ` | Protein: ${Math.round(nutrition.protein)}g`
         if (nutrition.carbs) athleteContext += ` | Carbs: ${Math.round(nutrition.carbs)}g`
@@ -449,9 +449,7 @@ export async function buildAthleteContext(userId: string): Promise<{
 
       // Only include dates that have actual data
       if (metrics.length > 0) {
-        entriesWithData.push(
-          `- **${formatUserDate(wellness.date, userTimezone)}**: ${metrics.join(' | ')}`
-        )
+        entriesWithData.push(`- **${formatDateUTC(wellness.date)}**: ${metrics.join(' | ')}`)
       }
     }
 
@@ -569,9 +567,9 @@ export async function buildAthleteContext(userId: string): Promise<{
     for (let i = 0; i < count; i++) {
       const date = new Date(today)
       date.setUTCDate(today.getUTCDate() + i)
-      const dayName = formatUserDate(date, userTimezone, 'EEEE')
-      const dateStr = formatUserDate(date, userTimezone, 'MMM d, yyyy')
-      days.push({ dayName, dateStr, date: formatUserDate(date, userTimezone, 'yyyy-MM-dd') })
+      const dayName = formatDateUTC(date, 'EEEE')
+      const dateStr = formatDateUTC(date, 'MMM d, yyyy')
+      days.push({ dayName, dateStr, date: formatDateUTC(date, 'yyyy-MM-dd') })
     }
     return days
   }

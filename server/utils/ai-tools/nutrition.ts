@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { prisma } from '../../utils/db'
-import { getStartOfDayUTC, getEndOfDayUTC, formatUserDate } from '../../utils/date'
+import { getStartOfDayUTC, getEndOfDayUTC, formatUserDate, formatDateUTC } from '../../utils/date'
 
 export const nutritionTools = (userId: string, timezone: string) => ({
   get_nutrition_log: tool({
@@ -70,7 +70,7 @@ export const nutritionTools = (userId: string, timezone: string) => ({
         },
         entries: nutritionEntries.map((entry) => ({
           id: entry.id,
-          date: formatUserDate(entry.date, timezone),
+          date: formatDateUTC(entry.date),
           macros: {
             calories: entry.calories,
             protein: entry.protein ? Math.round(entry.protein) : null,
