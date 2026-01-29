@@ -6,12 +6,7 @@ import { sportSettingsRepository } from '../../utils/repositories/sportSettingsR
 const profileUpdateSchema = z.object({
   // Basic Settings
   name: z.string().min(2).optional(),
-  nickname: z
-    .string()
-    .max(50)
-    .regex(/^[a-zA-Z0-9]*$/, 'Nickname must be alphanumeric')
-    .nullable()
-    .optional(),
+  nickname: z.string().max(50).nullable().optional(),
   language: z.string().optional(),
   weight: z.number().nullable().optional(),
   weightUnits: z.enum(['Kilograms', 'Pounds']).optional(),
@@ -97,10 +92,15 @@ export default defineEventHandler(async (event) => {
   const result = profileUpdateSchema.safeParse(body)
 
   if (!result.success) {
+    console.warn('[PATCH /api/profile] Validation failed:', {
+      user: session.user.email,
+      errors: result.error.errors,
+      body: body
+    })
     throw createError({
       statusCode: 400,
       statusMessage: 'Invalid input',
-      data: (result as any).error.errors
+      data: result.error.errors
     })
   }
 
@@ -152,7 +152,11 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error) {
-    console.error('Error updating profile:', error)
+    console.error('[PATCH /api/profile] Update failed:', {
+      user: userEmail,
+      error: error,
+      payload: data
+    })
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to update profile'
