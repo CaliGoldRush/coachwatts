@@ -6,6 +6,7 @@ import {
   fetchWithingsActivities,
   fetchWithingsSleep,
   fetchWithingsWorkouts,
+  fetchWithingsIntraday,
   normalizeWithingsMeasureGroup,
   normalizeWithingsActivity,
   normalizeWithingsSleep,
@@ -16,6 +17,8 @@ import { prisma } from '../server/utils/db'
 import { wellnessRepository } from '../server/utils/repositories/wellnessRepository'
 import { workoutRepository } from '../server/utils/repositories/workoutRepository'
 import { getUserTimezone, getStartOfDayUTC } from '../server/utils/date'
+import { normalizeTSS } from '../server/utils/normalize-tss'
+import { calculateWorkoutStress } from '../server/utils/calculate-workout-stress'
 import { roundToTwoDecimals } from '../server/utils/number'
 import { triggerReadinessCheckIfNeeded } from '../server/utils/services/wellness-analysis'
 
