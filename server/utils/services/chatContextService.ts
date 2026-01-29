@@ -258,6 +258,9 @@ export async function buildAthleteContext(userId: string): Promise<{
         const typeLabel = s.isDefault ? 'Default/Fallback' : s.types.join(', ')
         athleteContext += `#### ${s.name || (s.isDefault ? 'Default' : 'Profile')} (${typeLabel})\n`
         athleteContext += `- Thresholds: FTP=${s.ftp || 'N/A'}W, LTHR=${s.lthr || 'N/A'}bpm, MaxHR=${s.maxHr || 'N/A'}bpm\n`
+        if (s.loadPreference) {
+          athleteContext += `- **Preferred Load Metric**: ${s.loadPreference}\n`
+        }
 
         if (s.powerZones && Array.isArray(s.powerZones)) {
           athleteContext += `- Power Zones: ${s.powerZones.map((z: any) => `${z.name}: ${z.min}-${z.max}W`).join(', ')}\n`

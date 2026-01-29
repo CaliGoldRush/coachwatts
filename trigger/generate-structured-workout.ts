@@ -189,6 +189,9 @@ export const generateStructuredWorkoutTask = task({
     if (ftp) {
       zoneDefinitions += `**Reference FTP:** ${ftp} Watts\n`
     }
+    if (sportSettings?.loadPreference) {
+      zoneDefinitions += `**Preferred Load Metric:** ${sportSettings.loadPreference}\n`
+    }
 
     const prompt = `Design a structured ${workout.type} workout for ${workout.user.name || 'Athlete'}.
     

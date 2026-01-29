@@ -706,6 +706,10 @@ function buildWorkoutAnalysisPrompt(
 
     if (sportSettings.lthr) zoneDefinitions += `- **LTHR**: ${sportSettings.lthr} bpm\n`
 
+    if (sportSettings.loadPreference) {
+      zoneDefinitions += `- **Preferred Load Metric**: ${sportSettings.loadPreference}\n`
+    }
+
     if (sportSettings.hrZones && Array.isArray(sportSettings.hrZones)) {
       zoneDefinitions += '- **Heart Rate Zones**:\n'
 
