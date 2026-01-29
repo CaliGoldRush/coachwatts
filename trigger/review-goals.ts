@@ -433,6 +433,8 @@ ATHLETE PROFILE SCORES (1-10 scale):
 
 ${profileInsights}
 
+${aiSettings.aiContext ? `USER PROVIDED CONTEXT / ABOUT ME / SPECIAL INSTRUCTIONS:\n${aiSettings.aiContext}\n` : ''}
+
 RECENT TRAINING (Last 30 days):
 - Total workouts: ${recentWorkouts.length}
 - Total TSS: ${totalTSS.toFixed(0)}

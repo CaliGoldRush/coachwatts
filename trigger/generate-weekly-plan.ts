@@ -577,7 +577,7 @@ ${planContext}
 
 ${athleteContext}
 
-${aiSettings.aiContext ? `USER PROVIDED CONTEXT / ABOUT ME:\n${aiSettings.aiContext}\n` : ''}
+${aiSettings.aiContext ? `USER PROVIDED CONTEXT / ABOUT ME / SPECIAL INSTRUCTIONS:\n${aiSettings.aiContext}\n` : ''}
 
 TRAINING AVAILABILITY (when user can train):
 ${availabilitySummary || 'No availability set - assume flexible schedule'}

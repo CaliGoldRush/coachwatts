@@ -276,7 +276,7 @@ export async function buildAthleteContext(userId: string): Promise<{
 
     // User Provided Context
     if (userProfile.aiContext) {
-      athleteContext += `\n### User Provided Context / About Me\n${userProfile.aiContext}\n`
+      athleteContext += `\n### User Provided Context / About Me / Special instructions\n${userProfile.aiContext}\n`
     }
 
     const scores: string[] = []

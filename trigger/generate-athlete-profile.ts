@@ -707,7 +707,7 @@ USER PROFILE:
 - W/kg: ${user?.ftp && user?.weight ? (user.ftp / user.weight).toFixed(2) : 'Unknown'}
 - Max HR: ${user?.maxHr || 'Unknown'} bpm
 
-${aiSettings.aiContext ? `USER PROVIDED CONTEXT / ABOUT ME:\n${aiSettings.aiContext}\n` : ''}
+${aiSettings.aiContext ? `USER PROVIDED CONTEXT / ABOUT ME / SPECIAL INSTRUCTIONS:\n${aiSettings.aiContext}\n` : ''}
 
 ${formattedContext}
 
