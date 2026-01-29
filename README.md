@@ -72,6 +72,9 @@ Coach Watts connects seamlessly with:
 | **Yazio**         | Nutrition Logs, Macros, Hydration                  |
 | **Withings**      | Body Composition (Weight, Fat %), Sleep, Wellness  |
 | **Hevy**          | Strength Training, Exercises, Sets & Reps          |
+| **Fitbit**        | Steps, Sleep, Activity, Heart Rate                 |
+| **Oura**          | Readiness, Sleep, Activity, HRV                    |
+| **Polar**         | Training Sessions, Wellness, Recovery              |
 
 ## ⚡ Quick Start
 
