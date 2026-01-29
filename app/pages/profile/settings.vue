@@ -127,11 +127,23 @@
         description: 'Your settings have been saved.',
         color: 'success'
       })
-    } catch (error) {
-      console.error('Profile update failed:', error)
+    } catch (error: any) {
+      console.error('Profile update failed:', {
+        status: error.statusCode,
+        statusText: error.statusMessage,
+        data: error.data,
+        payload: newProfile
+      })
+
+      const errorMessage =
+        error.data?.statusMessage || error.message || 'Failed to save profile settings.'
+      const validationErrors = error.data?.data
+        ?.map((e: any) => `${e.path.join('.')}: ${e.message}`)
+        .join(', ')
+
       toast.add({
         title: 'Update Failed',
-        description: 'Failed to save profile settings.',
+        description: validationErrors ? `Invalid input: ${validationErrors}` : errorMessage,
         color: 'error'
       })
     }
@@ -161,8 +173,13 @@
           description: 'Your settings and sport-specific zones have been synced.',
           color: 'success'
         })
-      } catch (error) {
-        console.error('Autodetect sync failed:', error)
+      } catch (error: any) {
+        console.error('Autodetect sync failed:', {
+          status: error.statusCode,
+          statusText: error.statusMessage,
+          data: error.data,
+          payload: updatePayload
+        })
         toast.add({
           title: 'Update Failed',
           description: 'Failed to save synced settings.',
@@ -199,7 +216,13 @@
         description: 'Sport settings updated successfully.',
         color: 'success'
       })
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Sport settings update failed:', {
+        status: error.statusCode,
+        statusText: error.statusMessage,
+        data: error.data,
+        payload: { sportSettings: updatedSettings }
+      })
       toast.add({
         title: 'Update Failed',
         description: 'Failed to save sport settings.',
