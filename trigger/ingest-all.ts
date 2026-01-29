@@ -9,6 +9,7 @@ import { ingestIntervalsTask } from './ingest-intervals'
 import { ingestYazioTask } from './ingest-yazio'
 import { ingestFitbitTask } from './ingest-fitbit'
 import { ingestHevyTask } from './ingest-hevy'
+import { ingestPolarTask } from './ingest-polar'
 import { generateAthleteProfileTask } from './generate-athlete-profile'
 import { processSyncQueueTask } from './process-sync-queue'
 import { deduplicateWorkoutsTask } from './deduplicate-workouts'
@@ -16,6 +17,7 @@ import { recommendTodayActivityTask } from './recommend-today-activity'
 import { analyzeNutritionTask } from './analyze-nutrition'
 import { getUserTimezone, getUserLocalDate } from '../server/utils/date'
 import { getUserAiSettings } from '../server/utils/ai-settings'
+import { auditLogRepository } from '../server/utils/repositories/auditLogRepository'
 
 export const ingestAllTask = task({
   id: 'ingest-all',
@@ -116,9 +118,13 @@ export const ingestAllTask = task({
         case 'hevy':
           tasksTrigger.push({
             task: ingestHevyTask,
-            payload: { userId, fullSync: false } // Hevy task expects different payload structure? No, checked above.
-            // Wait, ingestHevy expects { userId, fullSync? }, others expect { userId, startDate, endDate }
-            // I should probably align them or adapt the payload here.
+            payload: { userId, fullSync: false }
+          })
+          break
+        case 'polar':
+          tasksTrigger.push({
+            task: ingestPolarTask,
+            payload: { userId }
           })
           break
         default:
@@ -153,6 +159,7 @@ export const ingestAllTask = task({
         if (item.task.id === 'ingest-yazio' && i.provider === 'yazio') return true
         if (item.task.id === 'ingest-fitbit' && i.provider === 'fitbit') return true
         if (item.task.id === ingestHevyTask.id && i.provider === 'hevy') return true
+        if (item.task.id === ingestPolarTask.id && i.provider === 'polar') return true
         return false
       })
 
@@ -276,7 +283,7 @@ export const ingestAllTask = task({
       try {
         const aiSettings = await getUserAiSettings(userId)
         if (aiSettings.aiAutoAnalyzeNutrition) {
-          logger.log('🔄 Nutrition updated: Checking for unanalyzed records...')
+          logger.log('🤖 [Auto-Analyze] Nutrition updated: Checking for unanalyzed records...')
           // Find unanalyzed nutrition records in the date range
           const unanalyzedNutrition = await prisma.nutrition.findMany({
             where: {
@@ -292,15 +299,23 @@ export const ingestAllTask = task({
 
           if (unanalyzedNutrition.length > 0) {
             logger.log(
-              `Found ${unanalyzedNutrition.length} unanalyzed nutrition records. Triggering analysis...`
+              `🤖 [Auto-Analyze] Found ${unanalyzedNutrition.length} unanalyzed nutrition records. Triggering analysis...`
             )
             for (const record of unanalyzedNutrition) {
               await analyzeNutritionTask.trigger({ nutritionId: record.id })
+              // Log the action
+              await auditLogRepository.log({
+                userId,
+                action: 'AUTO_ANALYZE_NUTRITION',
+                resourceType: 'Nutrition',
+                resourceId: record.id,
+                metadata: { date: record.date.toISOString() }
+              })
             }
           }
         }
       } catch (err) {
-        logger.error('❌ Failed to trigger nutrition analysis', { err })
+        logger.error('❌ [Auto-Analyze] Failed to trigger nutrition analysis', { err })
       }
     }
 
@@ -309,7 +324,7 @@ export const ingestAllTask = task({
       try {
         const aiSettings = await getUserAiSettings(userId)
         if (aiSettings.aiAutoAnalyzeReadiness) {
-          logger.log('🔄 Wellness updated: Checking readiness...')
+          logger.log('🤖 [Auto-Analyze] Wellness updated: Checking readiness...')
           const timezone = await getUserTimezone(userId)
           const todayLocal = getUserLocalDate(timezone)
 
@@ -323,10 +338,18 @@ export const ingestAllTask = task({
               tags: [`user:${userId}`]
             }
           )
-          logger.log('✅ Triggered recommend-today-activity (Readiness Check)')
+          logger.log('🤖 [Auto-Analyze] ✅ Triggered recommend-today-activity (Readiness Check)')
+
+          // Log the action
+          await auditLogRepository.log({
+            userId,
+            action: 'AUTO_ANALYZE_READINESS',
+            resourceType: 'ActivityRecommendation',
+            metadata: { date: todayLocal.toISOString() }
+          })
         }
       } catch (err) {
-        logger.error('❌ Failed to trigger readiness check', { err })
+        logger.error('❌ [Auto-Analyze] Failed to trigger readiness check', { err })
       }
     }
 

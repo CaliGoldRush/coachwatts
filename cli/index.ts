@@ -17,6 +17,7 @@ import triggerCommand from './trigger'
 import monitorCommand from './monitor'
 import telegramCommand from './telegram'
 import { ouraCommand } from './integrations/oura'
+import { polarCommand } from './integrations/polar'
 
 const program = new Command()
 
@@ -37,6 +38,7 @@ program.addCommand(triggerCommand)
 program.addCommand(monitorCommand)
 program.addCommand(telegramCommand)
 program.addCommand(ouraCommand)
+program.addCommand(polarCommand)
 
 program.parse(process.argv)
 

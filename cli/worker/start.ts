@@ -287,6 +287,47 @@ export const startCommand = new Command('start')
           }
         }
 
+        if (provider === 'polar') {
+          const { type, payload, headers, userId, logId } = job.data
+
+          console.log(
+            chalk.cyan(`[PolarJob ${job.id}]`) + ` Processing Polar event ${type} (LogID: ${logId})`
+          )
+
+          try {
+            // Trigger ingest-polar task for the user
+            // Polar webhook payload might contain specific data URLs, but we usually sync everything
+            // Or we could be smarter. The payload has `url`?
+            // "Webhook payload contains event type ... and possible url related to event."
+            // But our ingestPolarTask calls syncUser which lists everything.
+            // That's safer but maybe heavier.
+            // For now, triggering full sync is fine.
+
+            // Wait, we need to pass userId. It's in the job data.
+            await tasks.trigger(
+              'ingest-polar',
+              {
+                userId
+              },
+              {
+                concurrencyKey: userId,
+                tags: [`user:${userId}`]
+              }
+            )
+
+            console.log(chalk.green(`[PolarJob ${job.id}] Triggered sync for user ${userId}`))
+
+            if (logId) {
+              await updateWebhookStatus(logId, 'PROCESSED', 'Triggered sync')
+            }
+            return { handled: true }
+          } catch (error: any) {
+            console.error(chalk.red(`[PolarJob ${job.id}] Failed:`), error)
+            if (logId) await updateWebhookStatus(logId, 'FAILED', error.message || 'Unknown error')
+            throw error
+          }
+        }
+
         console.log(
           chalk.cyan(`[WebhookJob ${job.id}]`) +
             ` Processing ${chalk.magenta(provider)}:${chalk.yellow(type)} for user ${chalk.blue(userId)}

@@ -33,6 +33,8 @@
       :fitbit-connected="fitbitConnected"
       :strava-connected="stravaConnected"
       :hevy-connected="hevyConnected"
+      :polar-connected="polarConnected"
+      :polar-ingest-workouts="polarIngestWorkouts"
       :telegram-connected="telegramConnected"
       :syncing-providers="syncingProviders"
       @disconnect="disconnectIntegration"
@@ -133,6 +135,16 @@
     () => integrationStatus.value?.integrations?.some((i: any) => i.provider === 'hevy') ?? false
   )
 
+  const polarConnected = computed(
+    () => integrationStatus.value?.integrations?.some((i: any) => i.provider === 'polar') ?? false
+  )
+
+  const polarIngestWorkouts = computed(
+    () =>
+      integrationStatus.value?.integrations?.find((i: any) => i.provider === 'polar')
+        ?.ingestWorkouts ?? false
+  )
+
   const telegramConnected = computed(
     () =>
       integrationStatus.value?.integrations?.some((i: any) => i.provider === 'telegram') ?? false
@@ -201,9 +213,11 @@
                   ? 'Fitbit'
                   : provider === 'hevy'
                     ? 'Hevy'
-                    : provider === 'telegram'
-                      ? 'Telegram'
-                      : 'Strava'
+                    : provider === 'polar'
+                      ? 'Polar'
+                      : provider === 'telegram'
+                        ? 'Telegram'
+                        : 'Strava'
 
       toast.add({
         title: 'Sync Started',
@@ -249,9 +263,11 @@
                 ? 'Yazio'
                 : provider === 'fitbit'
                   ? 'Fitbit'
-                  : provider === 'telegram'
-                    ? 'Telegram'
-                    : 'Strava'
+                  : provider === 'polar'
+                    ? 'Polar'
+                    : provider === 'telegram'
+                      ? 'Telegram'
+                      : 'Strava'
 
       toast.add({
         title: 'Disconnected',
@@ -303,6 +319,7 @@
       route.query.withings_success ||
       route.query.strava_success ||
       route.query.fitbit_success ||
+      route.query.polar_success ||
       route.query.connected === 'yazio'
     ) {
       if (route.query.whoop_success) {
@@ -340,6 +357,13 @@
           color: 'success'
         })
         refreshIntegrations()
+      } else if (route.query.polar_success) {
+        toast.add({
+          title: 'Connected!',
+          description: 'Successfully connected to Polar',
+          color: 'success'
+        })
+        refreshIntegrations()
       } else if (route.query.connected === 'yazio') {
         toast.add({
           title: 'Connected!',
@@ -354,13 +378,15 @@
       route.query.oura_error ||
       route.query.withings_error ||
       route.query.strava_error ||
-      route.query.fitbit_error
+      route.query.fitbit_error ||
+      route.query.polar_error
     ) {
       const errorMsg = (route.query.whoop_error ||
         route.query.oura_error ||
         route.query.withings_error ||
         route.query.strava_error ||
-        route.query.fitbit_error) as string
+        route.query.fitbit_error ||
+        route.query.polar_error) as string
       const provider = route.query.whoop_error
         ? 'WHOOP'
         : route.query.oura_error
@@ -369,7 +395,9 @@
             ? 'Withings'
             : route.query.fitbit_error
               ? 'Fitbit'
-              : 'Strava'
+              : route.query.polar_error
+                ? 'Polar'
+                : 'Strava'
       const description =
         errorMsg === 'no_code'
           ? 'Authorization was cancelled or no code was received'

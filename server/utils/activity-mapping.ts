@@ -131,3 +131,47 @@ export const WHOOP_SPORT_MAP: Record<number, string> = {
 export function normalizeWhoopSport(sportId: number): string {
   return WHOOP_SPORT_MAP[sportId] || 'Other'
 }
+
+export function normalizePolarSport(sport: string, detailed?: string): string {
+  // Use detailed info if available for better mapping
+  if (detailed) {
+    const d = detailed.toUpperCase()
+    if (d.includes('RUNNING')) return 'Run'
+    if (d.includes('CYCLING')) {
+      if (d.includes('INDOOR')) return 'VirtualRide'
+      if (d.includes('MOUNTAIN')) return 'MountainBikeRide'
+      return 'Ride'
+    }
+    if (d.includes('SWIMMING')) return 'Swim'
+    if (d.includes('STRENGTH')) return 'WeightTraining'
+    if (d.includes('WALKING')) return 'Walk'
+    if (d.includes('HIKING')) return 'Hike'
+    if (d.includes('SKIING')) {
+      if (d.includes('CROSS_COUNTRY')) return 'NordicSki'
+      return 'AlpineSki'
+    }
+    if (d.includes('TENNIS')) return 'Tennis'
+    if (d.includes('SOCCER')) return 'Soccer'
+    if (d.includes('BASKETBALL')) return 'Basketball'
+    if (d.includes('GOLF')) return 'Golf'
+    if (d.includes('ROWING')) return 'Rowing'
+    if (d.includes('YOGA')) return 'Yoga'
+    if (d.includes('HIGH_INTENSITY')) return 'HIIT'
+  }
+
+  // Fallback to generic sport category
+  switch (sport.toUpperCase()) {
+    case 'RUNNING':
+      return 'Run'
+    case 'CYCLING':
+      return 'Ride'
+    case 'SWIMMING':
+      return 'Swim'
+    case 'WALKING':
+      return 'Walk'
+    case 'STRENGTH_TRAINING':
+      return 'WeightTraining'
+    default:
+      return 'Other'
+  }
+}

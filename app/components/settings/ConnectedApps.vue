@@ -390,6 +390,60 @@
       </div>
     </UCard>
 
+    <!-- Polar -->
+    <UCard :ui="{ body: 'flex flex-col h-full justify-between gap-4' }">
+      <div class="flex items-start gap-4">
+        <div
+          class="w-12 h-12 bg-white rounded-lg flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700"
+        >
+          <img
+            src="/images/logos/polar_logo_square.png"
+            alt="Polar Logo"
+            class="w-8 h-8 object-contain"
+          />
+        </div>
+        <div>
+          <h3 class="font-semibold">Polar</h3>
+          <p class="text-sm text-muted">Activities, sleep, and nightly recharge</p>
+        </div>
+      </div>
+
+      <div
+        class="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto"
+      >
+        <div v-if="!polarConnected">
+          <UButton
+            color="neutral"
+            variant="outline"
+            @click="navigateTo('/api/integrations/polar/authorize', { external: true })"
+          >
+            Connect
+          </UButton>
+        </div>
+        <div v-else class="flex items-center gap-2">
+          <UButton
+            color="success"
+            variant="solid"
+            size="sm"
+            class="font-bold"
+            icon="i-heroicons-arrow-path"
+            :loading="syncingProviders.has('polar')"
+            @click="$emit('sync', 'polar')"
+          >
+            Sync Now
+          </UButton>
+          <UDropdownMenu :items="polarActions">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-heroicons-ellipsis-vertical"
+            />
+          </UDropdownMenu>
+        </div>
+      </div>
+    </UCard>
+
     <!-- Strava -->
     <UCard :ui="{ body: 'flex flex-col h-full justify-between gap-4' }">
       <div class="flex items-start gap-4">
@@ -547,6 +601,8 @@
     fitbitConnected: boolean
     stravaConnected: boolean
     hevyConnected: boolean
+    polarConnected: boolean
+    polarIngestWorkouts: boolean
     telegramConnected: boolean
     syncingProviders: Set<string>
   }>()
@@ -678,6 +734,26 @@
         icon: 'i-heroicons-trash',
         color: 'error' as const,
         onSelect: () => emit('disconnect', 'strava')
+      }
+    ]
+  ])
+
+  const polarActions = computed(() => [
+    [
+      {
+        label: 'Ingest Workouts',
+        type: 'checkbox' as const,
+        checked: props.polarIngestWorkouts,
+        onUpdateChecked: (checked: boolean) =>
+          emit('updateSetting', 'polar', 'ingestWorkouts', checked)
+      }
+    ],
+    [
+      {
+        label: 'Disconnect',
+        icon: 'i-heroicons-trash',
+        color: 'error' as const,
+        onSelect: () => emit('disconnect', 'polar')
       }
     ]
   ])
