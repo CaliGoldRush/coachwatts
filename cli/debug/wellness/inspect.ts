@@ -5,9 +5,9 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import pg from 'pg'
 
-const debugWellnessCommand = new Command('wellness')
+const inspectCommand = new Command('inspect')
 
-debugWellnessCommand
+inspectCommand
   .description('Debug wellness data and discrepancies between DB columns and rawJson')
   .option('--prod', 'Use production database')
   .option('--user <email>', 'Filter by user email')
@@ -208,4 +208,4 @@ debugWellnessCommand
     }
   })
 
-export default debugWellnessCommand
+export default inspectCommand
