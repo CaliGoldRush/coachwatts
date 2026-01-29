@@ -1,3 +1,4 @@
+import { SchemaType } from '@google/generative-ai'
 import { prisma } from '../db'
 import { generateStructuredAnalysis } from '../gemini'
 import { wellnessRepository } from '../repositories/wellnessRepository'
@@ -18,7 +19,52 @@ import {
 
 // Define the schema for the AI analysis
 const wellnessAnalysisSchema = {
-  // ... existing code ...
+  type: SchemaType.OBJECT,
+  properties: {
+    executive_summary: {
+      type: SchemaType.STRING,
+      description: "A concise summary of the athlete's overall wellness state."
+    },
+    status: {
+      type: SchemaType.STRING,
+      description: "The readiness status: 'READY', 'CAUTION', or 'REST'.",
+      enum: ['READY', 'CAUTION', 'REST']
+    },
+    sections: {
+      type: SchemaType.ARRAY,
+      description: 'Detailed analysis broken down by category.',
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          title: { type: SchemaType.STRING, description: "Section title (e.g., 'Sleep Analysis')" },
+          content: { type: SchemaType.STRING, description: 'Detailed analysis content.' },
+          type: {
+            type: SchemaType.STRING,
+            description: 'Category of the section.',
+            enum: ['SLEEP', 'HRV', 'RECOVERY', 'SUBJECTIVE', 'TRENDS']
+          }
+        },
+        required: ['title', 'content', 'type']
+      }
+    },
+    recommendations: {
+      type: SchemaType.ARRAY,
+      description: 'Actionable advice for the athlete.',
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          title: { type: SchemaType.STRING, description: 'Recommendation title.' },
+          description: { type: SchemaType.STRING, description: 'Detailed recommendation.' },
+          type: {
+            type: SchemaType.STRING,
+            description: 'Type of recommendation.',
+            enum: ['TRAINING', 'LIFESTYLE', 'NUTRITION']
+          }
+        },
+        required: ['title', 'description', 'type']
+      }
+    }
+  },
   required: ['executive_summary', 'status', 'sections', 'recommendations']
 }
 
