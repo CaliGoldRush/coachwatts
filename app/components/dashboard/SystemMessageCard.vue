@@ -1,7 +1,7 @@
 <template>
   <UAlert
     v-if="message"
-    :title="message.title"
+    :title="null"
     :color="isAdvert ? 'gray' : color"
     :variant="variant"
     :icon="icon"
@@ -15,42 +15,62 @@
     :class="[
       { 'cursor-pointer': !!message.targetUrl },
       isAdvert
-        ? '!bg-amber-50/40 dark:!bg-[#1c1a17] ring-1 !ring-amber-400/40 dark:!ring-amber-500/40'
+        ? '!bg-amber-50/40 lg:!bg-amber-50/20 dark:!bg-[#1c1a17] ring-1 !ring-amber-400/40 dark:!ring-amber-500/40'
         : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
     ]"
     :ui="{
-      title: isAdvert ? 'text-gray-900 dark:text-gray-100 font-bold max-w-[40ch]' : undefined,
-      description: isAdvert ? 'text-gray-800 dark:text-gray-200' : undefined,
       icon: { base: isAdvert ? 'text-amber-500 dark:text-amber-500' : undefined },
       close: isAdvert
         ? 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors'
-        : undefined
+        : undefined,
+      description: 'w-full'
     }"
     @click="handleClick"
     @update:open="dismiss"
   >
     <template #description>
-      <div class="flex flex-col gap-4">
-        <div
-          class="prose dark:prose-invert max-w-none text-sm leading-relaxed"
-          :class="{
-            'prose-strong:text-amber-600 dark:prose-strong:text-amber-400 prose-strong:font-bold':
+      <div
+        class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-8 relative z-10"
+      >
+        <!-- Left Zone: Title + Content -->
+        <div class="flex flex-col gap-2 lg:gap-1 flex-1 min-w-0">
+          <h3
+            v-if="message.title"
+            class="text-sm font-medium"
+            :class="
               isAdvert
-          }"
-          v-html="parsedContent"
-        ></div>
-        <div v-if="message.actionLabel" class="mt-1 flex flex-col gap-2 items-start">
+                ? 'text-gray-900 dark:text-gray-100 font-bold lg:text-base'
+                : 'text-gray-900 dark:text-white'
+            "
+          >
+            {{ message.title }}
+          </h3>
+          <div
+            class="prose dark:prose-invert max-w-none text-sm leading-relaxed"
+            :class="{
+              'prose-strong:text-amber-600 dark:prose-strong:text-amber-400 prose-strong:font-bold':
+                isAdvert
+            }"
+            v-html="parsedContent"
+          ></div>
+        </div>
+
+        <!-- Right Zone: CTA -->
+        <div
+          v-if="message.actionLabel"
+          class="mt-1 lg:mt-0 flex flex-col gap-2 items-start lg:items-end shrink-0"
+        >
           <UButton
             :label="message.actionLabel"
             size="xs"
             :color="isAdvert ? 'warning' : color"
             variant="solid"
-            class="font-semibold shadow-lg shadow-amber-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-amber-500/35 active:translate-y-0"
+            class="font-semibold shadow-lg shadow-amber-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-amber-500/35 active:translate-y-0 lg:brightness-105 lg:px-6 lg:py-2"
             @click.stop="handleAction"
           />
           <span
             v-if="isAdvert"
-            class="text-[10px] text-gray-500 dark:text-gray-400 font-medium ml-1 mt-0.5"
+            class="text-[10px] text-gray-500 dark:text-gray-400 font-medium ml-1 mt-0.5 whitespace-nowrap"
           >
             No commitment • Cancel anytime
           </span>
