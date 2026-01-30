@@ -10,6 +10,13 @@
   // Background Task Monitor State
   const { isOpen: showTriggerMonitor } = useTriggerMonitor()
 
+  const userStore = useUserStore()
+
+  // Ensure user data (including subscription) is loaded
+  onMounted(() => {
+    userStore.fetchUser()
+  })
+
   const impersonationMeta = useCookie<{
     adminId: string
     adminEmail: string
