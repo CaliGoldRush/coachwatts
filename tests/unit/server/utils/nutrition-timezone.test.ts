@@ -10,7 +10,7 @@ vi.mock('../../../../server/utils/db', () => ({
   prisma: {
     user: { findUnique: vi.fn() },
     goal: { findMany: vi.fn() },
-    plannedWorkout: { findMany: vi.fn() },
+    plannedWorkout: { findMany: vi.fn(), findFirst: vi.fn() },
     trainingAvailability: { findMany: vi.fn() },
     weeklyTrainingPlan: { findFirst: vi.fn() },
     nutrition: { findMany: vi.fn() },
@@ -82,6 +82,7 @@ describe('Nutrition Timezone Handling', () => {
 
     vi.mocked(prisma.goal.findMany).mockResolvedValue([])
     vi.mocked(prisma.plannedWorkout.findMany).mockResolvedValue([])
+    vi.mocked(prisma.plannedWorkout.findFirst).mockResolvedValue(null)
     vi.mocked(prisma.trainingAvailability.findMany).mockResolvedValue([])
     vi.mocked(prisma.weeklyTrainingPlan.findFirst).mockResolvedValue(null)
 
