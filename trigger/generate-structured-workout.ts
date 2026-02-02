@@ -423,7 +423,8 @@ export const generateStructuredWorkoutTask = task({
         steps: structure.steps || [],
         exercises: structure.exercises, // Add this
         messages: [],
-        ftp: workout.user.ftp || 250
+        ftp: workout.user.ftp || 250,
+        sportSettings: sportSettings || undefined
       }
 
       const workoutDoc = WorkoutConverter.toIntervalsICU(workoutData)

@@ -286,7 +286,8 @@ export const adjustStructuredWorkoutTask = task({
         description: updatedWorkout.description || '',
         steps: (structure as any).steps || [],
         messages: [],
-        ftp: ftp
+        ftp: ftp,
+        sportSettings: sportSettings || undefined
       }
       const workoutDoc = WorkoutConverter.toIntervalsICU(workoutData)
       await syncPlannedWorkoutToIntervals(

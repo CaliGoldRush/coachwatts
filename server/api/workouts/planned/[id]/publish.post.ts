@@ -6,6 +6,7 @@ import {
 } from '../../../../utils/intervals'
 import { WorkoutConverter } from '../../../../utils/workout-converter'
 import { getServerSession } from '../../../../utils/session'
+import { sportSettingsRepository } from '../../../../utils/repositories/sportSettingsRepository'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
@@ -49,6 +50,12 @@ export default defineEventHandler(async (event) => {
     workout.externalId.startsWith('ai-gen-') ||
     workout.externalId.startsWith('adhoc-')
 
+  // Fetch sport settings to check preferences
+  const sportSettings = await sportSettingsRepository.getForActivityType(
+    userId,
+    workout.type || 'Ride'
+  )
+
   // Prepare workout data
   let workoutDoc = ''
   if (workout.structuredWorkout) {
@@ -58,7 +65,8 @@ export default defineEventHandler(async (event) => {
       steps: (workout.structuredWorkout as any).steps || [],
       exercises: (workout.structuredWorkout as any).exercises, // Add this
       messages: (workout.structuredWorkout as any).messages || [],
-      ftp: (workout.user as any).ftp || 250
+      ftp: (workout.user as any).ftp || 250,
+      sportSettings: sportSettings || undefined
     }
     workoutDoc = WorkoutConverter.toIntervalsICU(workoutData)
   }

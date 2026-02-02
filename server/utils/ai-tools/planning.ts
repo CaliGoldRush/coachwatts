@@ -13,6 +13,7 @@ import {
 import { tags } from '@trigger.dev/sdk/v3'
 import { plannedWorkoutRepository } from '../repositories/plannedWorkoutRepository'
 import { workoutRepository } from '../repositories/workoutRepository'
+import { sportSettingsRepository } from '../repositories/sportSettingsRepository'
 import {
   getUserLocalDate,
   formatUserDate,
@@ -366,6 +367,12 @@ export const planningTools = (userId: string, timezone: string) => ({
         workout.externalId.startsWith('ai-gen-') ||
         workout.externalId.startsWith('adhoc-')
 
+      // Fetch sport settings to check preferences
+      const sportSettings = await sportSettingsRepository.getForActivityType(
+        userId,
+        workout.type || 'Ride'
+      )
+
       let workoutDoc = ''
       if (workout.structuredWorkout) {
         const workoutData = {
@@ -374,7 +381,8 @@ export const planningTools = (userId: string, timezone: string) => ({
           steps: (workout.structuredWorkout as any).steps || [],
           exercises: (workout.structuredWorkout as any).exercises,
           messages: (workout.structuredWorkout as any).messages || [],
-          ftp: (workout.user as any).ftp || 250
+          ftp: (workout.user as any).ftp || 250,
+          sportSettings: sportSettings || undefined
         }
         workoutDoc = WorkoutConverter.toIntervalsICU(workoutData)
       }
