@@ -91,13 +91,8 @@ jobs:
           TRIGGER_API_URL: ${{ secrets.TRIGGER_API_URL }}
         run: |
           if [ -n "${TRIGGER_API_URL}" ]; then
-            # Sanitize quotes/whitespace/CR from secrets
-            API_URL="${TRIGGER_API_URL}"
-            API_URL="${API_URL%"}"
-            API_URL="${API_URL#"}"
-            API_URL="${API_URL%'}"
-            API_URL="${API_URL#'}"
-            API_URL=$(printf '%s' "${API_URL}" | tr -d '\r' | sed -e 's/^\s*//' -e 's/\s*$//')
+            # Sanitize quotes/whitespace/CR from secrets using sed to avoid GH Actions expression confusion
+            API_URL=$(echo "${TRIGGER_API_URL}" | sed -e 's/^[[:space:]"'"'"']*//' -e 's/[[:space:]"'"'"']*$//' | tr -d '\r')
 
             # Extract host for DNS diagnostics
             HOST=$(echo "${API_URL}" | sed -E 's#^https?://##; s#/.*$##')
