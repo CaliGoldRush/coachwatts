@@ -376,10 +376,16 @@ export const reviewGoalsTask = task({
             (Date.now() - new Date(g.createdAt).getTime()) / (1000 * 60 * 60 * 24)
           )
 
+          // Use the latest user weight if this is a weight goal to ensure accuracy
+          let effectiveCurrentValue = g.currentValue
+          if (g.metric === 'weight_kg' && user.weight) {
+            effectiveCurrentValue = user.weight
+          }
+
           let progressPct = null
-          if (g.startValue !== null && g.currentValue !== null && g.targetValue !== null) {
+          if (g.startValue !== null && effectiveCurrentValue !== null && g.targetValue !== null) {
             const totalChange = g.targetValue - g.startValue
-            const currentChange = g.currentValue - g.startValue
+            const currentChange = effectiveCurrentValue - g.startValue
             progressPct = totalChange !== 0 ? Math.round((currentChange / totalChange) * 100) : 0
           }
 
@@ -391,7 +397,7 @@ Description: ${g.description || 'N/A'}
 Priority: ${g.priority}
 Metric: ${g.metric || 'N/A'}
 Start Value: ${g.startValue || 'N/A'}
-Current Value: ${g.currentValue || 'N/A'}
+Current Value: ${effectiveCurrentValue || 'N/A'} (Note: Using latest profile data for analysis)
 Target Value: ${g.targetValue || 'N/A'}
 Progress: ${progressPct !== null ? progressPct + '%' : 'N/A'}
 Target Date: ${g.targetDate ? formatUserDate(g.targetDate, timezone) : 'N/A'}

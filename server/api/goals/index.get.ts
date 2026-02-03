@@ -69,9 +69,35 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // Dynamic update for Body Composition and FTP goals to ensure fresh UI
+    const goals = user.goals.map((goal) => {
+      // Create a shallow copy to modify
+      const g = { ...goal }
+
+      // Update weight goals if profile weight is different from stored currentValue
+      if (
+        (g.metric === 'weight_kg' || g.type === 'BODY_COMPOSITION') &&
+        user.weight &&
+        g.currentValue !== user.weight
+      ) {
+        g.currentValue = user.weight
+      }
+
+      // Update FTP goals if profile FTP is different from stored currentValue
+      if (
+        (g.metric === 'FTP (Watts)' || g.title?.toLowerCase().includes('ftp')) &&
+        user.ftp &&
+        g.currentValue !== user.ftp
+      ) {
+        g.currentValue = user.ftp
+      }
+
+      return g
+    })
+
     return {
       success: true,
-      goals: user.goals
+      goals
     }
   } catch (error) {
     console.error('Error fetching goals:', error)

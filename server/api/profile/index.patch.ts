@@ -2,6 +2,7 @@ import { getServerSession } from '../../utils/session'
 import { z } from 'zod'
 import { sportSettingsRepository } from '../../utils/repositories/sportSettingsRepository'
 import { profileUpdateSchema } from '../../utils/schemas/profile'
+import { athleteMetricsService } from '../../utils/athleteMetricsService'
 
 export default defineEventHandler(async (event) => {
   const session = await getServerSession(event)
@@ -33,33 +34,55 @@ export default defineEventHandler(async (event) => {
   const userEmail = session.user.email
 
   try {
-    // 1. Update User (Basic Settings)
-    // Exclude sportSettings from user update
-    const { sportSettings, hrZones, powerZones, ...userUpdateData } = data
-
-    // Normalize sex
-    if (userUpdateData.sex === 'M') userUpdateData.sex = 'Male'
-    if (userUpdateData.sex === 'F') userUpdateData.sex = 'Female'
-
-    // Handle date conversion for DOB
-    const updatePayload: any = { ...userUpdateData }
-    if (updatePayload.dob) {
-      updatePayload.dob = new Date(updatePayload.dob)
-    }
-
-    const updatedUser = await prisma.user.update({
+    // Fetch user to get ID
+    const user = await prisma.user.findUnique({
       where: { email: userEmail },
-      data: updatePayload
+      select: { id: true }
+    })
+    if (!user) throw createError({ statusCode: 404, message: 'User not found' })
+
+    // 1. Update Metrics via Service (Weight, FTP, LTHR, MaxHR)
+    // This also handles goal syncing and zone recalculation
+    const updatedUser = await athleteMetricsService.updateMetrics(user.id, {
+      ftp: data.ftp,
+      weight: data.weight,
+      maxHr: data.maxHr,
+      lthr: data.lthr
     })
 
-    // 2. Update Sport Settings via Repository
+    // 2. Update remaining User fields
+    const { sportSettings, hrZones, powerZones, ftp, weight, maxHr, lthr, ...otherData } = data
+
+    if (Object.keys(otherData).length > 0) {
+      // Normalize sex
+      if (otherData.sex === 'M') otherData.sex = 'Male'
+      if (otherData.sex === 'F') otherData.sex = 'Female'
+
+      // Handle date conversion for DOB
+      const updatePayload: any = { ...otherData }
+      if (updatePayload.dob) {
+        updatePayload.dob = new Date(updatePayload.dob)
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: updatePayload
+      })
+    }
+
+    // 3. Update Sport Settings via Repository (if explicitly provided)
     let updatedSettings = []
     if (sportSettings) {
       updatedSettings = await sportSettingsRepository.upsertSettings(updatedUser.id, sportSettings)
     } else {
-      // If not updating settings, fetch existing to return consistent response
+      // Fetch latest settings (including those updated by athleteMetricsService)
       updatedSettings = await sportSettingsRepository.getByUserId(updatedUser.id)
     }
+
+    // Re-fetch user to return full updated object
+    const finalUser = await prisma.user.findUnique({
+      where: { id: user.id }
+    })
 
     // Helper to format date as YYYY-MM-DD
     const formatDate = (date: Date | null) => {
@@ -70,8 +93,8 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       profile: {
-        ...updatedUser,
-        dob: formatDate(updatedUser.dob),
+        ...finalUser,
+        dob: formatDate(finalUser?.dob || null),
         // Return updated sport settings
         sportSettings: updatedSettings
       }

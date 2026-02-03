@@ -85,7 +85,58 @@ export const athleteMetricsService = {
       }
     }
 
+    // 6. Sync Goal Progress
+    await this.syncGoalProgress(userId, metrics)
+
     return updatedUser
+  },
+
+  /**
+   * Sync progress for active goals based on updated metrics.
+   */
+  async syncGoalProgress(
+    userId: string,
+    metrics: {
+      ftp?: number | null
+      weight?: number | null
+    }
+  ) {
+    const activeGoals = await prisma.goal.findMany({
+      where: {
+        userId,
+        status: 'ACTIVE'
+      }
+    })
+
+    for (const goal of activeGoals) {
+      const updateData: any = {}
+
+      // Update Weight Goals
+      if (
+        (goal.metric === 'weight_kg' || goal.type === 'BODY_COMPOSITION') &&
+        metrics.weight !== undefined &&
+        metrics.weight !== null
+      ) {
+        updateData.currentValue = roundToTwoDecimals(metrics.weight)
+      }
+
+      // Update FTP Goals
+      if (
+        (goal.metric === 'FTP (Watts)' || goal.title?.toLowerCase().includes('ftp')) &&
+        metrics.ftp !== undefined &&
+        metrics.ftp !== null
+      ) {
+        updateData.currentValue = metrics.ftp
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await prisma.goal.update({
+          where: { id: goal.id },
+          data: updateData
+        })
+        console.log(`[MetricsService] Updated progress for goal: ${goal.title}`, updateData)
+      }
+    }
   },
 
   /**

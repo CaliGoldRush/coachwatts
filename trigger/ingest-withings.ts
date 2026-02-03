@@ -21,6 +21,7 @@ import { normalizeTSS } from '../server/utils/normalize-tss'
 import { calculateWorkoutStress } from '../server/utils/calculate-workout-stress'
 import { roundToTwoDecimals } from '../server/utils/number'
 import { triggerReadinessCheckIfNeeded } from '../server/utils/services/wellness-analysis'
+import { athleteMetricsService } from '../server/utils/athleteMetricsService'
 
 export const ingestWithingsTask = task({
   id: 'ingest-withings',
@@ -137,9 +138,9 @@ export const ingestWithingsTask = task({
         // Also update the User profile weight if this is the most recent measurement
         const isRecent = new Date().getTime() - wellness.date.getTime() < 7 * 24 * 60 * 60 * 1000 // within 7 days
         if (isRecent && cleanWellness.weight) {
-          await prisma.user.update({
-            where: { id: userId },
-            data: { weight: cleanWellness.weight }
+          await athleteMetricsService.updateMetrics(userId, {
+            weight: cleanWellness.weight,
+            date: wellness.date
           })
         }
       }

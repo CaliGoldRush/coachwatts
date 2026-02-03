@@ -17,6 +17,7 @@ import { wellnessRepository } from '../repositories/wellnessRepository'
 import { eventRepository } from '../repositories/eventRepository'
 import { calendarNoteRepository } from '../repositories/calendarNoteRepository'
 import { sportSettingsRepository } from '../repositories/sportSettingsRepository'
+import { athleteMetricsService } from '../athleteMetricsService'
 import { normalizeTSS } from '../normalize-tss'
 import { calculateWorkoutStress } from '../calculate-workout-stress'
 import { getUserTimezone, getEndOfDayUTC, getStartOfDayUTC } from '../date'
@@ -67,17 +68,21 @@ export const IntervalsService = {
 
     const profile = await fetchIntervalsAthleteProfile(integration)
 
-    // Update Basic Settings
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        weight: profile.weight,
-        restingHr: profile.restingHR, // Note: normalized profile uses restingHR (uppercase HR)
-        maxHr: profile.maxHR,
-        lthr: profile.lthr,
-        ftp: profile.ftp
-      }
+    // Update Basic Settings via Service to sync goals/zones
+    await athleteMetricsService.updateMetrics(userId, {
+      weight: profile.weight,
+      maxHr: profile.maxHR,
+      lthr: profile.lthr,
+      ftp: profile.ftp
     })
+
+    // Update restingHr if available (not currently in updateMetrics)
+    if (profile.restingHR) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { restingHr: profile.restingHR }
+      })
+    }
 
     // Update Sport Settings using Repository
     if (profile.sportSettings && profile.sportSettings.length > 0) {
@@ -440,6 +445,15 @@ export const IntervalsService = {
         'intervals'
       )
       upsertedCount++
+
+      // Also update the User profile weight if this is a recent measurement
+      const isRecent = new Date().getTime() - wellnessDate.getTime() < 7 * 24 * 60 * 60 * 1000
+      if (isRecent && normalizedWellness.weight) {
+        await athleteMetricsService.updateMetrics(userId, {
+          weight: normalizedWellness.weight,
+          date: wellnessDate
+        })
+      }
     }
 
     return upsertedCount
