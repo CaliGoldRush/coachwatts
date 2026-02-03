@@ -59,16 +59,20 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trigger Dokploy Deployment
+        env:
+          DOKPLOY_WEBHOOK: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
         run: |
-          if [ -n "${{ secrets.DOKPLOY_WEBHOOK_URL }}" ]; then
-            curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_URL }}"
+          if [ -n "$DOKPLOY_WEBHOOK" ]; then
+            curl -X POST "$DOKPLOY_WEBHOOK"
           else
             echo "::warning::DOKPLOY_WEBHOOK_URL is not set. Skipping webhook trigger."
           fi
 
       - name: Discord Notification
         uses: sarisia/actions-status-discord@v1
-        if: always() && secrets.DISCORD_WEBHOOK != ''
+        if: always() && env.DISCORD_WEBHOOK != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           title: 'Deploy Status - ${{ github.repository }}'
@@ -77,3 +81,19 @@ jobs:
             **Branch:** ${{ github.ref_name }}
             **Commit:** [${{ github.sha }}](${{ github.event.head_commit.url }})
           color: ${{ job.status == 'success' && '0x28a745' || '0xdc3545' }}
+
+  deploy-trigger:
+    name: Deploy Trigger.dev
+    needs: build-and-deploy
+    uses: ./.github/workflows/reusable-trigger-deploy.yml
+    with:
+      environment: production
+      trigger-env: prod
+      trigger-version: '4.3.3'
+      node-version: '22'
+      preview-branch: false
+    secrets:
+      TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
+      TRIGGER_API_URL: ${{ secrets.TRIGGER_API_URL }}
+      TRIGGER_PROJECT_REF: ${{ secrets.TRIGGER_PROJECT_REF }}
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}

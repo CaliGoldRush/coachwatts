@@ -50,7 +50,7 @@ on:
 jobs:
   deploy:
     name: Deploy Trigger.dev Tasks
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -96,7 +96,7 @@ jobs:
             API_URL="${API_URL#"}"
             API_URL="${API_URL%'}"
             API_URL="${API_URL#'}"
-            API_URL=$(printf '%s' "${API_URL}" | tr -d '\r' | sed -e 's/^	*//' -e 's/	*$//')
+            API_URL=$(printf '%s' "${API_URL}" | tr -d '\r' | sed -e 's/^\s*//' -e 's/\s*$//')
 
             # Extract host for DNS diagnostics
             HOST=$(echo "${API_URL}" | sed -E 's#^https?://##; s#/.*$##')
@@ -107,7 +107,7 @@ jobs:
             echo "--- getent hosts ${HOST} ---"
             getent hosts "${HOST}" || echo "(no getent entry)"
 
-            HTTP_CODE=$(curl -sS -o /dev/null -w "%{{http_code}}" --connect-timeout 10 -L "${API_URL}" || echo "000")
+            HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 10 -L "${API_URL}" || echo "000")
             if [ "${HTTP_CODE}" = "000" ]; then
               echo "::error::Cannot connect to ${API_URL}. DNS/egress/firewall issue or incorrect API URL."
               exit 1
@@ -128,8 +128,8 @@ jobs:
           echo "🔎 Preflight:"
           if [ -n "${TRIGGER_ACCESS_TOKEN}" ]; then echo "  TRIGGER_ACCESS_TOKEN: present"; else echo "  TRIGGER_ACCESS_TOKEN: MISSING"; fi
           # Sanitize possible surrounding quotes
-          API_URL=$(echo "${TRIGGER_API_URL}" | sed -e 's/^	*\"?//' -e 's/\"?\t*$//')
-          PROJECT_REF=$(echo "${TRIGGER_PROJECT_REF}" | sed -e 's/^	*\"?//' -e 's/\"?\t*$//')
+          API_URL=$(echo "${TRIGGER_API_URL}" | sed -e 's/^\s*"?\s*//' -e 's/\s*"?\s*$//')
+          PROJECT_REF=$(echo "${TRIGGER_PROJECT_REF}" | sed -e 's/^\s*"?\s*//' -e 's/\s*"?\s*$//')
           if [ -n "${API_URL}" ]; then echo "  TRIGGER_API_URL: ${API_URL}"; else echo "  TRIGGER_API_URL: not set (defaults to Trigger.dev Cloud)"; fi
           if [ -n "${PROJECT_REF}" ]; then echo "  TRIGGER_PROJECT_REF: ${PROJECT_REF}"; else echo "  TRIGGER_PROJECT_REF: not set (will rely on config)"; fi
 
@@ -191,14 +191,16 @@ jobs:
           echo "  Trigger.dev Environment: ${TRIGGER_ENV}"
           echo "  Preview branch: ${{ inputs.preview-branch }} ${{ inputs.branch-name }}"
           echo "  Trigger version: ${{ inputs.trigger-version }}"
-          echo "  API URL set: $([[ -n \"${TRIGGER_API_URL}\" ]] && echo yes || echo no)"
-          echo "  Project ref set: $([[ -n \"${TRIGGER_PROJECT_REF}\" ]] && echo yes || echo no)"
+          echo "  API URL set: $([[ -n "${TRIGGER_API_URL}" ]] && echo yes || echo no)"
+          echo "  Project ref set: $([[ -n "${TRIGGER_PROJECT_REF}" ]] && echo yes || echo no)"
 
           echo "🎉 Trigger.dev deployment completed successfully!"
 
       - name: Discord Notification
         uses: sarisia/actions-status-discord@v1
-        if: always() && secrets.DISCORD_WEBHOOK != ''
+        if: always() && env.DISCORD_WEBHOOK != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           title: 'Deploy Status - ${{ github.repository }}'
