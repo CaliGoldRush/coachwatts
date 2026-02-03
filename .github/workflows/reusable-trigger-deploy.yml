@@ -14,12 +14,12 @@ on:
       trigger-version:
         description: Trigger.dev CLI version to use
         type: string
-        default: '4.3.3'
+        default: "4.3.3"
         required: false
       node-version:
         description: Node.js version to use
         type: string
-        default: '22'
+        default: "22"
         required: false
       preview-branch:
         description: Enable preview branch deployment (auto-detects from git branch)
@@ -69,7 +69,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: |
@@ -92,7 +92,7 @@ jobs:
         run: |
           if [ -n "${TRIGGER_API_URL}" ]; then
             # Sanitize quotes/whitespace/CR from secrets using sed to avoid GH Actions expression confusion
-            API_URL=$(echo "${TRIGGER_API_URL}" | sed -e 's/^[[:space:]"'"'"']	extit{//' -e 's/[[:space:]"'"'"']	extit{$//' | tr -d '\r')
+            API_URL=$(echo "${TRIGGER_API_URL}" | sed -e 's/^[[:space:]"'"'"']*//' -e 's/[[:space:]"'"'"']*$//')
 
             # Extract host for DNS diagnostics
             HOST=$(echo "${API_URL}" | sed -E 's#^https?://##; s#/.*$##')
@@ -121,43 +121,13 @@ jobs:
           TRIGGER_PROJECT_REF: ${{ secrets.TRIGGER_PROJECT_REF }}
           TRIGGER_API_URL: ${{ secrets.TRIGGER_API_URL }}
         run: |
-          # Aggressively sanitize all secrets to avoid CLI parsing issues
-          export TRIGGER_ACCESS_TOKEN=$(echo "${TRIGGER_ACCESS_TOKEN}" | sed -e 's/^[[:space:]"'"'"']	extit{//' -e 's/[[:space:]"'"'"']	extit{$//' | tr -d '\r')
-          export TRIGGER_API_URL=$(echo "${TRIGGER_API_URL}" | sed -e 's/^[[:space:]"'"'"']	extit{//' -e 's/[[:space:]"'"'"']	extit{$//' | tr -d '\r')
-          export TRIGGER_PROJECT_REF=$(echo "${TRIGGER_PROJECT_REF}" | sed -e 's/^[[:space:]"'"'"']	extit{//' -e 's/[[:space:]"'"'"']	extit{$//' | tr -d '\r')
-
           echo "🔎 Preflight:"
           if [ -n "${TRIGGER_ACCESS_TOKEN}" ]; then echo "  TRIGGER_ACCESS_TOKEN: present"; else echo "  TRIGGER_ACCESS_TOKEN: MISSING"; fi
           if [ -n "${TRIGGER_API_URL}" ]; then echo "  TRIGGER_API_URL: ${TRIGGER_API_URL}"; else echo "  TRIGGER_API_URL: not set (defaults to Trigger.dev Cloud)"; fi
           if [ -n "${TRIGGER_PROJECT_REF}" ]; then echo "  TRIGGER_PROJECT_REF: ${TRIGGER_PROJECT_REF}"; else echo "  TRIGGER_PROJECT_REF: not set (will rely on config)"; fi
 
-          # Determine which Trigger.dev environment to use
-          TRIGGER_ENV="${{ inputs.trigger-env }}"
-          if [ -z "${TRIGGER_ENV}" ]; then
-            TRIGGER_ENV="${{ inputs.environment }}"
-          fi
+          pnpm dlx trigger.dev@${{ inputs.trigger-version }} deploy
 
-          echo "🚀 Deploying Trigger.dev tasks to ${TRIGGER_ENV}..."
-
-          # Handle preview branch deployment params
-          BRANCH_ARG=""
-          if [ "${{ inputs.preview-branch }}" = "true" ]; then
-            TRIGGER_ENV="preview"
-            if [ -n "${{ inputs.branch-name }}" ]; then
-              BRANCH_ARG="--branch ${{ inputs.branch-name }}"
-            fi
-          fi
-
-          # Run deployment directly (environment variables are already exported)
-          TRIGGER_ACCESS_TOKEN="${TRIGGER_ACCESS_TOKEN}" \
-          TRIGGER_API_URL="${TRIGGER_API_URL}" \
-          TRIGGER_PROJECT_REF="${TRIGGER_PROJECT_REF}" \
-          pnpm dlx trigger.dev@${{ inputs.trigger-version }} deploy \
-            --env "${TRIGGER_ENV}" \
-            --log-level debug \
-            ${BRANCH_ARG} \
-            ${TRIGGER_API_URL:+-a "${TRIGGER_API_URL}"} \
-            ${TRIGGER_PROJECT_REF:+-p "${TRIGGER_PROJECT_REF}"}
       - name: Verify deployment
         env:
           TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
@@ -186,7 +156,7 @@ jobs:
         if: always() && env.DISCORD_WEBHOOK != ''
         with:
           webhook: ${{ env.DISCORD_WEBHOOK }}
-          title: 'Deploy Status - ${{ github.repository }}'
+          title: "Deploy Status - ${{ github.repository }}"
           description: |
             **Deploy:** ${{ job.status }}
             **Environment:** ${{ inputs.environment }}
