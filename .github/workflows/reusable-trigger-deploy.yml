@@ -50,7 +50,7 @@ on:
 jobs:
   deploy:
     name: Deploy Trigger.dev Tasks
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: ${{ inputs.environment }}
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy' }}
