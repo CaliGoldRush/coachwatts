@@ -716,6 +716,8 @@
   <PlannedWorkoutModal
     v-model="showPlannedWorkoutModal"
     :planned-workout="selectedPlannedWorkout"
+    :user-ftp="profile?.profile?.ftp"
+    :all-sport-settings="allSportSettings"
     @completed="handlePlannedWorkoutCompleted"
     @deleted="handlePlannedWorkoutDeleted"
   />

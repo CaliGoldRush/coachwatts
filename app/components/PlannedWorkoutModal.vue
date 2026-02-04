@@ -98,7 +98,12 @@
               Regenerate
             </UButton>
           </div>
-          <WorkoutChart :workout="plannedWorkout.structuredWorkout" />
+          <WorkoutRunChart
+            v-if="isRunWorkout"
+            :workout="plannedWorkout.structuredWorkout"
+            :preference="preference"
+          />
+          <WorkoutChart v-else :workout="plannedWorkout.structuredWorkout" :user-ftp="userFtp" />
         </div>
 
         <!-- Coaching Messages Timeline -->
@@ -411,7 +416,9 @@
 
 <script setup lang="ts">
   import WorkoutChart from '~/components/workouts/WorkoutChart.vue'
+  import WorkoutRunChart from '~/components/workouts/WorkoutRunChart.vue'
   import WorkoutMessagesTimeline from '~/components/workouts/WorkoutMessagesTimeline.vue'
+  import { getSportSettingsForActivity, getPreferredMetric } from '~/utils/sportSettings'
 
   const { formatDate, formatDateUTC } = useFormat()
   const toast = useToast()
@@ -419,6 +426,8 @@
   const props = defineProps<{
     plannedWorkout: any | null
     modelValue: boolean
+    userFtp?: number
+    allSportSettings?: any[]
   }>()
 
   const emit = defineEmits<{
@@ -441,6 +450,26 @@
   const showManualEntry = ref(false)
   const showDeleteConfirm = ref(false)
   const showMarkCompleteConfirm = ref(false)
+
+  const isRunWorkout = computed(() => props.plannedWorkout?.type?.toLowerCase().includes('run'))
+  const isRideWorkout = computed(
+    () =>
+      props.plannedWorkout?.type?.toLowerCase().includes('ride') ||
+      props.plannedWorkout?.type?.toLowerCase().includes('cycle')
+  )
+
+  const applicableSettings = computed(() => {
+    if (!props.allSportSettings || !props.plannedWorkout) return null
+    return getSportSettingsForActivity(props.allSportSettings, props.plannedWorkout.type)
+  })
+
+  const preference = computed(() => {
+    if (!props.plannedWorkout?.structuredWorkout) return 'power'
+    const hasHr = props.plannedWorkout.structuredWorkout.steps?.some((s: any) => s.heartRate)
+    const hasPower = props.plannedWorkout.structuredWorkout.steps?.some((s: any) => s.power)
+
+    return getPreferredMetric(applicableSettings.value, { hasHr, hasPower })
+  })
 
   async function generateStructure() {
     if (!props.plannedWorkout) return
