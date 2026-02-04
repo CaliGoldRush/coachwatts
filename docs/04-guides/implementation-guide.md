@@ -681,7 +681,7 @@ export const ingestWhoop = task({
 
 **Instructions:**
 
-1. Install Google Generative AI SDK (`@google/generative-ai`)
+1. Configure Vercel AI SDK (`ai` and `@ai-sdk/google`)
 2. Create `server/utils/gemini.ts`
 3. Export `generateCoachAnalysis()` function
 4. Support both Flash and Pro models
@@ -690,7 +690,7 @@ export const ingestWhoop = task({
 **Commands:**
 
 ```bash
-pnpm add @google/generative-ai
+pnpm add ai @ai-sdk/google
 ```
 
 **Implementation:**
@@ -698,28 +698,23 @@ pnpm add @google/generative-ai
 `server/utils/gemini.ts`:
 
 ```typescript
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { generateText, generateObject, jsonSchema } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { MODEL_NAMES, GeminiModel } from './ai-config'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-
-export type GeminiModel = 'flash' | 'pro'
-
-const MODEL_NAMES = {
-  flash: 'gemini-2.0-flash-exp',
-  pro: 'gemini-2.0-flash-thinking-exp-1219'
-} as const
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY
+})
 
 export async function generateCoachAnalysis(
   prompt: string,
   modelType: GeminiModel = 'flash'
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAMES[modelType]
+  const { text } = await generateText({
+    model: google(MODEL_NAMES[modelType]),
+    prompt
   })
-
-  const result = await model.generateContent(prompt)
-  const response = result.response
-  return response.text()
+  return text
 }
 
 export async function generateStructuredAnalysis<T>(
@@ -727,17 +722,12 @@ export async function generateStructuredAnalysis<T>(
   schema: any,
   modelType: GeminiModel = 'flash'
 ): Promise<T> {
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAMES[modelType],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: schema
-    }
+  const { object } = await generateObject({
+    model: google(MODEL_NAMES[modelType]),
+    prompt,
+    schema: jsonSchema(schema)
   })
-
-  const result = await model.generateContent(prompt)
-  const response = result.response
-  return JSON.parse(response.text())
+  return object as T
 }
 
 export function buildWorkoutSummary(workouts: any[]): string {

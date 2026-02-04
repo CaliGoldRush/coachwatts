@@ -28807,7 +28807,7 @@ For guaranteed cost savings, you can still use explicit caching with Gemini 2.5 
 
 ```ts
 import { google } from '@ai-sdk/google';
-import { GoogleAICacheManager } from '@google/generative-ai/server';
+// Migrated to Vercel AI SDK
 import { generateText } from 'ai';
 
 const cacheManager = new GoogleAICacheManager(

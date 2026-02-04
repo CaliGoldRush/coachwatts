@@ -11,7 +11,7 @@ The chat system is built using the following components:
 - **Frontend**: `vue-advanced-chat` component for the UI (client-side only).
 - **Backend**: Nuxt server API endpoints (`/api/chat/...`).
 - **Database**: PostgreSQL with Prisma ORM for storing chat history.
-- **AI**: Google Gemini (via `@google/generative-ai` SDK) for response generation.
+- **AI**: Google Gemini (via **Vercel AI SDK** with `@ai-sdk/google`) for response generation.
 
 ## Database Schema
 
