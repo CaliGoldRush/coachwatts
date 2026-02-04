@@ -1,5 +1,5 @@
 import { prisma } from './db'
-import type { GeminiModel } from './gemini'
+import type { GeminiModel } from './ai-config'
 
 export interface AiSettings {
   aiPersona: string

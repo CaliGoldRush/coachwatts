@@ -1,6 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { prisma } from './db'
 import { formatUserDate } from './date'
+import { generateText, generateObject, jsonSchema } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import {
   getMoodLabel,
   getStressLabel,
@@ -11,46 +12,12 @@ import {
   getInjuryLabel
 } from './wellness'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+import type { GeminiModel } from './ai-config'
+import { MODEL_NAMES, calculateLlmCost } from './ai-config'
 
-export type GeminiModel = 'flash' | 'pro'
-
-export const MODEL_NAMES = {
-  flash: 'gemini-flash-latest',
-  pro: 'gemini-3-pro-preview' // Using Gemini 1.5 Pro for advanced reasoning
-} as const
-
-// Gemini API pricing (as of Dec 2024, per 1M tokens)
-// Source: https://ai.google.dev/pricing
-const PRICING = {
-  'gemini-3-flash-preview': {
-    input: 0.075, // $0.075 per 1M input tokens
-    output: 0.3 // $0.30 per 1M output tokens
-  },
-  'gemini-flash-latest': {
-    input: 0.075, // $0.075 per 1M input tokens
-    output: 0.3 // $0.30 per 1M output tokens
-  },
-  'gemini-3-pro-preview': {
-    input: 1.25, // $1.25 per 1M input tokens
-    output: 5.0 // $5.00 per 1M output tokens
-  }
-} as const
-
-/**
- * Calculate cost in USD for a Gemini API call
- */
-function calculateCost(model: string, inputTokens: number, outputTokens: number): number {
-  const pricing = PRICING[model as keyof typeof PRICING]
-  if (!pricing) {
-    console.warn(`[Gemini] Unknown model for pricing: ${model}`)
-    return 0
-  }
-
-  const inputCost = (inputTokens / 1_000_000) * pricing.input
-  const outputCost = (outputTokens / 1_000_000) * pricing.output
-  return inputCost + outputCost
-}
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY
+})
 
 /**
  * Log LLM usage to database for cost tracking and analysis
@@ -115,6 +82,55 @@ async function logLlmUsage(params: {
 function getPreview(text: string, maxLength: number = 500): string {
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
+}
+
+/**
+ * Internal helper to log usage from Vercel AI SDK events
+ */
+async function logUsage(params: {
+  userId?: string
+  modelId: string
+  modelType: GeminiModel
+  operation: string
+  entityType?: string
+  entityId?: string
+  prompt: string
+  text?: string
+  usage: {
+    promptTokens: number
+    completionTokens: number
+  }
+  success: boolean
+  error?: any
+}) {
+  const durationMs = 0 // SDK doesn't always expose this directly in a simple way here
+  const estimatedCost = calculateLlmCost(
+    params.modelId,
+    params.usage.promptTokens,
+    params.usage.completionTokens
+  )
+
+  await logLlmUsage({
+    userId: params.userId,
+    model: params.modelId,
+    modelType: params.modelType,
+    operation: params.operation,
+    entityType: params.entityType,
+    entityId: params.entityId,
+    promptTokens: params.usage.promptTokens,
+    completionTokens: params.usage.completionTokens,
+    totalTokens: params.usage.promptTokens + params.usage.completionTokens,
+    estimatedCost,
+    durationMs,
+    retryCount: 0,
+    success: params.success,
+    errorType: params.error ? 'api_error' : undefined,
+    errorMessage: params.error?.message,
+    promptPreview: getPreview(params.prompt),
+    responsePreview: params.text ? getPreview(params.text) : undefined,
+    promptFull: params.prompt,
+    responseFull: params.text
+  })
 }
 
 // Retry configuration
@@ -236,7 +252,7 @@ async function retryWithBackoff<T>(
         // Calculate estimated cost
         const estimatedCost =
           promptTokens && completionTokens
-            ? calculateCost(trackingParams.model, promptTokens, completionTokens)
+            ? calculateLlmCost(trackingParams.model, promptTokens, completionTokens)
             : undefined
 
         const usageId = await logLlmUsage({
@@ -362,27 +378,52 @@ export async function generateCoachAnalysis(
 ): Promise<string> {
   const modelName = MODEL_NAMES[modelType]
 
-  const result = await retryWithBackoff(
-    async () => {
-      const model = genAI.getGenerativeModel({
-        model: modelName
+  try {
+    const { text, usage } = await generateText({
+      model: google(modelName),
+      prompt: prompt,
+      maxRetries: 3
+    })
+
+    if (trackingContext) {
+      await logUsage({
+        userId: trackingContext.userId,
+        modelId: modelName,
+        modelType,
+        operation: trackingContext.operation,
+        entityType: trackingContext.entityType,
+        entityId: trackingContext.entityId,
+        prompt: prompt,
+        text: text,
+        usage: {
+          promptTokens: usage.inputTokens || 0,
+          completionTokens: usage.outputTokens || 0
+        },
+        success: true
       })
+    }
 
-      return model.generateContent(prompt)
-    },
-    `generateCoachAnalysis(${modelType})`,
-    trackingContext
-      ? {
-          ...trackingContext,
-          model: modelName,
-          modelType,
-          prompt,
-          onUsageLogged: trackingContext.onUsageLogged
-        }
-      : undefined
-  )
-
-  return result.response.text()
+    return text
+  } catch (error: any) {
+    if (trackingContext) {
+      await logUsage({
+        userId: trackingContext.userId,
+        modelId: modelName,
+        modelType,
+        operation: trackingContext.operation,
+        entityType: trackingContext.entityType,
+        entityId: trackingContext.entityId,
+        prompt: prompt,
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0
+        },
+        success: false,
+        error
+      })
+    }
+    throw error
+  }
 }
 
 export async function generateStructuredAnalysis<T>(
@@ -393,31 +434,53 @@ export async function generateStructuredAnalysis<T>(
 ): Promise<T> {
   const modelName = MODEL_NAMES[modelType]
 
-  const result = await retryWithBackoff(
-    async () => {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: schema
-        }
+  try {
+    const { object, usage } = await generateObject({
+      model: google(modelName),
+      prompt: prompt,
+      schema: jsonSchema(schema),
+      maxRetries: 3
+    })
+
+    if (trackingContext) {
+      await logUsage({
+        userId: trackingContext.userId,
+        modelId: modelName,
+        modelType,
+        operation: trackingContext.operation,
+        entityType: trackingContext.entityType,
+        entityId: trackingContext.entityId,
+        prompt: prompt,
+        text: JSON.stringify(object),
+        usage: {
+          promptTokens: usage.inputTokens || 0,
+          completionTokens: usage.outputTokens || 0
+        },
+        success: true
       })
+    }
 
-      return model.generateContent(prompt)
-    },
-    `generateStructuredAnalysis(${modelType})`,
-    trackingContext
-      ? {
-          ...trackingContext,
-          model: modelName,
-          modelType,
-          prompt,
-          onUsageLogged: trackingContext.onUsageLogged
-        }
-      : undefined
-  )
-
-  return JSON.parse(result.response.text())
+    return object as T
+  } catch (error: any) {
+    if (trackingContext) {
+      await logUsage({
+        userId: trackingContext.userId,
+        modelId: modelName,
+        modelType,
+        operation: trackingContext.operation,
+        entityType: trackingContext.entityType,
+        entityId: trackingContext.entityId,
+        prompt: prompt,
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0
+        },
+        success: false,
+        error
+      })
+    }
+    throw error
+  }
 }
 
 export function buildWorkoutSummary(workouts: any[], timezone?: string): string {

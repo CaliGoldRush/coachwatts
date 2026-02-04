@@ -1,4 +1,3 @@
-import { SchemaType } from '@google/generative-ai'
 import { prisma } from '../db'
 import { generateStructuredAnalysis } from '../gemini'
 import { wellnessRepository } from '../repositories/wellnessRepository'
@@ -19,27 +18,27 @@ import {
 
 // Define the schema for the AI analysis
 const wellnessAnalysisSchema = {
-  type: SchemaType.OBJECT,
+  type: 'object',
   properties: {
     executive_summary: {
-      type: SchemaType.STRING,
+      type: 'string',
       description: "A concise summary of the athlete's overall wellness state."
     },
     status: {
-      type: SchemaType.STRING,
+      type: 'string',
       description: "The readiness status: 'READY', 'CAUTION', or 'REST'.",
       enum: ['READY', 'CAUTION', 'REST']
     },
     sections: {
-      type: SchemaType.ARRAY,
+      type: 'array',
       description: 'Detailed analysis broken down by category.',
       items: {
-        type: SchemaType.OBJECT,
+        type: 'object',
         properties: {
-          title: { type: SchemaType.STRING, description: "Section title (e.g., 'Sleep Analysis')" },
-          content: { type: SchemaType.STRING, description: 'Detailed analysis content.' },
+          title: { type: 'string', description: "Section title (e.g., 'Sleep Analysis')" },
+          content: { type: 'string', description: 'Detailed analysis content.' },
           type: {
-            type: SchemaType.STRING,
+            type: 'string',
             description: 'Category of the section.',
             enum: ['SLEEP', 'HRV', 'RECOVERY', 'SUBJECTIVE', 'TRENDS']
           }
@@ -48,15 +47,15 @@ const wellnessAnalysisSchema = {
       }
     },
     recommendations: {
-      type: SchemaType.ARRAY,
+      type: 'array',
       description: 'Actionable advice for the athlete.',
       items: {
-        type: SchemaType.OBJECT,
+        type: 'object',
         properties: {
-          title: { type: SchemaType.STRING, description: 'Recommendation title.' },
-          description: { type: SchemaType.STRING, description: 'Detailed recommendation.' },
+          title: { type: 'string', description: 'Recommendation title.' },
+          description: { type: 'string', description: 'Detailed recommendation.' },
           type: {
-            type: SchemaType.STRING,
+            type: 'string',
             description: 'Type of recommendation.',
             enum: ['TRAINING', 'LIFESTYLE', 'NUTRITION']
           }
