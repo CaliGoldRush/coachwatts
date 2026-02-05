@@ -128,11 +128,6 @@ llmCommand
     const isDry = options.dry
     const dateStr = options.date
 
-    if (!dateStr) {
-      console.error(chalk.red('Error: --date <YYYY-MM-DD> is required.'))
-      process.exit(1)
-    }
-
     const connectionString = isProd ? process.env.DATABASE_URL_PROD : process.env.DATABASE_URL
 
     if (isProd) {
@@ -154,68 +149,111 @@ llmCommand
       // Import the shared pricing logic
       const { calculateLlmCost } = await import('../../server/utils/ai-config')
 
-      const startOfDay = new Date(`${dateStr}T00:00:00Z`)
-      const endOfDay = new Date(`${dateStr}T23:59:59Z`)
+      const where: any = {
+        success: true,
+        promptTokens: { not: null },
+        completionTokens: { not: null }
+      }
 
-      console.log(chalk.blue(`Fetching LLM usage for ${dateStr}...`))
-      const usageRecords = await prisma.llmUsage.findMany({
-        where: {
-          createdAt: {
-            gte: startOfDay,
-            lte: endOfDay
-          },
-          success: true,
-          promptTokens: { not: null },
-          completionTokens: { not: null }
-        }
-      })
-
-      console.log(chalk.blue(`Found ${usageRecords.length} successful records.`))
-
-      let totalUpdated = 0
-      let totalOldCost = 0
-      let totalNewCost = 0
-
-      for (const record of usageRecords) {
-        const newCost = calculateLlmCost(
-          record.model,
-          record.promptTokens || 0,
-          record.completionTokens || 0
-        )
-        const oldCost = record.estimatedCost || 0
-
-        totalOldCost += oldCost
-        totalNewCost += newCost
-
-        if (Math.abs(newCost - oldCost) > 0.000001) {
-          if (isDry) {
-            console.log(
-              chalk.yellow(
-                `[DRY] Would update ${record.id} (${record.model}): $${oldCost.toFixed(6)} -> $${newCost.toFixed(6)}`
-              )
-            )
-          } else {
-            await prisma.llmUsage.update({
-              where: { id: record.id },
-              data: { estimatedCost: newCost }
-            })
-          }
-          totalUpdated++
+      if (dateStr) {
+        const startOfDay = new Date(`${dateStr}T00:00:00Z`)
+        const endOfDay = new Date(`${dateStr}T23:59:59Z`)
+        where.createdAt = {
+          gte: startOfDay,
+          lte: endOfDay
         }
       }
 
+      console.log(
+        chalk.blue(
+          dateStr
+            ? `Fetching LLM usage for ${dateStr}...`
+            : 'Fetching all successful LLM usage records...'
+        )
+      )
+
+      const usageRecords = await prisma.llmUsage.findMany({
+        where,
+        orderBy: { createdAt: 'asc' }
+      })
+
+      if (usageRecords.length === 0) {
+        console.log(chalk.yellow('No records found.'))
+        return
+      }
+
+      console.log(chalk.blue(`Found ${usageRecords.length} successful records.`))
+
+      // Group records by date
+      const recordsByDate: Record<string, typeof usageRecords> = {}
+      for (const record of usageRecords) {
+        const d = record.createdAt.toISOString().split('T')[0]
+        if (!recordsByDate[d]) recordsByDate[d] = []
+        recordsByDate[d].push(record)
+      }
+
+      const sortedDates = Object.keys(recordsByDate).sort()
+
+      let overallTotalUpdated = 0
+      let overallTotalOldCost = 0
+      let overallTotalNewCost = 0
+
+      for (const d of sortedDates) {
+        const dayRecords = recordsByDate[d]
+        let dayUpdated = 0
+        let dayOldCost = 0
+        let dayNewCost = 0
+
+        console.log(chalk.bold(`\nProcessing ${d} (${dayRecords.length} records)...`))
+
+        for (const record of dayRecords) {
+          const newCost = calculateLlmCost(
+            record.model,
+            record.promptTokens || 0,
+            record.completionTokens || 0
+          )
+          const oldCost = record.estimatedCost || 0
+
+          dayOldCost += oldCost
+          dayNewCost += newCost
+
+          if (Math.abs(newCost - oldCost) > 0.000001) {
+            if (!isDry) {
+              await prisma.llmUsage.update({
+                where: { id: record.id },
+                data: { estimatedCost: newCost }
+              })
+            }
+            dayUpdated++
+          }
+        }
+
+        console.log(`  Records checked: ${dayRecords.length}`)
+        console.log(`  Records with cost change: ${dayUpdated}`)
+        console.log(`  Day Old Cost: $${dayOldCost.toFixed(4)}`)
+        console.log(`  Day New Cost: $${dayNewCost.toFixed(4)}`)
+
+        overallTotalUpdated += dayUpdated
+        overallTotalOldCost += dayOldCost
+        overallTotalNewCost += dayNewCost
+      }
+
       console.log(chalk.cyan('\n--- Recalculation Summary ---'))
-      console.log(chalk.cyan(`Date: ${dateStr}`))
-      console.log(chalk.cyan(`Records checked: ${usageRecords.length}`))
-      console.log(chalk.cyan(`Records with cost change: ${totalUpdated}`))
-      console.log(chalk.cyan(`Total Old Cost: $${totalOldCost.toFixed(4)}`))
-      console.log(chalk.cyan(`Total New Cost: $${totalNewCost.toFixed(4)}`))
+      if (dateStr) {
+        console.log(chalk.cyan(`Date: ${dateStr}`))
+      } else {
+        console.log(chalk.cyan(`Dates processed: ${sortedDates.length}`))
+      }
+      console.log(chalk.cyan(`Total records checked: ${usageRecords.length}`))
+      console.log(chalk.cyan(`Total records with cost change: ${overallTotalUpdated}`))
+      console.log(chalk.cyan(`Total Old Cost: $${overallTotalOldCost.toFixed(4)}`))
+      console.log(chalk.cyan(`Total New Cost: $${overallTotalNewCost.toFixed(4)}`))
       console.log(chalk.cyan('-----------------------------\n'))
 
       if (isDry) {
         console.log(chalk.yellow(`[DRY] Finished. No changes applied.`))
       } else {
-        console.log(chalk.green(`Successfully updated ${totalUpdated} records.`))
+        console.log(chalk.green(`Successfully updated ${overallTotalUpdated} records.`))
       }
     } catch (e) {
       console.error(chalk.red('Error recalculating costs:'), e)
