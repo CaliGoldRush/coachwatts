@@ -272,6 +272,37 @@
     }
   })
 
+  const dailyTokenBreakdownChartData = computed(() => {
+    if (!stats.value?.dailyTokenBreakdown) return { labels: [], datasets: [] }
+
+    const data = stats.value.dailyTokenBreakdown
+    const dates = data.map((d) => d.date).sort()
+
+    return {
+      labels: dates.map((d) =>
+        new Date(d!).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+      ),
+      datasets: [
+        {
+          label: 'Cached Tokens',
+          backgroundColor: '#10b981', // Emerald
+          data: dates.map((date) => {
+            const entry = data.find((d) => d.date === date)
+            return entry ? entry.cached : 0
+          })
+        },
+        {
+          label: 'Uncached Input',
+          backgroundColor: '#3b82f6', // Blue
+          data: dates.map((date) => {
+            const entry = data.find((d) => d.date === date)
+            return entry ? entry.uncached : 0
+          })
+        }
+      ]
+    }
+  })
+
   const dailyTotalUsersChartData = computed(() => {
     if (!stats.value?.dailyTotalUsers) return { labels: [], datasets: [] }
 
@@ -472,7 +503,7 @@
         </div>
 
         <!-- NEW: Daily Trends -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <UCard>
             <template #header>
               <h3 class="font-semibold">Daily Costs by Model</h3>
@@ -490,6 +521,17 @@
               <Bar :data="dailyUsersChartData" :options="stackedBarOptions" />
             </div>
           </UCard>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <UCard>
+            <template #header>
+              <h3 class="font-semibold">Input Caching Efficiency (Cached vs Uncached)</h3>
+            </template>
+            <div class="h-64 relative">
+              <Bar :data="dailyTokenBreakdownChartData" :options="stackedBarOptions" />
+            </div>
+          </UCard>
 
           <UCard>
             <template #header>
@@ -497,6 +539,17 @@
             </template>
             <div class="h-64 relative">
               <Bar :data="dailyCachedTokensChartData" :options="stackedBarOptions" />
+            </div>
+          </UCard>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6">
+          <UCard>
+            <template #header>
+              <h3 class="font-semibold">Total Unique Users per Day (All LLM Operations)</h3>
+            </template>
+            <div class="h-64 relative">
+              <Line :data="dailyTotalUsersChartData" :options="barOptions" />
             </div>
           </UCard>
         </div>
@@ -607,23 +660,16 @@
           </UCard>
         </div>
 
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold">Total Unique Users per Day (All LLM Operations)</h3>
-          </template>
-          <div class="h-64 relative">
-            <Line :data="dailyTotalUsersChartData" :options="barOptions" />
-          </div>
-        </UCard>
-
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold">Daily LLM Requests from Chat</h3>
-          </template>
-          <div class="h-64 relative">
-            <Line :data="dailyChatRequestsChartData" :options="lineOptions" />
-          </div>
-        </UCard>
+        <div class="grid grid-cols-1 gap-6">
+          <UCard>
+            <template #header>
+              <h3 class="font-semibold">Daily LLM Requests from Chat</h3>
+            </template>
+            <div class="h-64 relative">
+              <Line :data="dailyChatRequestsChartData" :options="lineOptions" />
+            </div>
+          </UCard>
+        </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Recent Failures -->

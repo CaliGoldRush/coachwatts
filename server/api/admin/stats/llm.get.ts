@@ -320,6 +320,27 @@ export default defineEventHandler(async (event) => {
     count: Number(row.count)
   }))
 
+  // 16. Daily Input Tokens Breakdown (Cached vs Uncached)
+  const dailyTokenBreakdownRaw = await prisma.$queryRaw<
+    { date: string; prompt: bigint; cached: bigint }[]
+  >`
+    SELECT 
+      DATE("createdAt") as date, 
+      SUM(COALESCE("promptTokens", 0)) as prompt,
+      SUM(COALESCE("cachedTokens", 0)) as cached
+    FROM "LlmUsage"
+    WHERE "createdAt" >= ${thirtyDaysAgo}
+    GROUP BY DATE("createdAt")
+    ORDER BY date ASC
+  `
+
+  const dailyTokenBreakdown = dailyTokenBreakdownRaw.map((row) => ({
+    date: new Date(row.date).toISOString().split('T')[0],
+    prompt: Number(row.prompt),
+    cached: Number(row.cached),
+    uncached: Math.max(0, Number(row.prompt) - Number(row.cached))
+  }))
+
   return {
     usageByModel: usageByModel
       .map((m) => ({
@@ -343,6 +364,7 @@ export default defineEventHandler(async (event) => {
     dailyChatRequests,
     dailyCachedTokensByModel,
     dailyTotalUsers,
+    dailyTokenBreakdown,
     topSpenders: topSpendersDetails,
     topSpendersToday,
     topSpendersYesterday,
