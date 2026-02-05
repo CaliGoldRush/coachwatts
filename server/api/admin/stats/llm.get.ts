@@ -341,6 +341,34 @@ export default defineEventHandler(async (event) => {
     uncached: Math.max(0, Number(row.prompt) - Number(row.cached))
   }))
 
+  // 17. Hourly Stats (Past 48 Hours)
+  const fortyEightHoursAgo = new Date()
+  fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48)
+
+  const hourlyStatsRaw = await prisma.$queryRaw<
+    { hour: string; model: string; prompt: bigint; cached: bigint; cost: number }[]
+  >`
+    SELECT 
+      DATE_TRUNC('hour', "createdAt") as hour,
+      model,
+      SUM(COALESCE("promptTokens", 0)) as prompt,
+      SUM(COALESCE("cachedTokens", 0)) as cached,
+      SUM(COALESCE("estimatedCost", 0)) as cost
+    FROM "LlmUsage"
+    WHERE "createdAt" >= ${fortyEightHoursAgo}
+    GROUP BY hour, model
+    ORDER BY hour ASC
+  `
+
+  const hourlyStats = hourlyStatsRaw.map((row) => ({
+    hour: new Date(row.hour).toISOString(),
+    model: row.model,
+    prompt: Number(row.prompt),
+    cached: Number(row.cached),
+    uncached: Math.max(0, Number(row.prompt) - Number(row.cached)),
+    cost: Number(row.cost)
+  }))
+
   return {
     usageByModel: usageByModel
       .map((m) => ({
@@ -365,6 +393,7 @@ export default defineEventHandler(async (event) => {
     dailyCachedTokensByModel,
     dailyTotalUsers,
     dailyTokenBreakdown,
+    hourlyStats,
     topSpenders: topSpendersDetails,
     topSpendersToday,
     topSpendersYesterday,

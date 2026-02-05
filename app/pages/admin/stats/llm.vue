@@ -366,6 +366,91 @@
     }
   })
 
+  // Hourly Chart Data (Last 48 Hours)
+  const hourlyChartLabels = computed(() => {
+    if (!stats.value?.hourlyStats) return []
+    const hours = [...new Set(stats.value.hourlyStats.map((h) => h.hour))].sort()
+    return hours.map((h) => {
+      const d = new Date(h)
+      return d.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    })
+  })
+
+  const hourlyCostChartData = computed(() => {
+    if (!stats.value?.hourlyStats) return { labels: [], datasets: [] }
+
+    const data = stats.value.hourlyStats
+    const hours = [...new Set(data.map((h) => h.hour))].sort()
+    const models = [...new Set(data.map((h) => h.model))]
+
+    return {
+      labels: hourlyChartLabels.value,
+      datasets: models.map((model) => ({
+        label: model,
+        backgroundColor: getModelColor(model),
+        data: hours.map((hour) => {
+          const entry = data.find((d) => d.hour === hour && d.model === model)
+          return entry ? entry.cost : 0
+        })
+      }))
+    }
+  })
+
+  const hourlyEfficiencyChartData = computed(() => {
+    if (!stats.value?.hourlyStats) return { labels: [], datasets: [] }
+
+    const data = stats.value.hourlyStats
+    const hours = [...new Set(data.map((h) => h.hour))].sort()
+
+    return {
+      labels: hourlyChartLabels.value,
+      datasets: [
+        {
+          label: 'Cached Tokens',
+          backgroundColor: '#10b981',
+          data: hours.map((hour) => {
+            const entries = data.filter((d) => d.hour === hour)
+            return entries.reduce((sum, e) => sum + e.cached, 0)
+          })
+        },
+        {
+          label: 'Uncached Input',
+          backgroundColor: '#3b82f6',
+          data: hours.map((hour) => {
+            const entries = data.filter((d) => d.hour === hour)
+            return entries.reduce((sum, e) => sum + e.uncached, 0)
+          })
+        }
+      ]
+    }
+  })
+
+  const hourlyCachedByModelChartData = computed(() => {
+    if (!stats.value?.hourlyStats) return { labels: [], datasets: [] }
+
+    const data = stats.value.hourlyStats
+    const hours = [...new Set(data.map((h) => h.hour))].sort()
+    const models = [...new Set(data.map((h) => h.model))]
+
+    return {
+      labels: hourlyChartLabels.value,
+      datasets: models.map((model) => ({
+        label: model,
+        backgroundColor: getModelColor(model),
+        data: hours.map((hour) => {
+          const entry = data.find((d) => d.hour === hour && d.model === model)
+          return entry ? entry.cached : 0
+        })
+      }))
+    }
+  })
+
   const modelChartData = computed(() => {
     if (!stats.value?.usageByModel) return { labels: [], datasets: [] }
     return {
@@ -521,6 +606,45 @@
               <Bar :data="dailyUsersChartData" :options="stackedBarOptions" />
             </div>
           </UCard>
+        </div>
+
+        <!-- NEW: Hourly Trends (Past 48 Hours) -->
+        <div class="space-y-6">
+          <div class="flex items-center gap-2 mt-4">
+            <UIcon name="i-lucide-clock" class="w-5 h-5 text-gray-400" />
+            <h2 class="text-lg font-semibold">Hourly Trends (Past 48 Hours)</h2>
+          </div>
+
+          <div class="grid grid-cols-1 gap-6">
+            <UCard>
+              <template #header>
+                <h3 class="font-semibold">Hourly Costs by Model</h3>
+              </template>
+              <div class="h-64 relative">
+                <Bar :data="hourlyCostChartData" :options="stackedBarOptions" />
+              </div>
+            </UCard>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <UCard>
+              <template #header>
+                <h3 class="font-semibold">Hourly Caching Efficiency (Cached vs Uncached)</h3>
+              </template>
+              <div class="h-64 relative">
+                <Bar :data="hourlyEfficiencyChartData" :options="stackedBarOptions" />
+              </div>
+            </UCard>
+
+            <UCard>
+              <template #header>
+                <h3 class="font-semibold">Hourly Cached Tokens by Model</h3>
+              </template>
+              <div class="h-64 relative">
+                <Bar :data="hourlyCachedByModelChartData" :options="stackedBarOptions" />
+              </div>
+            </UCard>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
