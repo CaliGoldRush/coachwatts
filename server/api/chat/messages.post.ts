@@ -352,7 +352,20 @@ export default defineEventHandler(async (event) => {
           try {
             const promptTokens = usage.inputTokens || 0
             const completionTokens = usage.outputTokens || 0
-            const estimatedCost = calculateLlmCost(modelName, promptTokens, completionTokens)
+            const cachedTokens = usage.inputTokenDetails?.cacheReadTokens || 0
+            const reasoningTokens = (usage as any).outputTokenDetails?.reasoningTokens || 0
+
+            console.log(
+              `[Chat API] Usage: Prompt=${promptTokens} (Cached Read=${cachedTokens}), Completion=${completionTokens} (Reasoning=${reasoningTokens})`
+            )
+
+            const estimatedCost = calculateLlmCost(
+              modelName,
+              promptTokens,
+              completionTokens,
+              cachedTokens
+            )
+
             await prisma.llmUsage.create({
               data: {
                 userId,
@@ -364,6 +377,8 @@ export default defineEventHandler(async (event) => {
                 entityId: aiMessage.id,
                 promptTokens,
                 completionTokens,
+                cachedTokens,
+                reasoningTokens,
                 totalTokens: promptTokens + completionTokens,
                 estimatedCost,
                 durationMs: 0,
